@@ -64,3 +64,56 @@ omniconvert/
 ├── vercel.json              # Vercel deployment COOP/COEP headers
 ├── vite.config.ts           # Development server headers
 └── package.json
+Local Development
+Prerequisites
+Node.js 18.x or higher
+
+npm or pnpm
+
+Installation
+Clone the repository:
+
+Bash
+git clone git@github.com:your-username/omniconvert.git
+cd omniconvert
+Install dependencies:
+
+Bash
+npm install
+Launch the development server:
+
+Bash
+npm run dev
+Open http://localhost:5173 in a Chromium-based browser or Firefox.
+
+Production Security Headers
+Multi-threaded WebAssembly requires SharedArrayBuffer, which modern browsers restrict unless Cross-Origin Isolation is active.
+
+Verify your server delivers these exact HTTP response headers:
+
+HTTP
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+Verification
+Open browser Developer Tools, switch to the Console tab, and run:
+
+JavaScript
+window.crossOriginIsolated
+The output must evaluate to true. If false, the WebAssembly engine will fall back to single-threaded mode or fail to allocate memory.
+
+Production Build
+To generate production-ready static assets:
+
+Bash
+npm run build
+The compiled output is located in the dist/ directory and can be deployed directly to Vercel, Cloudflare Pages, Netlify, or AWS S3/CloudFront.
+
+Privacy and Regulatory Compliance
+Zero External Dependencies: No external font CDNs (Google Fonts) or asset libraries are requested at runtime.
+
+No Telemetry by Default: Tracking and telemetry scripts remain deactivated unless explicitly approved by the user.
+
+Legal Disclosures: Dedicated routes are included for Privacy Policy (/privacy), Terms of Service (/terms), and statutory DMCA notices (/terms#dmca).
+
+License
+Proprietary. All rights reserved.
