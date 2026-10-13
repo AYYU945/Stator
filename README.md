@@ -65,27 +65,29 @@ omniconvert/
 ├── vite.config.ts           # Development server headers
 └── package.json
 ```
-
 Local Development
 Prerequisites
 Node.js 18.x or higher
-
+```
 npm or pnpm
-
+```
 Installation
 Clone the repository:
 
-Bash
+```Bash
 git clone git@github.com:your-username/omniconvert.git
 cd omniconvert
+```
 Install dependencies:
 
-Bash
+```Bash
 npm install
+```
 Launch the development server:
 
-Bash
+```Bash
 npm run dev
+```
 Open http://localhost:5173 in a Chromium-based browser or Firefox.
 
 Production Security Headers
@@ -93,21 +95,24 @@ Multi-threaded WebAssembly requires SharedArrayBuffer, which modern browsers res
 
 Verify your server delivers these exact HTTP response headers:
 
-HTTP
+```HTTP
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
+```
 Verification
 Open browser Developer Tools, switch to the Console tab, and run:
 
-JavaScript
+```JavaScript
 window.crossOriginIsolated
+```
 The output must evaluate to true. If false, the WebAssembly engine will fall back to single-threaded mode or fail to allocate memory.
 
 Production Build
 To generate production-ready static assets:
 
-Bash
+```Bash
 npm run build
+```
 The compiled output is located in the dist/ directory and can be deployed directly to Vercel, Cloudflare Pages, Netlify, or AWS S3/CloudFront.
 
 Privacy and Regulatory Compliance
