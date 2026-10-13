@@ -64,6 +64,8 @@ omniconvert/
 ├── vercel.json              # Vercel deployment COOP/COEP headers
 ├── vite.config.ts           # Development server headers
 └── package.json
+```
+
 Local Development
 Prerequisites
 Node.js 18.x or higher
