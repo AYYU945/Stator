@@ -1,6 +1,6 @@
 {
   "name": "OmniConvert",
-  "description": "Convert image, audio, and video formats locally inside your browser using WebAssembly. No files are uploaded to any server.",
+  "description": "High-performance browser-based conversion utility. Convert audio, video, and images locally using WebAssembly. No files are uploaded to any server.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

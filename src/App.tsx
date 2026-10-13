@@ -8,6 +8,8 @@ import { MediaInspectorModal } from './components/MediaInspectorModal.tsx';
 import { HistoryDrawer } from './components/HistoryDrawer.tsx';
 import { FaqSection } from './components/FaqSection.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
+import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
+import { TermsOfService } from './components/TermsOfService.tsx';
 import {
   QueueItem,
   formatFileSize,
@@ -94,6 +96,36 @@ export default function App() {
 
   // Dedicated Media Inspector Modal State
   const [inspectorFileId, setInspectorFileId] = useState<string | null>(null);
+
+  // View state for legal pages and main converter
+  const [currentView, setCurrentView] = useState<'converter' | 'privacy' | 'terms'>('converter');
+
+  // Handle path-based navigation and popstate
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/privacy') {
+        setCurrentView('privacy');
+      } else if (path === '/terms') {
+        setCurrentView('terms');
+      } else {
+        setCurrentView('converter');
+      }
+    };
+
+    handleLocationChange();
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  const navigateTo = (view: 'converter' | 'privacy' | 'terms') => {
+    setCurrentView(view);
+    const targetPath = view === 'converter' ? '/' : `/${view}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Load persistent history records on mount
   useEffect(() => {
@@ -532,39 +564,49 @@ export default function App() {
         onOpenPresets={() => handleOpenPresetModal(null)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 sm:pb-16 flex flex-col items-center">
-        {/* Hero Section */}
-        <Hero />
+      {/* Main Content Area or Legal View */}
+      {currentView === 'privacy' ? (
+        <main className="flex-1 w-full pb-20">
+          <PrivacyPolicy onBack={() => navigateTo('converter')} />
+        </main>
+      ) : currentView === 'terms' ? (
+        <main className="flex-1 w-full pb-20">
+          <TermsOfService onBack={() => navigateTo('converter')} />
+        </main>
+      ) : (
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 sm:pb-16 flex flex-col items-center">
+          {/* Hero Section */}
+          <Hero />
 
-        {/* Responsive Drop Zone Card centered directly beneath subtitle */}
-        <DropZone onFilesSelected={handleFilesSelected} />
+          {/* Responsive Drop Zone Card centered directly beneath subtitle */}
+          <DropZone onFilesSelected={handleFilesSelected} />
 
-        {/* Responsive Active Queue Component */}
-        <ActiveQueue
-          queue={queue}
-          totalQueueCount={queue.length}
-          activeCategory="All Formats"
-          onResetCategory={() => {}}
-          onRemoveItem={handleRemoveItem}
-          onClearQueue={handleClearQueue}
-          onUpdateTargetFormat={handleUpdateTargetFormat}
-          onStartConversion={handleStartConversion}
-          onCancelConversion={handleCancelConversion}
-          onConvertAll={handleConvertAll}
-          onConvertMore={() => {
-            const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-            input?.click();
-          }}
-          onLoadDemoQueue={handleLoadDemoQueue}
-          globalPreset={globalPreset}
-          onOpenPresetModal={handleOpenPresetModal}
-          onOpenInspector={(id) => setInspectorFileId(id)}
-        />
+          {/* Responsive Active Queue Component */}
+          <ActiveQueue
+            queue={queue}
+            totalQueueCount={queue.length}
+            activeCategory="All Formats"
+            onResetCategory={() => {}}
+            onRemoveItem={handleRemoveItem}
+            onClearQueue={handleClearQueue}
+            onUpdateTargetFormat={handleUpdateTargetFormat}
+            onStartConversion={handleStartConversion}
+            onCancelConversion={handleCancelConversion}
+            onConvertAll={handleConvertAll}
+            onConvertMore={() => {
+              const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+              input?.click();
+            }}
+            onLoadDemoQueue={handleLoadDemoQueue}
+            globalPreset={globalPreset}
+            onOpenPresetModal={handleOpenPresetModal}
+            onOpenInspector={(id) => setInspectorFileId(id)}
+          />
 
-        {/* Minimalist Collapsible FAQ Accordion */}
-        <FaqSection />
-      </main>
+          {/* Minimalist Collapsible FAQ Accordion */}
+          <FaqSection />
+        </main>
+      )}
 
       {/* Dedicated Media Inspector Modal */}
       <MediaInspectorModal
@@ -617,7 +659,10 @@ export default function App() {
       />
 
       {/* Bottom Status Footer */}
-      <StatusFooter />
+      <StatusFooter
+        onNavigatePrivacy={() => navigateTo('privacy')}
+        onNavigateTerms={() => navigateTo('terms')}
+      />
     </div>
   );
 }
