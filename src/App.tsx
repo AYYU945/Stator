@@ -11,6 +11,8 @@ import { FaqSection } from './components/FaqSection.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
 import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
+import { ProUpgradeModal } from './components/auth/ProUpgradeModal.tsx';
+import { useLicense } from './lib/license.ts';
 import {
   QueueItem,
   formatFileSize,
@@ -40,6 +42,7 @@ import {
   resolutionToResizeKey,
   resizeKeyToResolution,
 } from './lib/presets.ts';
+import { extractFileMetadata } from './utils/metadataExtractor.ts';
 
 // Initial demo queue with calibrated byte metrics matching the reference screenshots
 const DEMO_QUEUE: QueueItem[] = [
@@ -52,6 +55,7 @@ const DEMO_QUEUE: QueueItem[] = [
     formatBadge: 'SONY ARW',
     metadata: '6000 × 4000 • 14-bit Uncompressed',
     dimensions: '6000 × 4000',
+    technicalTag: '6000x4000 • 42.8 MB',
     targetFormat: 'PNG',
     quality: 90,
     resolution: 'Original',
@@ -80,6 +84,8 @@ const DEMO_QUEUE: QueueItem[] = [
     formatBadge: 'PRORES 422',
     metadata: '02:14 duration • 1080p @ 60fps',
     dimensions: '1080p @ 60fps',
+    duration: '02:14',
+    technicalTag: '1920x1080 • 02:14 • 184.2 MB',
     targetFormat: 'MP4',
     quality: 90,
     resolution: '1080p',
@@ -108,6 +114,13 @@ const DEMO_QUEUE: QueueItem[] = [
 
 export default function App() {
   const { theme, setTheme, toggleTheme } = useTheme();
+  const {
+    isPro,
+    isUpgradeModalOpen,
+    upgradeReason,
+    openUpgradeModal,
+    closeUpgradeModal,
+  } = useLicense();
   const [activeCategory, setActiveCategory] = useState('All Formats');
   const [batchMode, setBatchMode] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>(DEMO_QUEUE);
@@ -334,7 +347,7 @@ export default function App() {
     }
   };
 
-  // Connect Drop Zone to accept real files with smart defaults reading from globalPreset
+  // Connect Drop Zone to accept real files with smart defaults and container metadata extraction
   const handleFilesSelected = (files: File[]) => {
     const currentGlobalPreset = getStoredGlobalPreset();
     const globalSettings = globalPresetToSettings(currentGlobalPreset);
@@ -372,6 +385,7 @@ export default function App() {
         typeCategory,
         formatBadge: file.name.split('.').pop()?.toUpperCase() || (isImage ? 'IMG' : 'VIDEO'),
         metadata: file.type || `${typeCategory.toUpperCase()} asset`,
+        technicalTag: sizeFormatted,
         targetFormat: defaultTarget,
         quality: currentGlobalPreset.imageQuality,
         resolution: currentGlobalPreset.targetResolution,
@@ -390,6 +404,25 @@ export default function App() {
 
     setQueue((prev) => [...prev, ...newItems]);
 
+    // Asynchronously extract container metadata (width, height, duration)
+    newItems.forEach((item) => {
+      if (!item.file) return;
+      extractFileMetadata(item.file).then((meta) => {
+        setQueue((prev) =>
+          prev.map((i) =>
+            i.id === item.id
+              ? {
+                  ...i,
+                  dimensions: meta.dimensions || i.dimensions,
+                  duration: meta.duration || i.duration,
+                  technicalTag: meta.technicalTag,
+                }
+              : i
+          )
+        );
+      });
+    });
+
     // When 1 file is dropped or selected: immediately open the inspector modal
     if (newItems.length === 1) {
       setInspectorFileId(newItems[0].id);
@@ -397,10 +430,29 @@ export default function App() {
   };
 
   const handleRemoveItem = (id: string) => {
+    // Revoke Object URLs to prevent virtual memory leaks
+    const target = queue.find((i) => i.id === id);
+    if (target) {
+      if (target.outputUrl && target.outputUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(target.outputUrl);
+      }
+      if (target.previewUrl && target.previewUrl.startsWith('blob:') && target.previewUrl !== target.outputUrl) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+    }
     setQueue((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleClearQueue = () => {
+    // Revoke all Object URLs in queue to free browser virtual memory
+    for (const item of queue) {
+      if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.outputUrl);
+      }
+      if (item.previewUrl && item.previewUrl.startsWith('blob:') && item.previewUrl !== item.outputUrl) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+    }
     setQueue([]);
   };
 
@@ -449,7 +501,7 @@ export default function App() {
         console.error('Canvas conversion error:', err);
         return {
           status: 'error',
-          errorMessage: err?.message || 'Image processing failed.',
+          errorMessage: 'Failed to transcode: Unsupported codec or corrupted stream',
           progress: 0,
         };
       }
@@ -497,7 +549,7 @@ export default function App() {
         console.error('FFmpeg transcode error:', err);
         return {
           status: 'error',
-          errorMessage: err?.message || 'FFmpeg transcoding failed.',
+          errorMessage: 'Failed to transcode: Unsupported codec or corrupted stream',
           progress: 0,
         };
       }
@@ -604,30 +656,25 @@ export default function App() {
     );
     if (itemsToProcess.length === 0) return;
 
-    // Concurrently process items based on hardwareConcurrency
-    const maxConcurrency = Math.max(2, Math.min(4, navigator.hardwareConcurrency || 4));
-    let activeIndex = 0;
+    // Enforce sequential processing to protect browser virtual memory below 2 GB tab crash threshold
+    for (const item of itemsToProcess) {
+      // Mark as converting in state
+      setQueue((prev) =>
+        prev.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                status: 'converting',
+                progress: 20,
+                speed: '28.4 MB/s',
+                workers: 1,
+                errorMessage: undefined,
+              }
+            : i
+        )
+      );
 
-    const runWorker = async () => {
-      while (activeIndex < itemsToProcess.length) {
-        const item = itemsToProcess[activeIndex++];
-        if (!item) break;
-
-        // Mark as converting in state
-        setQueue((prev) =>
-          prev.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  status: 'converting',
-                  progress: 25,
-                  speed: '34.8 MB/s',
-                  workers: maxConcurrency,
-                }
-              : i
-          )
-        );
-
+      try {
         const updates = await processItemConversion(item);
         setQueue((prev) =>
           prev.map((i) => (i.id === item.id ? { ...i, ...updates } : i))
@@ -636,11 +683,23 @@ export default function App() {
         if (updates.status === 'completed') {
           recordHistory(item, updates);
         }
+      } catch (err: any) {
+        console.error(`Item ${item.name} failed transcoding:`, err);
+        // Non-blocking: mark that single item as error and allow queue runner to proceed cleanly
+        setQueue((prev) =>
+          prev.map((i) =>
+            i.id === item.id
+              ? {
+                  ...i,
+                  status: 'error',
+                  progress: 0,
+                  errorMessage: 'Failed to transcode: Unsupported codec or corrupted stream',
+                }
+              : i
+          )
+        );
       }
-    };
-
-    const workers = Array.from({ length: maxConcurrency }, () => runWorker());
-    await Promise.all(workers);
+    }
   };
 
   const handleLoadDemoQueue = () => {
@@ -667,6 +726,7 @@ export default function App() {
         theme={theme}
         onThemeChange={setTheme}
         onToggleTheme={toggleTheme}
+        onOpenPro={() => openUpgradeModal()}
       />
 
       {/* Main Content Area or Legal View */}
@@ -684,7 +744,11 @@ export default function App() {
           <Hero />
 
           {/* Responsive Drop Zone Card centered directly beneath subtitle */}
-          <DropZone onFilesSelected={handleFilesSelected} />
+          <DropZone
+            onFilesSelected={handleFilesSelected}
+            currentQueueLength={queue.length}
+            onRequirePro={(reason) => openUpgradeModal(reason)}
+          />
 
           {/* Responsive Active Queue Component */}
           <ActiveQueue
@@ -755,6 +819,17 @@ export default function App() {
         activeItemId={activePresetItemId}
         activeItemName={activeTargetItem?.name}
         activeCategory={activeTargetItem?.typeCategory}
+        onRequirePro={(reason) => openUpgradeModal(reason)}
+      />
+
+      {/* Stator Pro Upgrade Modal */}
+      <ProUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={closeUpgradeModal}
+        reason={upgradeReason}
+        onActivated={() => {
+          showToast('Stator Pro successfully activated');
+        }}
       />
 
       {/* Slide-out Conversion History Drawer */}

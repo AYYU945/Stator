@@ -195,6 +195,12 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
     if (shouldRevoke) {
       URL.revokeObjectURL(downloadUrl);
+    } else if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
+      setTimeout(() => {
+        try {
+          URL.revokeObjectURL(item.outputUrl!);
+        } catch {}
+      }, 1500);
     }
 
     showToast(`Downloaded ${filename}`);
@@ -433,10 +439,10 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                           {item.targetFormat}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5 flex items-center gap-1.5">
-                        <span>Original: {item.sizeFormatted}</span>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5 flex items-center gap-1.5 truncate">
+                        <span className="truncate">{item.technicalTag || `Original: ${item.sizeFormatted}`}</span>
                         <span>•</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
                           {item.reductionBadge || `Output: ${item.outputSizeFormatted || 'Ready'}`}
                         </span>
                       </p>
@@ -535,6 +541,53 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
             </button>
           </div>
 
+          {/* Aggregate Queue Status Bar when 2 or more files are converting or pending */}
+          {(() => {
+            const convertingOrPendingItems = queue.filter(
+              (item) => item.status === 'converting' || item.status === 'ready'
+            );
+            const showAggregateBar = convertingOrPendingItems.length >= 2;
+
+            if (!showAggregateBar) return null;
+
+            const totalBatchCount = queue.length;
+            const convertingIndex = queue.findIndex((item) => item.status === 'converting');
+            const completedOrErrorCount = queue.filter(
+              (item) => item.status === 'completed' || item.status === 'error'
+            ).length;
+            const currentItemNumber = convertingIndex !== -1
+              ? completedOrErrorCount + 1
+              : Math.min(totalBatchCount, completedOrErrorCount + 1);
+
+            const totalProgressPercent = totalBatchCount > 0
+              ? Math.min(
+                  100,
+                  Math.round(
+                    queue.reduce((acc, item) => {
+                      if (item.status === 'completed') return acc + 100;
+                      if (item.status === 'converting') return acc + (item.progress || 0);
+                      return acc;
+                    }, 0) / totalBatchCount
+                  )
+                )
+              : 0;
+
+            return (
+              <div className="mb-3.5 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 shadow-sm dark:shadow-none">
+                <div className="flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
+                  <span>Converting item {currentItemNumber} of {totalBatchCount} (Total progress: {totalProgressPercent}%)</span>
+                  <span>{totalProgressPercent}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-sm overflow-hidden mt-1.5">
+                  <div
+                    className="bg-zinc-900 dark:bg-zinc-100 transition-[width] duration-200 ease-out h-full"
+                    style={{ width: `${totalProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Minimalist Queue Item Rows */}
           <div className="space-y-2.5">
             {queue.map((item) => {
@@ -552,22 +605,22 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                       : 'animate-in fade-in slide-in-from-top-1 duration-150 ease-out fill-mode-forwards opacity-100 max-h-[300px]'
                   } ${
                     isError
-                      ? 'border-red-300 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/10'
+                      ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/10'
                       : 'hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   {/* Ready Item Row */}
                   {isReady && (
                     <div className="flex items-center justify-between gap-3">
-                      {/* Left: Media icon + truncated filename + formatted original size */}
+                      {/* Left: Media icon + truncated filename + compact technical tag */}
                       <div className="flex items-center gap-3 min-w-0 flex-1 select-none">
                         {renderCategoryIcon(item.typeCategory, item.targetFormat)}
                         <div className="min-w-0">
                           <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base tracking-tight truncate block">
                             {item.name}
                           </span>
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-                            {item.sizeFormatted}
+                          <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 block truncate">
+                            {item.technicalTag || item.sizeFormatted}
                           </span>
                         </div>
                       </div>
@@ -631,7 +684,10 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                             <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base tracking-tight truncate block">
                               {item.name}
                             </span>
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums font-medium flex items-center gap-1.5">
+                            <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 block truncate">
+                              {item.technicalTag || item.sizeFormatted}
+                            </span>
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums font-medium flex items-center gap-1.5 mt-0.5">
                               <span className="inline-block w-1.5 h-1.5 rounded-sm bg-emerald-500 transition-opacity duration-150" />
                               <span>Converting: {item.progress}%</span>
                             </span>
@@ -659,27 +715,35 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
                   {/* Error Row */}
                   {isError && (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="font-semibold text-zinc-900 dark:text-white text-sm block truncate">
-                          {item.name}
-                        </span>
-                        <p className="text-xs text-red-600 dark:text-red-400 font-mono mt-0.5">
-                          {item.errorMessage || 'Conversion failed.'}
-                        </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {renderCategoryIcon(item.typeCategory, item.targetFormat)}
+                        <div className="min-w-0 flex-1">
+                          <span className="font-semibold text-zinc-900 dark:text-white text-sm block truncate">
+                            {item.name}
+                          </span>
+                          <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 block truncate">
+                            {item.technicalTag || item.sizeFormatted}
+                          </span>
+                          <div className="mt-1.5">
+                            <span className="inline-block text-xs font-mono text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md">
+                              {item.errorMessage || 'Failed to transcode: Unsupported codec or corrupted stream'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                         <button
                           onClick={() => onStartConversion(item.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-red-300 dark:border-red-800 rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-rose-300 dark:border-rose-900/50 rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
                           <span>Retry</span>
                         </button>
                         <button
                           onClick={() => handleAnimatedRemove(item.id)}
-                          className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-red-600 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-rose-600 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

@@ -33,8 +33,8 @@ export const QueueItem: React.FC<QueueItemProps> = ({
             <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base tracking-tight truncate block">
               {item.name}
             </span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-              {item.sizeFormatted}
+            <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500 block truncate">
+              {item.technicalTag || item.sizeFormatted}
             </span>
           </div>
         </div>

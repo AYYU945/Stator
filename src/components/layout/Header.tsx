@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { WasmStatus } from '../../utils/ffmpegManager.ts';
 import { ThemeMode } from '../../lib/theme.ts';
+import { useLicense } from '../../lib/license.ts';
 
 export interface HeaderProps {
   activeCategory?: string;
@@ -23,6 +24,7 @@ export interface HeaderProps {
   theme?: ThemeMode;
   onThemeChange?: (mode: ThemeMode) => void;
   onToggleTheme?: () => void;
+  onOpenPro?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,7 +35,9 @@ export const Header: React.FC<HeaderProps> = ({
   wasmStatus = 'active',
   onThemeChange,
   onToggleTheme,
+  onOpenPro,
 }) => {
+  const { isPro } = useLicense();
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof document !== 'undefined') {
       return document.documentElement.classList.contains('dark');
@@ -131,8 +135,30 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Center: Clean breathing room */}
         <div className="flex-1" />
 
-        {/* Right Utility Cluster: Theme Toggle, History, Settings, and Profile Buttons */}
+        {/* Right Utility Cluster: Pro Status, Theme Toggle, History, Settings, and Profile Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Stator Pro Status / Upgrade Badge */}
+          {isPro ? (
+            <button
+              onClick={onOpenPro}
+              className="px-2.5 py-1 text-xs font-mono font-medium rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Stator Pro Active"
+            >
+              <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500" />
+              <span>PRO</span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenPro}
+              className="px-2.5 py-1 text-xs font-medium rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>Upgrade</span>
+              <span className="text-[10px] font-mono px-1 py-0.2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-sm">
+                PRO
+              </span>
+            </button>
+          )}
+
           {/* Theme Mode Toggle Button */}
           <button
             onClick={handleToggleTheme}

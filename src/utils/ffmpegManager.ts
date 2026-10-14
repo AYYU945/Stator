@@ -19,6 +19,7 @@ if (typeof window !== 'undefined' && !(window as any).__workerShimmed) {
 
 import { calculateReductionBadge } from './converter.ts';
 import { PresetSettings } from '../types/queue.ts';
+import { getStoredLicense, FREE_LIMITS } from '../lib/license.ts';
 
 export type WasmStatus = 'loading' | 'active' | 'ready' | 'idle' | 'error';
 
@@ -196,6 +197,15 @@ class FFmpegManager {
         channelArgs.push('-ac', '2');
       }
 
+      // Configure hardware concurrency allocation:
+      // Pro users get full multi-core threads (navigator.hardwareConcurrency || 4)
+      // Free users are capped to FREE_LIMITS.hardwareThreads (2 threads)
+      const currentLicense = getStoredLicense();
+      const allocatedThreads = currentLicense.isPro
+        ? (typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4)
+        : FREE_LIMITS.hardwareThreads;
+      const threadArgs = ['-threads', allocatedThreads.toString()];
+
       const normInputExt = inputExt.toLowerCase();
       const normTargetExt = ext.toLowerCase();
 
@@ -269,7 +279,7 @@ class FFmpegManager {
           else if (preset?.videoBitrate === 'balanced') crf = '23';
           else if (preset?.videoBitrate === 'compact') crf = '28';
 
-          const args: string[] = ['-i', inputName];
+          const args: string[] = ['-i', inputName, ...threadArgs];
           if (videoScaleFilter) {
             args.push('-vf', videoScaleFilter);
           }

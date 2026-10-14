@@ -1,43 +1,72 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
-import { GlobalPreset, getStoredGlobalPreset } from '../lib/presets.ts';
+import { GlobalPreset } from '../lib/presets.ts';
+import { useLicense, FREE_LIMITS } from '../lib/license.ts';
 
 export interface DropZoneProps {
   onFilesSelected: (files: File[]) => void;
   globalPreset?: GlobalPreset;
+  currentQueueLength?: number;
+  onRequirePro?: (reason: string) => void;
 }
 
-export const DropZone: React.FC<DropZoneProps> = ({ onFilesSelected, globalPreset }) => {
-  const [isDragging, setIsDragging] = useState(false);
+export const DropZone: React.FC<DropZoneProps> = ({
+  onFilesSelected,
+  currentQueueLength = 0,
+  onRequirePro,
+}) => {
+  const { isPro, openUpgradeModal } = useLicense();
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processIncomingFiles = (rawFiles: File[]) => {
+    if (!rawFiles || rawFiles.length === 0) return;
+
+    if (!isPro && currentQueueLength + rawFiles.length > FREE_LIMITS.maxQueueBatch) {
+      const allowedCount = Math.max(0, FREE_LIMITS.maxQueueBatch - currentQueueLength);
+      const stagedFiles = rawFiles.slice(0, allowedCount);
+      if (stagedFiles.length > 0) {
+        onFilesSelected(stagedFiles);
+      }
+      const msg = 'Free tier is limited to 3 items per batch. Upgrade to Stator Pro for uncapped batch processing.';
+      if (onRequirePro) {
+        onRequirePro(msg);
+      } else {
+        openUpgradeModal(msg);
+      }
+      return;
+    }
+
+    onFilesSelected(rawFiles);
+  };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+    setIsDragActive(true);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    setIsDragActive(false);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    setIsDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFiles = Array.from(e.dataTransfer.files);
-      onFilesSelected(droppedFiles);
+      processIncomingFiles(droppedFiles);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
-      onFilesSelected(selectedFiles);
+      processIncomingFiles(selectedFiles);
       e.target.value = '';
     }
   };
@@ -65,8 +94,8 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFilesSelected, globalPrese
         onDrop={handleDrop}
         onClick={triggerBrowse}
         className={`group w-full rounded-lg p-8 sm:p-12 text-center select-none cursor-pointer border border-dashed transition-all ${
-          isDragging
-            ? 'bg-zinc-100 border-zinc-500 dark:bg-zinc-900/70 dark:border-zinc-500 scale-[0.998] duration-150 ease-out'
+          isDragActive
+            ? 'bg-zinc-100/90 border-zinc-500 shadow-md dark:bg-zinc-900/80 dark:border-zinc-400 dark:shadow-md scale-[0.998] duration-150 ease-out'
             : 'bg-white dark:bg-[#121214] border-zinc-300 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-700 shadow-sm dark:shadow-none duration-200 ease-out'
         }`}
       >
@@ -83,10 +112,12 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFilesSelected, globalPrese
 
           {/* Clean Primary Copy */}
           <h2 className="text-sm sm:text-base font-medium text-zinc-900 dark:text-zinc-200">
-            Drop files here or click to browse
+            {isDragActive ? 'Drop files to stage in local queue' : 'Drop files here or click to browse'}
           </h2>
           <p className="text-xs text-zinc-500 mt-1">
-            Processed entirely on your device via WebAssembly
+            {isDragActive
+              ? 'Release to stage files in local queue'
+              : 'Processed entirely on your device via WebAssembly'}
           </p>
         </div>
       </div>

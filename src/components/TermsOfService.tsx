@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Scale, ShieldAlert, FileText, Mail } from 'lucide-react';
+import { ArrowLeft, Scale, ShieldAlert, FileText, Mail, ShoppingCart, RefreshCw } from 'lucide-react';
 
 export interface TermsOfServiceProps {
   onBack: () => void;
@@ -25,7 +25,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             Terms of Service
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Please read these terms carefully before utilizing the Stator utility.
+            Please read these terms carefully before utilizing the Stator utility or purchasing a commercial license.
           </p>
         </div>
 
@@ -54,11 +54,52 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
           </p>
         </div>
 
-        {/* Section 8: DMCA Designated Agent Notification Procedure */}
+        {/* Section 3: Commercial Terms, Merchant of Record & Statutory Waiver */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <ShoppingCart className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>3. Commercial Terms, Merchant of Record &amp; Digital Content Waiver</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            All commercial transactions, subscriptions, and lifetime license purchases for Stator Pro are facilitated and processed by our designated third-party Merchant of Record (such as Paddle or Lemon Squeezy). The Merchant of Record is the merchant of record for all purchases, handles billing inquiries, collects applicable sales tax and VAT, and issues sales invoices.
+          </p>
+          <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-md p-4 text-xs font-mono text-zinc-700 dark:text-zinc-300 space-y-2">
+            <div className="font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
+              Statutory EU / UK Right of Withdrawal Waiver
+            </div>
+            <p className="leading-relaxed">
+              In accordance with Directive 2011/83/EU on Consumer Rights and UK Consumer Contracts Regulations, you explicitly acknowledge and agree that the supply of digital software licenses (Stator Pro) commences immediately upon the generation or activation of your license key. You expressly agree that by initiating digital activation, you waive any statutory 14-day right of withdrawal or cooling-off period.
+            </p>
+          </div>
+        </div>
+
+        {/* Section 4: Subscription Auto-Renewal and Cancellation */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <RefreshCw className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>4. Subscription Auto-Renewal and Cancellation</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            Monthly access subscriptions renew automatically every 30 days at the prevailing stated rate unless cancelled prior to the renewal date via the customer billing portal. Lifetime passes represent a single, non-recurring charge granting permanent access to Pro tier capabilities.
+          </p>
+        </div>
+
+        {/* Section 5: Disclaimer & Limitation of Liability */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <Mail className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>5. Disclaimer of Warranty and Limitation of Liability</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            Stator is provided on an as-is and as-available basis without warranties of any kind, whether express, statutory, or implied. In no event shall Stator, LLC or its contributors be liable for direct, indirect, incidental, special, exemplary, or consequential damages arising out of the performance, failure, or use of the client-side conversion routines.
+          </p>
+        </div>
+
+        {/* Section 6: DMCA Designated Agent Notification Procedure */}
         <div id="dmca-notice" className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-4 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
             <FileText className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>8. DMCA Designated Agent Notification Procedure</h2>
+            <h2>6. DMCA Designated Agent Notification Procedure</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
             Because Stator processes all files strictly client-side inside the user browser, our servers do not host, store, cache, or transmit user media. However, in full accordance with the Digital Millennium Copyright Act (17 U.S.C. Section 512), Stator, LLC maintains a designated notification agent for copyright compliance notices.
@@ -83,17 +124,6 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <li>A statement that you have a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.</li>
             <li>A statement that the information in the notification is accurate, and under penalty of perjury, that you are authorized to act on behalf of the owner of the infringed right.</li>
           </ol>
-        </div>
-
-        {/* Section 4: Disclaimer & Limitation of Liability */}
-        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <Mail className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>4. Disclaimer of Warranty and Limitation of Liability</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Stator is provided on an as-is and as-available basis without warranties of any kind, whether express, statutory, or implied. In no event shall Stator, LLC or its contributors be liable for direct, indirect, incidental, special, consequential, or exemplary damages arising out of the performance, failure, or use of the client-side conversion routines.
-          </p>
         </div>
 
         {/* Contact info */}

@@ -10,6 +10,7 @@ import {
   FileText,
   RotateCcw,
   Loader2,
+  Lock,
 } from 'lucide-react';
 import {
   QueueItem,
@@ -19,6 +20,7 @@ import {
 import { CustomSelect } from './CustomSelect.tsx';
 import { calculateTargetDimensions } from '../utils/converter.ts';
 import { resolutionToResizeKey } from '../lib/presets.ts';
+import { useLicense } from '../lib/license.ts';
 
 interface MediaInspectorModalProps {
   isOpen: boolean;
@@ -62,6 +64,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   onStartConversion,
   onCancelConversion,
 }) => {
+  const { isPro, openProModal } = useLicense();
   const [localSettings, setLocalSettings] = useState<PresetSettings>(DEFAULT_PRESET_SETTINGS);
   const [localFormat, setLocalFormat] = useState<string>('WEBP');
   const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
@@ -480,25 +483,41 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                       {[
-                        { id: 'original', label: 'Original' },
-                        { id: '4K', label: '4K (2160p)' },
-                        { id: '2K', label: '2K (1440p)' },
-                        { id: '1080p', label: '1080p' },
-                        { id: '720p', label: '720p' },
-                      ].map((res) => (
-                        <button
-                          key={res.id}
-                          type="button"
-                          onClick={() => updateSetting('imageResize', res.id as any)}
-                          className={`py-1.5 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center ${
-                            localSettings.imageResize === res.id
-                              ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
-                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                          }`}
-                        >
-                          {res.label}
-                        </button>
-                      ))}
+                        { id: 'original', label: 'Original', isGated: false },
+                        { id: '4K', label: '4K (2160p)', isGated: true },
+                        { id: '2K', label: '2K (1440p)', isGated: true },
+                        { id: '1080p', label: '1080p', isGated: false },
+                        { id: '720p', label: '720p', isGated: false },
+                      ].map((res) => {
+                        const isLocked = !isPro && res.isGated;
+                        const handleSelect = () => {
+                          if (isLocked) {
+                            openProModal('Resolution upscaling beyond 1080p requires Stator Pro.');
+                            return;
+                          }
+                          updateSetting('imageResize', res.id as any);
+                        };
+
+                        return (
+                          <button
+                            key={res.id}
+                            type="button"
+                            onClick={handleSelect}
+                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                              localSettings.imageResize === res.id
+                                ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
+                                : isLocked
+                                ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                            }`}
+                          >
+                            <span>{res.label}</span>
+                            {isLocked && (
+                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -619,25 +638,41 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                       {[
-                        { id: 'original', label: 'Original' },
-                        { id: '4K', label: '4K (2160p)' },
-                        { id: '2K', label: '2K (1440p)' },
-                        { id: '1080p', label: '1080p' },
-                        { id: '720p', label: '720p' },
-                      ].map((res) => (
-                        <button
-                          key={res.id}
-                          type="button"
-                          onClick={() => updateSetting('videoResolution', res.id as any)}
-                          className={`py-1.5 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center ${
-                            localSettings.videoResolution === res.id
-                              ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
-                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                          }`}
-                        >
-                          {res.label}
-                        </button>
-                      ))}
+                        { id: 'original', label: 'Original', isGated: false },
+                        { id: '4K', label: '4K (2160p)', isGated: true },
+                        { id: '2K', label: '2K (1440p)', isGated: true },
+                        { id: '1080p', label: '1080p', isGated: false },
+                        { id: '720p', label: '720p', isGated: false },
+                      ].map((res) => {
+                        const isLocked = !isPro && res.isGated;
+                        const handleSelect = () => {
+                          if (isLocked) {
+                            openProModal('Resolution upscaling beyond 1080p requires Stator Pro.');
+                            return;
+                          }
+                          updateSetting('videoResolution', res.id as any);
+                        };
+
+                        return (
+                          <button
+                            key={res.id}
+                            type="button"
+                            onClick={handleSelect}
+                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                              localSettings.videoResolution === res.id
+                                ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
+                                : isLocked
+                                ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                            }`}
+                          >
+                            <span>{res.label}</span>
+                            {isLocked && (
+                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
