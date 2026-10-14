@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { Navbar } from './components/Navbar.tsx';
 import { Hero } from './components/Hero.tsx';
 import { DropZone } from './components/DropZone.tsx';
@@ -30,6 +31,15 @@ import {
   calculateReductionBadge,
 } from './utils/converter.ts';
 import { ffmpegManager, WasmStatus } from './utils/ffmpegManager.ts';
+import { useTheme, ThemeMode } from './lib/theme.ts';
+import {
+  getStoredGlobalPreset,
+  saveGlobalPreset,
+  globalPresetToSettings,
+  settingsToGlobalPreset,
+  resolutionToResizeKey,
+  resizeKeyToResolution,
+} from './lib/presets.ts';
 
 // Initial demo queue with calibrated byte metrics matching the reference screenshots
 const DEMO_QUEUE: QueueItem[] = [
@@ -43,7 +53,16 @@ const DEMO_QUEUE: QueueItem[] = [
     metadata: '6000 × 4000 • 14-bit Uncompressed',
     dimensions: '6000 × 4000',
     targetFormat: 'PNG',
+    quality: 90,
+    resolution: 'Original',
+    stripExif: false,
     preset: 'Lossless (90%)',
+    presetSettings: {
+      ...DEFAULT_PRESET_SETTINGS,
+      imageQuality: 90,
+      imageResize: 'original',
+      stripMetadata: false,
+    },
     status: 'ready',
     progress: 0,
     outputName: 'portrait-shoot.png',
@@ -62,7 +81,16 @@ const DEMO_QUEUE: QueueItem[] = [
     metadata: '02:14 duration • 1080p @ 60fps',
     dimensions: '1080p @ 60fps',
     targetFormat: 'MP4',
+    quality: 90,
+    resolution: '1080p',
+    stripExif: false,
     preset: 'H.264 High (Auto)',
+    presetSettings: {
+      ...DEFAULT_PRESET_SETTINGS,
+      videoBitrate: 'high',
+      videoResolution: '1080p',
+      fpsLimiter: '60',
+    },
     status: 'converting',
     progress: 68,
     speed: '24.2 MB/s',
@@ -79,6 +107,7 @@ const DEMO_QUEUE: QueueItem[] = [
 ];
 
 export default function App() {
+  const { theme, setTheme, toggleTheme } = useTheme();
   const [activeCategory, setActiveCategory] = useState('All Formats');
   const [batchMode, setBatchMode] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>(DEMO_QUEUE);
@@ -88,17 +117,74 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
 
-  // Preset State Management
-  const [globalPreset, setGlobalPreset] = useState<PresetSettings>(DEFAULT_PRESET_SETTINGS);
+  // Preset State Management - load persisted global preset from localStorage
+  const [globalPreset, setGlobalPreset] = useState<PresetSettings>(() => {
+    return globalPresetToSettings(getStoredGlobalPreset());
+  });
   const [itemPresets, setItemPresets] = useState<Record<string, PresetSettings>>({});
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [activePresetItemId, setActivePresetItemId] = useState<string | null>(null);
+
+  // Global UI Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => {
+      setToastMessage((current) => (current === message ? null : current));
+    }, 2800);
+  };
 
   // Dedicated Media Inspector Modal State
   const [inspectorFileId, setInspectorFileId] = useState<string | null>(null);
 
   // View state for legal pages and main converter
   const [currentView, setCurrentView] = useState<'converter' | 'privacy' | 'terms'>('converter');
+
+  // Synchronize initial queue ready items with active global preset on mount and on storage events
+  useEffect(() => {
+    const syncWithGlobalPreset = () => {
+      const currentGlobal = getStoredGlobalPreset();
+      const settings = globalPresetToSettings(currentGlobal);
+      setGlobalPreset(settings);
+
+      setQueue((prev) =>
+        prev.map((item) => {
+          if (item.status === 'ready') {
+            const updatedSettings: PresetSettings = {
+              ...(item.presetSettings || settings),
+              imageQuality: currentGlobal.imageQuality,
+              imageResize: resolutionToResizeKey(currentGlobal.targetResolution),
+              videoResolution:
+                resolutionToResizeKey(currentGlobal.targetResolution) === 'custom'
+                  ? 'original'
+                  : (resolutionToResizeKey(currentGlobal.targetResolution) as any),
+              stripMetadata: currentGlobal.stripExif,
+            };
+            return {
+              ...item,
+              quality: currentGlobal.imageQuality,
+              resolution: currentGlobal.targetResolution,
+              stripExif: currentGlobal.stripExif,
+              presetSettings: updatedSettings,
+              preset: getPresetLabel(updatedSettings, item.typeCategory),
+            };
+          }
+          return item;
+        })
+      );
+    };
+
+    syncWithGlobalPreset();
+    window.addEventListener('stator_preset_changed', syncWithGlobalPreset);
+    window.addEventListener('omniconvert_preset_changed', syncWithGlobalPreset);
+    window.addEventListener('storage', syncWithGlobalPreset);
+    return () => {
+      window.removeEventListener('stator_preset_changed', syncWithGlobalPreset);
+      window.removeEventListener('omniconvert_preset_changed', syncWithGlobalPreset);
+      window.removeEventListener('storage', syncWithGlobalPreset);
+    };
+  }, []);
 
   // Handle path-based navigation and popstate
   useEffect(() => {
@@ -194,17 +280,40 @@ export default function App() {
 
   const handleApplyPreset = (settings: PresetSettings, itemId: string | null) => {
     if (itemId === null) {
+      // 1. Convert settings to GlobalPreset and persist in localStorage
+      const newGlobal = settingsToGlobalPreset(settings);
+      saveGlobalPreset(newGlobal);
       setGlobalPreset(settings);
+
+      // 2. Immediately update all existing queue items in ready / idle status
       setQueue((prev) =>
-        prev.map((item) =>
-          item.presetSettings
-            ? item
-            : {
-                ...item,
-                preset: getPresetLabel(settings, item.typeCategory),
-              }
-        )
+        prev.map((item) => {
+          if (item.status === 'ready') {
+            const updatedSettings: PresetSettings = {
+              ...(item.presetSettings || settings),
+              imageQuality: newGlobal.imageQuality,
+              imageResize: resolutionToResizeKey(newGlobal.targetResolution),
+              videoResolution:
+                resolutionToResizeKey(newGlobal.targetResolution) === 'custom'
+                  ? 'original'
+                  : (resolutionToResizeKey(newGlobal.targetResolution) as any),
+              stripMetadata: newGlobal.stripExif,
+            };
+            return {
+              ...item,
+              quality: newGlobal.imageQuality,
+              resolution: newGlobal.targetResolution,
+              stripExif: newGlobal.stripExif,
+              presetSettings: updatedSettings,
+              preset: getPresetLabel(updatedSettings, item.typeCategory),
+            };
+          }
+          return item;
+        })
       );
+
+      // 3. Trigger UI toast feedback
+      showToast('Global preset applied');
     } else {
       setItemPresets((prev) => ({ ...prev, [itemId]: settings }));
       setQueue((prev) =>
@@ -214,51 +323,41 @@ export default function App() {
                 ...item,
                 presetSettings: settings,
                 preset: getPresetLabel(settings, item.typeCategory),
+                quality: settings.imageQuality,
+                resolution: resizeKeyToResolution(settings.imageResize || settings.videoResolution),
+                stripExif: settings.stripMetadata,
               }
             : item
         )
       );
+      showToast('Preset applied');
     }
   };
 
-  // Connect Drop Zone to accept real files with smart defaults
+  // Connect Drop Zone to accept real files with smart defaults reading from globalPreset
   const handleFilesSelected = (files: File[]) => {
+    const currentGlobalPreset = getStoredGlobalPreset();
+    const globalSettings = globalPresetToSettings(currentGlobalPreset);
+
     const newItems: QueueItem[] = files.map((file) => {
-      const { typeCategory, formatBadge } = detectTypeCategory(file);
-      const id = `file-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const { typeCategory } = detectTypeCategory(file);
+      const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|raw|heic|arw|cr2|nef|dng|tiff?)$/i.test(file.name);
+      const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|ogg|aac|flac)$/i.test(file.name);
+      const defaultTarget = isImage ? 'PNG' : isAudio ? 'MP3' : 'MP4';
+
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `file-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const sizeFormatted = formatFileSize(file.size);
 
-      // Smart defaults based on media category
-      let smartTarget = 'WEBP';
-      let smartPresetSettings: PresetSettings = { ...globalPreset };
-
-      if (typeCategory === 'image') {
-        smartTarget = 'WEBP';
-        smartPresetSettings = {
-          ...smartPresetSettings,
-          imageQuality: 90,
-          imageResize: 'original',
-          stripMetadata: true,
-        };
-      } else if (typeCategory === 'video') {
-        smartTarget = 'MP4';
-        smartPresetSettings = {
-          ...smartPresetSettings,
-          videoBitrate: 'high', // MP4 H.264 High
-          videoResolution: 'original',
-          fpsLimiter: 'original',
-        };
-      } else if (typeCategory === 'audio') {
-        smartTarget = 'MP3';
-        smartPresetSettings = {
-          ...smartPresetSettings,
-          audioBitrate: '192k', // MP3 192kbps
-        };
-      } else if (typeCategory === 'document') {
-        smartTarget = 'PDF';
-      } else {
-        smartTarget = 'ZIP';
-      }
+      const resizeKey = resolutionToResizeKey(currentGlobalPreset.targetResolution);
+      const smartPresetSettings: PresetSettings = {
+        ...globalSettings,
+        imageQuality: currentGlobalPreset.imageQuality,
+        imageResize: resizeKey,
+        videoResolution: resizeKey === 'custom' ? 'original' : (resizeKey as any),
+        stripMetadata: currentGlobalPreset.stripExif,
+      };
 
       const estimatedOutputBytes = Math.max(1024, Math.floor(file.size * 0.65));
       const outputSizeFormatted = formatFileSize(estimatedOutputBytes);
@@ -271,14 +370,17 @@ export default function App() {
         sizeFormatted,
         sizeBytes: file.size,
         typeCategory,
-        formatBadge,
+        formatBadge: file.name.split('.').pop()?.toUpperCase() || (isImage ? 'IMG' : 'VIDEO'),
         metadata: file.type || `${typeCategory.toUpperCase()} asset`,
-        targetFormat: smartTarget,
+        targetFormat: defaultTarget,
+        quality: currentGlobalPreset.imageQuality,
+        resolution: currentGlobalPreset.targetResolution,
+        stripExif: currentGlobalPreset.stripExif,
         preset: getPresetLabel(smartPresetSettings, typeCategory),
         presetSettings: smartPresetSettings,
-        status: 'ready',
+        status: 'ready' as const,
         progress: 0,
-        outputName: `${file.name.replace(/\.[^/.]+$/, '')}.${smartTarget.toLowerCase().split(' ')[0]}`,
+        outputName: `${file.name.replace(/\.[^/.]+$/, '')}.${defaultTarget.toLowerCase().split(' ')[0]}`,
         outputSizeBytes: estimatedOutputBytes,
         outputSizeFormatted,
         reductionBadge: badge,
@@ -404,7 +506,7 @@ export default function App() {
     // 3. Demo Mock items (item.file is undefined)
     const outputSizeBytes = item.outputSizeBytes || Math.floor((item.sizeBytes || 1048576) * 0.7);
     const { badge } = calculateReductionBadge(item.sizeBytes || 1048576, outputSizeBytes);
-    const syntheticBlob = new Blob(['OmniConvert transcoded asset'], {
+    const syntheticBlob = new Blob(['Stator transcoded asset'], {
       type: 'application/octet-stream',
     });
 
@@ -550,7 +652,7 @@ export default function App() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex flex-col font-sans selection:bg-zinc-800 selection:text-white">
+    <div className="min-h-screen bg-[#f4f4f5] dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-zinc-200 dark:selection:bg-zinc-800 selection:text-zinc-900 dark:selection:text-white">
       {/* Responsive Top Navbar */}
       <Navbar
         activeCategory={activeCategory}
@@ -562,6 +664,9 @@ export default function App() {
         onOpenHistory={() => setIsHistoryDrawerOpen(true)}
         wasmStatus={wasmStatus}
         onOpenPresets={() => handleOpenPresetModal(null)}
+        theme={theme}
+        onThemeChange={setTheme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content Area or Legal View */}
@@ -623,6 +728,9 @@ export default function App() {
                     ...item,
                     presetSettings: settings,
                     preset: getPresetLabel(settings, item.typeCategory),
+                    quality: settings.imageQuality,
+                    resolution: resizeKeyToResolution(settings.imageResize || settings.videoResolution),
+                    stripExif: settings.stripMetadata,
                   }
                 : item
             )
@@ -663,6 +771,14 @@ export default function App() {
         onNavigatePrivacy={() => navigateTo('privacy')}
         onNavigateTerms={() => navigateTo('terms')}
       />
+
+      {/* Subtle Global Toast Feedback */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-100 shadow-xl text-xs font-medium animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

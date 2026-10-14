@@ -239,13 +239,13 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'OmniConvert_bundle.zip';
+      a.download = 'Stator_bundle.zip';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      showToast(`Downloaded OmniConvert_bundle.zip (${formatFileSize(zipBlob.size)})`);
+      showToast(`Downloaded Stator_bundle.zip (${formatFileSize(zipBlob.size)})`);
     } catch (err) {
       console.error('Failed to bundle ZIP:', err);
       showToast('Error generating ZIP archive');
@@ -258,7 +258,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
   const renderCategoryIcon = (category: FileTypeCategory, targetFormat?: string) => {
     if (targetFormat?.toUpperCase() === 'GIF') {
       return (
-        <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
           <FileImage className="w-4 h-4" strokeWidth={1.8} />
         </div>
       );
@@ -267,32 +267,32 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
     switch (category) {
       case 'video':
         return (
-          <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
             <Video className="w-4 h-4" strokeWidth={1.8} />
           </div>
         );
       case 'audio':
         return (
-          <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
             <Music className="w-4 h-4" strokeWidth={1.8} />
           </div>
         );
       case 'document':
         return (
-          <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4" strokeWidth={1.8} />
           </div>
         );
       case 'other':
         return (
-          <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
             <FileBox className="w-4 h-4" strokeWidth={1.8} />
           </div>
         );
       case 'image':
       default:
         return (
-          <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
             <Camera className="w-4 h-4" strokeWidth={1.8} />
           </div>
         );
@@ -303,18 +303,18 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
   if (queue.length === 0) {
     if (totalQueueCount && totalQueueCount > 0 && activeCategory && activeCategory !== 'All Formats') {
       return (
-        <section className="w-full max-w-4xl mx-auto mt-6 bg-[#121214] border border-zinc-800 rounded-lg p-6 sm:p-8 text-center shadow-lg">
-          <div className="w-10 h-10 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-400 mb-3">
+        <section className="w-full max-w-4xl mx-auto mt-6 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 sm:p-8 text-center shadow-xs">
+          <div className="w-10 h-10 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center mx-auto text-zinc-500 dark:text-zinc-400 mb-3">
             <Folder className="w-5 h-5" strokeWidth={1.8} />
           </div>
-          <h3 className="text-sm sm:text-base font-semibold text-white">No {activeCategory.toLowerCase()} in queue</h3>
-          <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
+          <h3 className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-white">No {activeCategory.toLowerCase()} in queue</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
             You have {totalQueueCount} other {totalQueueCount === 1 ? 'file' : 'files'} in the queue.
           </p>
           {onResetCategory && (
             <button
               onClick={onResetCategory}
-              className="mt-4 inline-flex items-center gap-2 bg-zinc-100 hover:bg-white text-zinc-900 font-medium rounded-md px-4 py-2 text-sm cursor-pointer transition-colors"
+              className="mt-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 font-medium rounded-md px-4 py-2 text-sm cursor-pointer transition-colors shadow-xs"
             >
               <span>View All Formats ({totalQueueCount})</span>
             </button>
@@ -324,18 +324,18 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
     }
 
     return (
-      <section className="w-full max-w-4xl mx-auto mt-6 bg-[#121214] border border-zinc-800 rounded-lg p-6 sm:p-8 text-center shadow-lg">
-        <div className="w-10 h-10 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-400 mb-3">
+      <section className="w-full max-w-4xl mx-auto mt-6 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 sm:p-8 text-center shadow-xs">
+        <div className="w-10 h-10 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center mx-auto text-zinc-500 dark:text-zinc-400 mb-3">
           <Folder className="w-5 h-5" strokeWidth={1.8} />
         </div>
-        <h3 className="text-sm sm:text-base font-semibold text-white">Queue is empty</h3>
-        <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
+        <h3 className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-white">Queue is empty</h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
           Drop files above to begin instant on-device conversion.
         </p>
         {onLoadDemoQueue && (
           <button
             onClick={onLoadDemoQueue}
-            className="mt-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
+            className="mt-4 inline-flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
           >
             <span>Load sample files</span>
           </button>
@@ -360,24 +360,24 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
       {isAllCompleted ? (
         <div className="space-y-4">
           {/* Top Success Banner with Dynamic Savings */}
-          <div className="w-full bg-[#121214] border border-zinc-800 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+          <div className="w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm dark:shadow-none">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-md bg-zinc-800 border border-zinc-700 text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-md bg-emerald-50 dark:bg-zinc-800 border border-emerald-200 dark:border-zinc-700 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Check className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white tracking-tight">
                   {completedItems.length} of {queue.length} files converted successfully
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                   Ready for local download. Zero bytes sent to cloud.
                 </p>
               </div>
             </div>
 
             <div className="shrink-0 self-start sm:self-center">
-              <div className="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-emerald-400 text-xs font-medium flex items-center gap-1.5">
-                <TrendingDown className="w-3.5 h-3.5 text-emerald-400 stroke-[2]" />
+              <div className="px-3 py-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-1.5">
+                <TrendingDown className="w-3.5 h-3.5 stroke-[2]" />
                 <span>
                   Total saved: {formatFileSize(totalSavedBytes)} ({savingsPercent}%)
                 </span>
@@ -388,15 +388,15 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
           {/* Section Header */}
           <div className="flex items-center justify-between gap-2 pt-1 px-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-white">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
                 Ready to Download
               </h2>
-              <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-zinc-300 text-xs font-medium border border-zinc-800">
+              <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-medium border border-zinc-200 dark:border-zinc-800">
                 {completedItems.length} ready
               </span>
             </div>
 
-            <span className="text-xs text-zinc-400 font-mono">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
               Total size: {formatFileSize(totalOutputBytes)}
             </span>
           </div>
@@ -412,7 +412,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`w-full bg-[#121214] border border-zinc-800 rounded-lg p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all ${
+                  className={`w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all shadow-sm dark:shadow-none ${
                     isRemoving
                       ? 'opacity-0 -translate-x-2 max-h-0 py-0 my-0 overflow-hidden duration-150 ease-in pointer-events-none'
                       : 'animate-in fade-in slide-in-from-top-1 duration-150 ease-out fill-mode-forwards opacity-100'
@@ -426,17 +426,17 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                     {renderCategoryIcon(item.typeCategory, item.targetFormat)}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white text-sm sm:text-base truncate block hover:text-zinc-300 transition-colors">
+                        <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base truncate block hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
                           {displayName}
                         </span>
-                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
+                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
                           {item.targetFormat}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400 font-mono mt-0.5 flex items-center gap-1.5">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5 flex items-center gap-1.5">
                         <span>Original: {item.sizeFormatted}</span>
                         <span>•</span>
-                        <span className="text-emerald-400 font-medium">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                           {item.reductionBadge || `Output: ${item.outputSizeFormatted || 'Ready'}`}
                         </span>
                       </p>
@@ -446,7 +446,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <button
                       onClick={() => setPreviewItem(item)}
-                      className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                      className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                       title="Quick Preview"
                     >
                       <Eye className="w-4 h-4" />
@@ -454,7 +454,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
                     <button
                       onClick={() => handleAnimatedRemove(item.id)}
-                      className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                      className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-red-600 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -462,7 +462,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
                     <button
                       onClick={() => triggerDownloadFile(item)}
-                      className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                      className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white font-medium rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer shadow-xs"
                     >
                       <Download className="w-3.5 h-3.5 stroke-[2]" />
                       <span className="hidden sm:inline">Download</span>
@@ -474,10 +474,10 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
           </div>
 
           {/* Clean Completed Footer with Utilitarian CTA */}
-          <div className="hidden md:flex mt-3 bg-[#121214] border border-zinc-800 rounded-lg p-4 items-center justify-between">
+          <div className="hidden md:flex mt-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 items-center justify-between shadow-sm dark:shadow-none">
             <button
               onClick={onClearQueue}
-              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
+              className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
             >
               Clear Queue
             </button>
@@ -485,7 +485,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
             <div className="flex items-center gap-2.5">
               <button
                 onClick={onConvertMore}
-                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Convert More Files</span>
@@ -494,16 +494,16 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
               <button
                 disabled={isZipping}
                 onClick={handleDownloadAllZip}
-                className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-4 py-2 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-zinc-900 hover:bg-black text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 font-medium rounded-md px-4 py-2 text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-sm dark:shadow-none"
               >
                 {isZipping ? (
                   <>
-                    <Loader2 className="w-4 h-4 text-zinc-900 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-white dark:text-zinc-900 animate-spin" />
                     <span>Archiving ZIP...</span>
                   </>
                 ) : (
                   <>
-                    <FolderArchive className="w-4 h-4 text-zinc-900 stroke-[2]" />
+                    <FolderArchive className="w-4 h-4 stroke-[2]" />
                     <span>Download All (.ZIP) ({formatFileSize(totalOutputBytes)})</span>
                   </>
                 )}
@@ -519,17 +519,17 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between gap-3 mb-3 px-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-white">
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
                 Active Queue
               </h2>
-              <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-zinc-300 text-xs font-medium border border-zinc-800">
+              <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-medium border border-zinc-200 dark:border-zinc-800">
                 {queue.length} {queue.length === 1 ? 'item' : 'items'}
               </span>
             </div>
 
             <button
               onClick={onClearQueue}
-              className="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer"
             >
               Clear Queue
             </button>
@@ -546,74 +546,46 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`w-full bg-[#121214] border rounded-lg p-3.5 sm:p-4 transition-all ${
+                  className={`w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 sm:p-4 transition-all shadow-sm dark:shadow-none ${
                     isRemoving
                       ? 'opacity-0 -translate-x-2 max-h-0 py-0 my-0 overflow-hidden duration-150 ease-in pointer-events-none'
                       : 'animate-in fade-in slide-in-from-top-1 duration-150 ease-out fill-mode-forwards opacity-100 max-h-[300px]'
                   } ${
                     isError
-                      ? 'border-red-900/50 bg-red-950/10'
-                      : 'border-zinc-800 hover:border-zinc-700'
+                      ? 'border-red-300 bg-red-50/60 dark:border-red-900/50 dark:bg-red-950/10'
+                      : 'hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   {/* Ready Item Row */}
                   {isReady && (
                     <div className="flex items-center justify-between gap-3">
                       {/* Left: Media icon + truncated filename + formatted original size */}
-                      <div
-                        onClick={() => onOpenInspector?.(item.id)}
-                        className="flex items-center gap-3 min-w-0 cursor-pointer flex-1 select-none"
-                        title="Click to configure in Media Inspector"
-                      >
+                      <div className="flex items-center gap-3 min-w-0 flex-1 select-none">
                         {renderCategoryIcon(item.typeCategory, item.targetFormat)}
                         <div className="min-w-0">
-                          <span className="font-semibold text-white text-sm sm:text-base tracking-tight truncate block hover:text-zinc-300 transition-colors">
+                          <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base tracking-tight truncate block">
                             {item.name}
                           </span>
-                          <span className="text-xs text-zinc-400 font-mono">
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
                             {item.sizeFormatted}
                           </span>
                         </div>
                       </div>
 
-                      {/* Center: Target format badge */}
+                      {/* Center: Target format badge - purely informational static readout */}
                       <div className="shrink-0 flex items-center">
-                        <button
-                          type="button"
-                          onClick={() => onOpenInspector?.(item.id)}
-                          className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-all duration-120 ease-out active:scale-[0.96] flex items-center gap-1.5 cursor-pointer"
-                          title="Click to configure"
-                        >
-                          <span className="text-zinc-500 font-bold">→</span>
-                          <span className="text-zinc-100 font-bold tracking-wide">{item.targetFormat}</span>
-                          {item.typeCategory === 'image' && (
-                            <span className="text-[11px] text-zinc-400 font-mono">
-                              {item.presetSettings?.imageResize === '4K'
-                                ? '4K'
-                                : item.presetSettings?.imageResize === '2K'
-                                ? '2K'
-                                : `${item.presetSettings?.imageQuality || 90}%`}
-                            </span>
-                          )}
-                          {item.typeCategory === 'video' && (
-                            <span className="text-[11px] text-zinc-400 font-mono">
-                              {item.presetSettings?.videoResolution === '4K'
-                                ? '4K UHD'
-                                : item.presetSettings?.videoResolution === '2K'
-                                ? '2K QHD'
-                                : item.presetSettings?.videoBitrate === 'lossless'
-                                ? 'Lossless'
-                                : item.presetSettings?.videoResolution !== 'original'
-                                ? item.presetSettings?.videoResolution
-                                : 'H.264'}
-                            </span>
-                          )}
-                          {item.typeCategory === 'audio' && (
-                            <span className="text-[11px] text-zinc-400 font-mono">
-                              {item.presetSettings?.audioBitrate || '192k'}
-                            </span>
-                          )}
-                        </button>
+                        {(() => {
+                          const fileName = item.file?.name || item.name || '';
+                          const sourceExt = fileName.includes('.')
+                            ? fileName.split('.').pop()?.toUpperCase() || 'FILE'
+                            : (item.file?.name?.split('.').pop()?.toUpperCase() || 'FILE');
+                          const targetExt = item.targetFormat.toUpperCase();
+                          return (
+                            <div className="text-zinc-600 bg-zinc-100 border border-zinc-200 dark:text-zinc-400 dark:bg-zinc-900/70 dark:border-zinc-800 rounded-md px-2.5 py-1 text-xs font-mono tracking-tight cursor-default select-none pointer-events-none">
+                              {sourceExt} → {targetExt}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Right: Configure slider icon button, Convert button, Trash button */}
@@ -621,7 +593,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenInspector?.(item.id)}
-                          className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                           title="Configure"
                         >
                           <SlidersHorizontal className="w-4 h-4" />
@@ -630,17 +602,17 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                         <button
                           type="button"
                           onClick={() => onStartConversion(item.id)}
-                          className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white font-medium rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer shadow-xs"
                           title="Convert Now"
                         >
-                          <Play className="w-3 h-3 fill-zinc-900" />
+                          <Play className="w-3 h-3 fill-white dark:fill-zinc-900" />
                           <span className="hidden sm:inline">Convert</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleAnimatedRemove(item.id)}
-                          className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-red-600 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                           title="Remove from queue"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -656,11 +628,11 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                         <div className="flex items-center gap-3 min-w-0">
                           {renderCategoryIcon(item.typeCategory, item.targetFormat)}
                           <div className="min-w-0">
-                            <span className="font-semibold text-white text-sm sm:text-base tracking-tight truncate block">
+                            <span className="font-semibold text-zinc-900 dark:text-white text-sm sm:text-base tracking-tight truncate block">
                               {item.name}
                             </span>
-                            <span className="text-xs text-zinc-400 font-mono tabular-nums font-medium flex items-center gap-1.5">
-                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 transition-opacity duration-150" />
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums font-medium flex items-center gap-1.5">
+                              <span className="inline-block w-1.5 h-1.5 rounded-sm bg-emerald-500 transition-opacity duration-150" />
                               <span>Converting: {item.progress}%</span>
                             </span>
                           </div>
@@ -668,17 +640,17 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
                         <button
                           onClick={() => onCancelConversion(item.id)}
-                          className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-xs flex items-center gap-1 cursor-pointer transition-all duration-120 ease-out active:scale-[0.96]"
+                          className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-xs flex items-center gap-1 cursor-pointer transition-all duration-120 ease-out active:scale-[0.96]"
                         >
-                          <X className="w-3.5 h-3.5 text-zinc-400" />
+                          <X className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                           <span>Cancel</span>
                         </button>
                       </div>
 
                       {/* Clean utilitarian progress bar with smooth interpolation */}
-                      <div className="w-full h-1.5 rounded-md bg-zinc-800 overflow-hidden relative">
+                      <div className="w-full h-1.5 rounded-md bg-zinc-200 dark:bg-zinc-800 overflow-hidden relative">
                         <div
-                          className="h-full rounded-md bg-zinc-200 transition-[width] duration-150 ease-out will-change-[width]"
+                          className="h-full rounded-md bg-zinc-900 dark:bg-zinc-100 transition-[width] duration-150 ease-out will-change-[width]"
                           style={{ width: `${item.progress}%` }}
                         />
                       </div>
@@ -689,10 +661,10 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                   {isError && (
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <span className="font-semibold text-white text-sm block truncate">
+                        <span className="font-semibold text-zinc-900 dark:text-white text-sm block truncate">
                           {item.name}
                         </span>
-                        <p className="text-xs text-red-400 font-mono mt-0.5">
+                        <p className="text-xs text-red-600 dark:text-red-400 font-mono mt-0.5">
                           {item.errorMessage || 'Conversion failed.'}
                         </p>
                       </div>
@@ -700,14 +672,14 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => onStartConversion(item.id)}
-                          className="bg-zinc-900 hover:bg-zinc-800 text-red-300 border border-red-800 rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-red-300 dark:border-red-800 rounded-md px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
                           <span>Retry</span>
                         </button>
                         <button
                           onClick={() => handleAnimatedRemove(item.id)}
-                          className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
+                          className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-red-600 transition-all duration-120 ease-out active:scale-[0.96] cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -720,19 +692,19 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
           </div>
 
           {/* Clean Queue Footer with Industrial Button */}
-          <div className="hidden md:flex mt-4 bg-[#121214] border border-zinc-800 rounded-lg p-4 items-center justify-between">
+          <div className="hidden md:flex mt-4 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 items-center justify-between shadow-sm dark:shadow-none">
             <button
               onClick={onClearQueue}
-              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
+              className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
             >
               Clear Queue
             </button>
 
             <button
               onClick={onConvertAll}
-              className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-4 py-2 text-sm flex items-center gap-2 transition-colors cursor-pointer"
+              className="bg-zinc-900 hover:bg-black text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 font-medium rounded-md px-4 py-2 text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-sm dark:shadow-none"
             >
-              <Zap className="w-4 h-4 fill-zinc-900" />
+              <Zap className="w-4 h-4 fill-white dark:fill-zinc-900" />
               <span>Convert All ({queue.length})</span>
             </button>
           </div>
@@ -740,21 +712,21 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
       )}
 
       {/* Mobile Bottom Sticky Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-3 bg-[#09090b]/95 backdrop-blur-md border-t border-zinc-800 z-40">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 dark:bg-[#09090b]/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 z-40">
         {isAllCompleted ? (
           <button
             disabled={isZipping}
             onClick={handleDownloadAllZip}
-            className="w-full py-2.5 px-4 rounded-md bg-zinc-100 active:bg-white text-zinc-900 font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-black active:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:active:bg-white dark:text-zinc-900 font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm dark:shadow-none"
           >
             {isZipping ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-zinc-900" />
+                <Loader2 className="w-4 h-4 animate-spin text-white dark:text-zinc-900" />
                 <span>Archiving ZIP...</span>
               </>
             ) : (
               <>
-                <FolderArchive className="w-4 h-4 text-zinc-900 stroke-[2]" />
+                <FolderArchive className="w-4 h-4 stroke-[2]" />
                 <span>Download All (.ZIP) ({formatFileSize(totalOutputBytes)})</span>
               </>
             )}
@@ -762,9 +734,9 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
         ) : (
           <button
             onClick={onConvertAll}
-            className="w-full py-2.5 px-4 rounded-md bg-zinc-100 active:bg-white text-zinc-900 font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-md bg-zinc-900 hover:bg-black active:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:active:bg-white dark:text-zinc-900 font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm dark:shadow-none"
           >
-            <Zap className="w-4 h-4 fill-zinc-900" />
+            <Zap className="w-4 h-4 fill-white dark:fill-zinc-900" />
             <span>Convert All ({queue.length})</span>
           </button>
         )}
@@ -776,31 +748,31 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
           role="dialog"
           aria-modal="true"
           onClick={() => setPreviewItem(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#121214] border border-zinc-800 rounded-lg max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col"
+            className="bg-white border-zinc-200 text-zinc-900 dark:bg-[#121214] dark:border-zinc-800 dark:text-zinc-100 border rounded-lg max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative flex flex-col"
           >
-            <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
                   <FileImage className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base font-bold text-white truncate">
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white truncate">
                     {previewItem.outputName || previewItem.name}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono mt-0.5">
-                    <span className="text-emerald-400 font-medium">
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                       {previewItem.outputSizeFormatted || previewItem.sizeFormatted}
                     </span>
                     <span>•</span>
-                    <span className="text-zinc-200">
+                    <span className="text-zinc-700 dark:text-zinc-200">
                       {dynamicDimensions || previewItem.dimensions || 'Measuring...'}
                     </span>
                     <span>•</span>
-                    <span className="text-zinc-300 font-bold uppercase">
+                    <span className="text-zinc-900 dark:text-zinc-300 font-bold uppercase">
                       {previewItem.targetFormat}
                     </span>
                   </div>
@@ -809,14 +781,14 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
 
               <button
                 onClick={() => setPreviewItem(null)}
-                className="p-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white"
+                className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
                 title="Close (Esc)"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="mt-4 w-full h-72 sm:h-96 rounded-md bg-black border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+            <div className="mt-4 w-full h-72 sm:h-96 rounded-md bg-zinc-100 dark:bg-black border border-zinc-200 dark:border-zinc-800 flex items-center justify-center overflow-hidden relative">
               {previewItem.typeCategory === 'video' &&
               previewItem.targetFormat.toUpperCase() !== 'GIF' &&
               previewItem.outputUrl ? (
@@ -837,10 +809,10 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                 />
               ) : previewItem.typeCategory === 'audio' && previewItem.outputUrl ? (
                 <div className="flex flex-col items-center justify-center p-6 gap-3 w-full">
-                  <div className="w-14 h-14 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shadow-xs">
                     <Music className="w-6 h-6" />
                   </div>
-                  <p className="text-sm font-semibold text-white mt-1">Transcoded Audio Output</p>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white mt-1">Transcoded Audio Output</p>
                   <audio controls autoPlay src={previewItem.outputUrl} className="w-full max-w-sm mt-2" />
                 </div>
               ) : (
@@ -861,8 +833,8 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                 />
               )}
 
-              <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-md bg-zinc-900/90 border border-zinc-800 text-[10px] sm:text-[11px] font-mono text-zinc-300 flex items-center gap-1.5 pointer-events-none">
-                <Maximize2 className="w-3 h-3 text-zinc-400" />
+              <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-[10px] sm:text-[11px] font-mono text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 pointer-events-none shadow-xs">
+                <Maximize2 className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
                 <span>
                   {dynamicDimensions ? `Resolution: ${dynamicDimensions}` : 'Lossless Render'}
                 </span>
@@ -872,7 +844,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
             <div className="mt-4 sm:mt-5 flex items-center justify-end gap-2.5 pt-2">
               <button
                 onClick={() => setPreviewItem(null)}
-                className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
+                className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -881,7 +853,7 @@ export const ActiveQueue: React.FC<ActiveQueueProps> = ({
                   triggerDownloadFile(previewItem);
                   setPreviewItem(null);
                 }}
-                className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-4 py-2 text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white font-medium rounded-md px-4 py-2 text-sm flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
                 <Download className="w-3.5 h-3.5 stroke-[2]" />
                 <span>Download</span>

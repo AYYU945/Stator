@@ -1,19 +1,33 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>OmniConvert | Client-Side Media Converter</title>
-    <meta name="description" content="High-performance browser-based conversion utility. Convert audio, video, and images locally using WebAssembly. No files are uploaded to any server." />
-    <meta property="og:title" content="OmniConvert | Client-Side Media Converter" />
-    <meta property="og:description" content="High-performance browser-based conversion utility. Convert audio, video, and images locally using WebAssembly. No files are uploaded to any server." />
-    <meta property="og:type" content="website" />
+    <title>Stator | Local Media Engine</title>
+    <meta name="description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
+    <meta property="og:title" content="Stator | Local Media Engine" />
+    <meta property="og:description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
+    <meta property="og:site_name" content="Stator" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Stator | Local Media Engine" />
+    <meta name="twitter:description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('stator_theme') || localStorage.getItem('omniconvert_theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#09090B] text-white antialiased">
+  <body class="bg-zinc-100 dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

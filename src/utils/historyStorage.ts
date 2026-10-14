@@ -1,7 +1,8 @@
 import { HistoryEntry } from '../types/history.ts';
 
-const STORAGE_KEY = 'omniconvert_history_v1';
-const DB_NAME = 'omniconvert_db';
+const STORAGE_KEY = 'stator_conversion_history';
+const FALLBACK_STORAGE_KEY = 'omniconvert_history_v1';
+const DB_NAME = 'stator_db';
 const STORE_NAME = 'history_entries';
 const DB_VERSION = 1;
 
@@ -115,7 +116,7 @@ export async function loadHistoryRecords(): Promise<HistoryEntry[]> {
 
   // Fallback to localStorage
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(FALLBACK_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {

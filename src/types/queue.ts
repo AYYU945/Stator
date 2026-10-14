@@ -104,6 +104,9 @@ export interface QueueItem {
   conversionTime?: string;
   codecDetail?: string;
   errorMessage?: string;
+  quality?: number;
+  resolution?: 'Original' | '4K (2160p)' | '2K (1440p)' | '1080p' | '720p' | string;
+  stripExif?: boolean;
 }
 
 export const TARGET_FORMAT_OPTIONS: Record<FileTypeCategory, string[]> = {

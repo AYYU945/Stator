@@ -52,7 +52,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
   // Sync settings when modal opens or active item changes
   useEffect(() => {
     if (isOpen) {
-      setSettings(initialSettings || DEFAULT_PRESET_SETTINGS);
+      setSettings(initialSettings);
       if (activeCategory === 'video' || activeCategory === 'audio') {
         setActiveTab('video');
       } else {
@@ -61,34 +61,38 @@ export const PresetModal: React.FC<PresetModalProps> = ({
     }
   }, [isOpen, initialSettings, activeCategory]);
 
-  // Handle escape key
+  // Escape key to close
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isRendered) return null;
-
-  const handleReset = () => {
-    setSettings(DEFAULT_PRESET_SETTINGS);
-  };
 
   const handleSave = () => {
     onApply(settings, activeItemId);
     onClose();
   };
 
-  const getQualityLabel = (val: number) => {
-    if (val >= 95) return `${val}% (Lossless Pro)`;
-    if (val >= 85) return `${val}% (High Quality)`;
-    if (val >= 70) return `${val}% (Balanced)`;
-    return `${val}% (Compact)`;
+  const handleReset = () => {
+    setSettings(DEFAULT_PRESET_SETTINGS);
   };
+
+  const getQualityLabel = (quality: number) => {
+    if (quality >= 95) return `${quality}% (Near Lossless)`;
+    if (quality >= 85) return `${quality}% (High Quality)`;
+    if (quality >= 70) return `${quality}% (Balanced)`;
+    return `${quality}% (Maximum Compression)`;
+  };
+
+  const isDarkMode =
+    typeof document !== 'undefined'
+      ? document.documentElement.classList.contains('dark')
+      : true;
 
   return (
     <div
@@ -96,29 +100,29 @@ export const PresetModal: React.FC<PresetModalProps> = ({
       aria-modal="true"
       data-state={isVisible ? 'open' : 'closed'}
       onClick={onClose}
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity duration-200 ease-out opacity-0 data-[state=open]:opacity-100 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm transition-opacity duration-200 ease-out opacity-0 data-[state=open]:opacity-100 ${
         isVisible ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         data-state={isVisible ? 'open' : 'closed'}
-        className="bg-[#121214] border border-zinc-800 rounded-lg p-5 sm:p-6 max-w-lg w-full text-white shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] transition-all duration-200 opacity-0 scale-[0.98] data-[state=open]:opacity-100 data-[state=open]:scale-100"
+        className="bg-white border-zinc-200 text-zinc-900 dark:bg-[#121214] dark:border-zinc-800 dark:text-zinc-100 border rounded-lg p-5 sm:p-6 max-w-lg w-full shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] transition-all duration-200 opacity-0 scale-[0.98] data-[state=open]:opacity-100 data-[state=open]:scale-100"
         style={{
           transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
               <Sliders className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+              <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white tracking-tight truncate">
                 Advanced Encoding Presets
               </h3>
-              <p className="text-xs text-zinc-400 truncate">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                 {activeItemName
                   ? `Configuring: ${activeItemName}`
                   : 'Global Preset (Applied to all queue items)'}
@@ -128,7 +132,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -136,13 +140,13 @@ export const PresetModal: React.FC<PresetModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="mt-4 flex bg-zinc-900 p-1 rounded-md border border-zinc-800">
+        <div className="mt-4 flex bg-zinc-100 dark:bg-zinc-900 p-1 rounded-md border border-zinc-200 dark:border-zinc-800">
           <button
             onClick={() => setActiveTab('image')}
             className={`flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md flex items-center justify-center gap-2 transition-colors cursor-pointer ${
               activeTab === 'image'
-                ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-white dark:bg-zinc-100 text-zinc-900 dark:text-zinc-900 font-semibold shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
             <ImageIcon className="w-4 h-4" />
@@ -153,8 +157,8 @@ export const PresetModal: React.FC<PresetModalProps> = ({
             onClick={() => setActiveTab('video')}
             className={`flex-1 py-1.5 text-xs sm:text-sm font-medium rounded-md flex items-center justify-center gap-2 transition-colors cursor-pointer ${
               activeTab === 'video'
-                ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-white dark:bg-zinc-100 text-zinc-900 dark:text-zinc-900 font-semibold shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
             }`}
           >
             <Video className="w-4 h-4" />
@@ -163,15 +167,15 @@ export const PresetModal: React.FC<PresetModalProps> = ({
         </div>
 
         {/* Scrollable Body Controls */}
-        <div className="mt-5 space-y-6 overflow-y-auto no-scrollbar pr-1 pb-20 flex-1">
+        <div className="mt-5 space-y-6 overflow-y-auto no-scrollbar pr-1 pb-4 flex-1">
           {activeTab === 'image' ? (
             /* IMAGE CONTROLS */
             <div className="space-y-5">
               {/* Quality Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="font-medium text-zinc-300">Compression Quality</span>
-                  <span className="font-mono font-medium text-zinc-200">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Compression Quality</span>
+                  <span className="font-mono font-medium text-zinc-900 dark:text-zinc-200">
                     {getQualityLabel(settings.imageQuality)}
                   </span>
                 </div>
@@ -189,16 +193,18 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                         setSettings({ ...settings, imageQuality: parseInt(e.target.value) })
                       }
                       style={{
-                        background: `linear-gradient(to right, #f4f4f5 ${percentage}%, #27272a ${percentage}%)`,
+                        background: isDarkMode
+                          ? `linear-gradient(to right, #f4f4f5 ${percentage}%, #27272a ${percentage}%)`
+                          : `linear-gradient(to right, #18181b ${percentage}%, #e4e4e7 ${percentage}%)`,
                       }}
-                      className="w-full h-2 rounded-md cursor-pointer appearance-none outline-none transition-[background] duration-100 ease-out [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-100 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:active:scale-110 [&::-webkit-slider-thumb]:shadow-[0_0_6px_rgba(255,255,255,0.4)] [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-zinc-100 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:duration-100 [&::-moz-range-thumb]:active:scale-110"
+                      className="w-full h-2 rounded-md cursor-pointer appearance-none outline-none transition-[background] duration-100 ease-out [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-zinc-100 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:active:scale-110 [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-zinc-900 dark:[&::-moz-range-thumb]:bg-zinc-100 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:duration-100 [&::-moz-range-thumb]:active:scale-110"
                     />
                   );
                 })()}
 
-                <div className="flex justify-between items-center text-[10px] text-zinc-400 font-mono pt-0.5">
+                <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono pt-0.5">
                   <span>10% (Maximum Compression)</span>
-                  <span className="text-zinc-500">90% Default</span>
+                  <span className="text-zinc-400 dark:text-zinc-500">90% Default</span>
                   <span>100% (Lossless Pro)</span>
                 </div>
               </div>
@@ -206,11 +212,11 @@ export const PresetModal: React.FC<PresetModalProps> = ({
               {/* Resolution Scaling */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs sm:text-sm font-medium text-zinc-300">
+                  <label className="text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Target Resolution Scaling
                   </label>
                   {(settings.imageResize === '4K' || settings.imageResize === '2K') && (
-                    <span className="text-[11px] font-mono text-zinc-300">
+                    <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
                       {settings.imageResize === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                     </span>
                   )}
@@ -229,8 +235,8 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                       onClick={() => setSettings({ ...settings, imageResize: res.id as any })}
                       className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer ${
                         settings.imageResize === res.id
-                          ? 'bg-zinc-100 text-zinc-900 border-zinc-100 font-semibold'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                          ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                       }`}
                     >
                       {res.label}
@@ -240,14 +246,14 @@ export const PresetModal: React.FC<PresetModalProps> = ({
               </div>
 
               {/* Privacy Toggle: Strip Metadata */}
-              <div className="p-3.5 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-between">
+              <div className="p-3.5 rounded-md bg-zinc-50 border-zinc-200 dark:bg-zinc-900/50 dark:border-zinc-800 border flex items-center justify-between">
                 <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-white">
+                    <h4 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white">
                       Strip EXIF Metadata
                     </h4>
-                    <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
                       Removes GPS locations, camera serials, and timestamp tags.
                     </p>
                   </div>
@@ -262,12 +268,14 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                     setSettings({ ...settings, stripMetadata: !settings.stripMetadata })
                   }
                   className={`w-9 h-5 flex items-center rounded-md p-0.5 cursor-pointer transition-colors duration-150 ease-out shrink-0 ${
-                    settings.stripMetadata ? 'bg-zinc-100' : 'bg-zinc-700'
+                    settings.stripMetadata
+                      ? 'bg-zinc-900 dark:bg-zinc-100'
+                      : 'bg-zinc-300 dark:bg-zinc-700'
                   }`}
                 >
                   <div
                     data-state={settings.stripMetadata ? 'checked' : 'unchecked'}
-                    className="w-4 h-4 rounded-sm bg-zinc-900 transition-transform duration-150 ease-out translate-x-0 data-[state=checked]:translate-x-4"
+                    className="w-4 h-4 rounded-sm bg-white dark:bg-zinc-900 transition-transform duration-150 ease-out translate-x-0 data-[state=checked]:translate-x-4 shadow-xs"
                   />
                 </button>
               </div>
@@ -277,7 +285,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
             <div className="space-y-5">
               {/* Encoding Profile */}
               <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-medium text-zinc-300">
+                <label className="text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Video Encoding Profile (CRF / Bitrate)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -298,17 +306,17 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                       }
                       className={`p-2.5 text-left rounded-md border transition-colors cursor-pointer ${
                         settings.videoBitrate === p.id
-                          ? 'bg-zinc-800 border-zinc-600 text-white font-semibold'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                          ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-white font-semibold shadow-xs'
+                          : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-700'
                       }`}
                     >
-                      <div className="text-xs font-semibold text-white flex items-center justify-between">
+                      <div className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center justify-between">
                         <span>{p.label}</span>
                         {settings.videoBitrate === p.id && (
-                          <Check className="w-3.5 h-3.5 text-zinc-200" />
+                          <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-200" />
                         )}
                       </div>
-                      <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{p.sub}</div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">{p.sub}</div>
                     </button>
                   ))}
                 </div>
@@ -317,11 +325,11 @@ export const PresetModal: React.FC<PresetModalProps> = ({
               {/* Video Resolution Scaling */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs sm:text-sm font-medium text-zinc-300">
+                  <label className="text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Target Max Video Resolution
                   </label>
                   {(settings.videoResolution === '4K' || settings.videoResolution === '2K') && (
-                    <span className="text-[11px] font-mono text-zinc-300">
+                    <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
                       {settings.videoResolution === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                     </span>
                   )}
@@ -340,8 +348,8 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                       onClick={() => setSettings({ ...settings, videoResolution: res.id as any })}
                       className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer ${
                         settings.videoResolution === res.id
-                          ? 'bg-zinc-100 text-zinc-900 border-zinc-100 font-semibold'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                          ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                       }`}
                     >
                       {res.label}
@@ -353,7 +361,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
               {/* Frame Rate & Audio Bitrate Side-by-Side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">Frame Rate (FPS)</label>
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Frame Rate (FPS)</label>
                   <CustomSelect
                     value={settings.fpsLimiter}
                     onChange={(val) =>
@@ -372,7 +380,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">Audio Bitrate</label>
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Audio Bitrate</label>
                   <CustomSelect
                     value={settings.audioBitrate}
                     onChange={(val) =>
@@ -394,11 +402,11 @@ export const PresetModal: React.FC<PresetModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <button
             type="button"
             onClick={handleReset}
-            className="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset to Defaults</span>
@@ -408,7 +416,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-1.5 text-xs transition-colors cursor-pointer"
+              className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-xs transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -416,7 +424,7 @@ export const PresetModal: React.FC<PresetModalProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="bg-zinc-100 text-zinc-900 hover:bg-white font-medium rounded-md px-4 py-2 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white font-medium rounded-md px-4 py-2 text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Apply Preset</span>
