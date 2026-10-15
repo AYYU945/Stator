@@ -25,6 +25,7 @@ export interface AdvancedPresetsModalProps {
 }
 
 export const GATED_RESOLUTIONS = ['4K (2160p)', '2K (1440p)'];
+export const GATED_AUDIO_BITRATES = ['192 kbps', '320 kbps'];
 
 export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
   isOpen,
@@ -111,6 +112,19 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
     } else {
       setSettings((prev) => ({ ...prev, imageResize: resKey as any }));
     }
+  };
+
+  const handleAudioBitrateClick = (bitrateKey: PresetSettings['audioBitrate'], bitrateLabel: string) => {
+    if (!isPro && GATED_AUDIO_BITRATES.includes(bitrateLabel)) {
+      const reason = 'High-fidelity audio bitrates (192 kbps and 320 kbps) require Stator Pro.';
+      if (onRequirePro) {
+        onRequirePro(reason);
+      } else {
+        openProModal(reason);
+      }
+      return;
+    }
+    setSettings((prev) => ({ ...prev, audioBitrate: bitrateKey }));
   };
 
   const isDarkMode =
@@ -420,21 +434,51 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Audio Bitrate</label>
-                  <CustomSelect
-                    value={settings.audioBitrate}
-                    onChange={(val) =>
-                      setSettings({
-                        ...settings,
-                        audioBitrate: val as PresetSettings['audioBitrate'],
-                      })
-                    }
-                    options={[
-                      { value: '128k', label: '128 kbps', description: 'Standard fidelity' },
-                      { value: '192k', label: '192 kbps', description: 'High fidelity audio' },
-                      { value: '320k', label: '320 kbps', description: 'Studio master' },
-                    ]}
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Audio Bitrate</label>
+                    <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+                      {settings.audioBitrate === '320k'
+                        ? '320 kbps (Studio)'
+                        : settings.audioBitrate === '192k'
+                        ? '192 kbps (Hi-Fi)'
+                        : settings.audioBitrate === '128k'
+                        ? '128 kbps (Standard)'
+                        : '64 kbps (Compact)'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { id: '64k', label: '64 kbps' },
+                      { id: '128k', label: '128 kbps' },
+                      { id: '192k', label: '192 kbps' },
+                      { id: '320k', label: '320 kbps' },
+                    ].map((bitrate) => {
+                      const isGated = GATED_AUDIO_BITRATES.includes(bitrate.label);
+                      const isLocked = !isPro && isGated;
+
+                      return (
+                        <button
+                          key={bitrate.id}
+                          type="button"
+                          onClick={() =>
+                            handleAudioBitrateClick(bitrate.id as PresetSettings['audioBitrate'], bitrate.label)
+                          }
+                          className={`py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                            settings.audioBitrate === bitrate.id
+                              ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                              : isLocked
+                              ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                          }`}
+                        >
+                          <span>{bitrate.label}</span>
+                          {isLocked && (
+                            <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>

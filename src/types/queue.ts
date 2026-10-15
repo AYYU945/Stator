@@ -11,8 +11,8 @@ export interface PresetSettings {
   videoBitrate: 'lossless' | 'high' | 'balanced' | 'compact';
   videoResolution: 'original' | '4K' | '2K' | '1080p' | '720p' | '480p';
   fpsLimiter: 'original' | '60' | '30' | '24';
-  videoAudioBitrate?: 'original' | '320k' | '192k' | '128k' | 'mute';
-  audioBitrate: '320k' | '256k' | '192k' | '128k';
+  videoAudioBitrate?: 'original' | '320k' | '192k' | '128k' | '64k' | 'mute';
+  audioBitrate: '320k' | '256k' | '192k' | '128k' | '64k';
   audioChannels?: 'stereo' | 'mono';
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Scale, ShieldAlert, FileText, Mail, ShoppingCart, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Scale, ShieldAlert, FileText, Mail, ShoppingCart, RefreshCw, Cpu, Shield, Globe } from 'lucide-react';
 
 export interface TermsOfServiceProps {
   onBack: () => void;
@@ -54,37 +54,29 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
           </p>
         </div>
 
-        {/* Section 3: Commercial Terms, Merchant of Record & Statutory Waiver */}
+        {/* Section 3: Browser Performance and Hardware Limitations */}
         <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <ShoppingCart className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>3. Commercial Terms, Merchant of Record &amp; Digital Content Waiver</h2>
+            <Cpu className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>3. Browser Performance and Hardware Limitations</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            All commercial transactions, subscriptions, and lifetime license purchases for Stator Pro are facilitated and processed by our designated third-party Merchant of Record (such as Paddle or Lemon Squeezy). The Merchant of Record is the merchant of record for all purchases, handles billing inquiries, collects applicable sales tax and VAT, and issues sales invoices.
-          </p>
-          <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-md p-4 text-xs font-mono text-zinc-700 dark:text-zinc-300 space-y-2">
-            <div className="font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
-              Statutory EU / UK Right of Withdrawal Waiver
-            </div>
-            <p className="leading-relaxed">
-              In accordance with Directive 2011/83/EU on Consumer Rights and UK Consumer Contracts Regulations, you explicitly acknowledge and agree that the supply of digital software licenses (Stator Pro) commences immediately upon the generation or activation of your license key. You expressly agree that by initiating digital activation, you waive any statutory 14-day right of withdrawal or cooling-off period.
-            </p>
-          </div>
-        </div>
-
-        {/* Section 4: Subscription Auto-Renewal and Cancellation */}
-        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <RefreshCw className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>4. Subscription Auto-Renewal and Cancellation</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Monthly access subscriptions renew automatically every 30 days at the prevailing stated rate unless cancelled prior to the renewal date via the customer billing portal. Lifetime passes represent a single, non-recurring charge granting permanent access to Pro tier capabilities.
+            All media transformations depend directly on your local device hardware, including available CPU threads, RAM allocation, and WebAssembly runtime support in your browser. Stator cannot guarantee identical conversion speed or memory limits across differing hardware architectures or legacy browser platforms.
           </p>
         </div>
 
-        {/* Section 5: Disclaimer & Limitation of Liability */}
+        {/* Section 4: Acceptable Use and Security Integrity */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <Shield className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>4. Acceptable Use and Security Integrity</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            Users must not attempt to inject malicious code, exploit WebAssembly memory sandboxes, bypass license verification checks, or distribute automated scrapers that degrade application availability.
+          </p>
+        </div>
+
+        {/* Section 5: Disclaimer of Warranty and Limitation of Liability */}
         <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
             <Mail className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
@@ -124,6 +116,59 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <li>A statement that you have a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.</li>
             <li>A statement that the information in the notification is accurate, and under penalty of perjury, that you are authorized to act on behalf of the owner of the infringed right.</li>
           </ol>
+        </div>
+
+        {/* Section 7: Privacy and Local Data Handling */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <Shield className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>7. Privacy and Local Data Handling</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            Zero file content or converted output leaves your browser. All conversion tasks occur within volatile WebAssembly memory and HTML5 canvas buffers. No telemetry captures your filenames, visual contents, audio tracks, or metadata.
+          </p>
+        </div>
+
+        {/* Section 8: Governing Law and Severability */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <Globe className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>8. Governing Law and Severability</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            These Terms are governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to conflict of law principles. If any provision is deemed unenforceable, the remaining provisions remain in full force.
+          </p>
+        </div>
+
+        {/* Section 9: Terms of Commercial Sale */}
+        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-4 shadow-xs">
+          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
+            <ShoppingCart className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>9. Terms of Commercial Sale</h2>
+          </div>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            Digital licenses grant a personal or commercial, non-exclusive, non-transferable authorization to access advanced local browser features, including expanded batch limits, high-fidelity audio encoders, unrestricted multi-core concurrency, and Lanczos-3 resolution upscaling.
+          </p>
+          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            All orders, transactions, and payments are billed and invoiced by our authorized Merchant of Record. The Merchant of Record serves as the merchant of record for customer support, tax collection, VAT compliance, and electronic invoicing.
+          </p>
+          <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-md p-4 text-xs font-mono text-zinc-700 dark:text-zinc-300 space-y-2">
+            <div className="font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
+              Statutory Right of Withdrawal Waiver (EU / UK)
+            </div>
+            <p className="leading-relaxed">
+              Purchasers acknowledge and agree that digital services begin immediately upon key issuance and waive the statutory 14-day right of withdrawal under EU Directive 2011/83/EU.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-white">
+              <RefreshCw className="w-4 h-4 text-zinc-500" />
+              <span>Subscription Auto-Renewal Terms</span>
+            </div>
+            <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+              Monthly subscriptions renew automatically every 30 days unless cancelled prior to the renewal date via the customer billing portal. Lifetime passes represent a single, non-recurring purchase with no recurring fees.
+            </p>
+          </div>
         </div>
 
         {/* Contact info */}

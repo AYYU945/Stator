@@ -66,8 +66,14 @@ export function saveLicense(license: StatorLicense): void {
 
 export function validateLicenseKey(rawKey: string): { valid: boolean; tier: LicenseTier; error?: string } {
   const cleanKey = rawKey.trim().toUpperCase();
-  // Pattern: STTR-XXXX-XXXX-XXXX
-  const pattern = /^STTR-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+
+  // Special direct developer test key requested
+  if (cleanKey === 'STTR-TEST-PRO-2026') {
+    return { valid: true, tier: 'lifetime' };
+  }
+
+  // Pattern: STTR-XXXX-XXXX-XXXX (where parts can be 3 to 5 alphanumeric chars)
+  const pattern = /^STTR-[A-Z0-9]{3,5}-[A-Z0-9]{3,5}-[A-Z0-9]{3,5}$/;
   if (!pattern.test(cleanKey)) {
     return {
       valid: false,
@@ -76,8 +82,8 @@ export function validateLicenseKey(rawKey: string): { valid: boolean; tier: Lice
     };
   }
 
-  // Tier determination: LIFE or PRO in segments indicates lifetime, otherwise monthly pro
-  if (cleanKey.includes('LIFE')) {
+  // Tier determination: LIFE, TEST, or PRO indicates lifetime pass
+  if (cleanKey.includes('LIFE') || cleanKey.includes('TEST')) {
     return { valid: true, tier: 'lifetime' };
   }
   return { valid: true, tier: 'monthly' };

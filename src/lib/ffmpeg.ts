@@ -21,6 +21,28 @@ export function getAllocatedHardwareThreads(): number {
 }
 
 /**
+ * Translates audio bitrate setting into standardized FFmpeg command-line flags:
+ * - 64 kbps -> ['-b:a', '64k']
+ * - 128 kbps -> ['-b:a', '128k']
+ * - 192 kbps -> ['-b:a', '192k']
+ * - 320 kbps -> ['-b:a', '320k']
+ */
+export function getAudioBitrateFlags(bitrate?: PresetSettings['audioBitrate'] | string): string[] {
+  switch (bitrate) {
+    case '64k':
+      return ['-b:a', '64k'];
+    case '128k':
+      return ['-b:a', '128k'];
+    case '192k':
+      return ['-b:a', '192k'];
+    case '320k':
+      return ['-b:a', '320k'];
+    default:
+      return ['-b:a', bitrate || '192k'];
+  }
+}
+
+/**
  * Explicit helper to delete input and output virtual files in WebAssembly memory
  * Called after every individual file transcode finishes (success or failure)
  */

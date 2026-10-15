@@ -12,7 +12,7 @@ import { StatusFooter } from './components/StatusFooter.tsx';
 import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
 import { ProUpgradeModal } from './components/auth/ProUpgradeModal.tsx';
-import { useLicense } from './lib/license.ts';
+import { useLicense, FREE_LIMITS } from './lib/license.ts';
 import {
   QueueItem,
   formatFileSize,
@@ -348,7 +348,17 @@ export default function App() {
   };
 
   // Connect Drop Zone to accept real files with smart defaults and container metadata extraction
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesSelected = (incomingFiles: File[]) => {
+    let files = incomingFiles;
+    if (!isPro && queue.length + files.length > FREE_LIMITS.maxQueueBatch) {
+      const allowedCount = Math.max(0, FREE_LIMITS.maxQueueBatch - queue.length);
+      files = files.slice(0, allowedCount);
+      openUpgradeModal(
+        `Free tier is limited to ${FREE_LIMITS.maxQueueBatch} items per batch. Upgrade to Stator Pro for uncapped queue processing.`
+      );
+      if (files.length === 0) return;
+    }
+
     const currentGlobalPreset = getStoredGlobalPreset();
     const globalSettings = globalPresetToSettings(currentGlobalPreset);
 
