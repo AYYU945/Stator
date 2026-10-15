@@ -7,7 +7,7 @@ import { ActiveQueue } from './components/ActiveQueue.tsx';
 import { PresetModal } from './components/PresetModal.tsx';
 import { MediaInspectorModal } from './components/MediaInspectorModal.tsx';
 import { HistoryDrawer } from './components/HistoryDrawer.tsx';
-import { FaqSection } from './components/FaqSection.tsx';
+import { HelpDrawer } from './components/HelpDrawer.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
 import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
@@ -129,6 +129,9 @@ export default function App() {
   // History State
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+
+  // Help & FAQ Drawer State
+  const [isHelpDrawerOpen, setIsHelpDrawerOpen] = useState(false);
 
   // Preset State Management - load persisted global preset from localStorage
   const [globalPreset, setGlobalPreset] = useState<PresetSettings>(() => {
@@ -731,6 +734,8 @@ export default function App() {
         historyCount={history.length}
         isHistoryOpen={isHistoryDrawerOpen}
         onOpenHistory={() => setIsHistoryDrawerOpen(true)}
+        isHelpOpen={isHelpDrawerOpen}
+        onOpenHelp={() => setIsHelpDrawerOpen((prev) => !prev)}
         wasmStatus={wasmStatus}
         onOpenPresets={() => handleOpenPresetModal(null)}
         theme={theme}
@@ -781,9 +786,6 @@ export default function App() {
             onOpenPresetModal={handleOpenPresetModal}
             onOpenInspector={(id) => setInspectorFileId(id)}
           />
-
-          {/* Minimalist Collapsible FAQ Accordion */}
-          <FaqSection />
         </main>
       )}
 
@@ -849,6 +851,12 @@ export default function App() {
         history={history}
         onClearHistory={handleClearAllHistory}
         onDeleteEntry={handleDeleteHistoryEntry}
+      />
+
+      {/* Slide-out Help & FAQ Drawer */}
+      <HelpDrawer
+        isOpen={isHelpDrawerOpen}
+        onClose={() => setIsHelpDrawerOpen(false)}
       />
 
       {/* Bottom Status Footer */}

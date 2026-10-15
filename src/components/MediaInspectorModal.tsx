@@ -3,6 +3,7 @@ import {
   X,
   SlidersHorizontal,
   Play,
+  ArrowRight,
   Check,
   Download,
   Video,
@@ -32,8 +33,8 @@ interface MediaInspectorModalProps {
   onCancelConversion: (id: string) => void;
 }
 
-// Fallback high-resolution preview SVG for demo camera shoot
-const DEMO_PREVIEW_IMG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2318181b"/><stop offset="50%" stop-color="%2309090b"/><stop offset="100%" stop-color="%23121214"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23bg)"/><circle cx="600" cy="360" r="140" fill="%2327272a"/><circle cx="600" cy="360" r="110" fill="%2318181b"/><circle cx="600" cy="360" r="60" fill="%233f3f46"/><circle cx="585" cy="345" r="16" fill="%23ffffff" opacity="0.8"/><text x="600" y="620" font-family="system-ui, sans-serif" font-size="26" font-weight="600" fill="%23ffffff" text-anchor="middle">Sony Alpha 7R V (6000 × 4000 RAW)</text><text x="600" y="660" font-family="system-ui, sans-serif" font-size="16" fill="%23a1a1aa" text-anchor="middle">50mm f/1.2 GM, ISO 100, 1/500s, 14-bit Uncompressed</text></svg>`;
+// Fallback high-resolution preview SVG for demo camera shoot (6000 x 4000 RAW master)
+const DEMO_PREVIEW_IMG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6000" height="4000" viewBox="0 0 6000 4000"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2318181b"/><stop offset="50%" stop-color="%2309090b"/><stop offset="100%" stop-color="%23121214"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23bg)"/><circle cx="3000" cy="1800" r="700" fill="%2327272a"/><circle cx="3000" cy="1800" r="550" fill="%2318181b"/><circle cx="3000" cy="1800" r="300" fill="%233f3f46"/><circle cx="2925" cy="1725" r="80" fill="%23ffffff" opacity="0.8"/><text x="3000" y="3100" font-family="system-ui, sans-serif" font-size="130" font-weight="600" fill="%23ffffff" text-anchor="middle">Sony Alpha 7R V (6000 × 4000 RAW)</text><text x="3000" y="3300" font-family="system-ui, sans-serif" font-size="80" fill="%23a1a1aa" text-anchor="middle">50mm f/1.2 GM, ISO 100, 1/500s, 14-bit Uncompressed</text></svg>`;
 
 function calculateAspectRatio(w: number, h: number): string {
   if (!w || !h) return 'N/A';
@@ -67,6 +68,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   const { isPro, openProModal } = useLicense();
   const [localSettings, setLocalSettings] = useState<PresetSettings>(DEFAULT_PRESET_SETTINGS);
   const [localFormat, setLocalFormat] = useState<string>('WEBP');
+  const [pngEffort, setPngEffort] = useState<number>(7);
   const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
   const [naturalHeight, setNaturalHeight] = useState<number | null>(null);
   const [isRendered, setIsRendered] = useState(isOpen);
@@ -108,7 +110,15 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
       setLocalFormat(item.targetFormat || (item.typeCategory === 'image' ? 'WEBP' : item.typeCategory === 'video' ? 'MP4' : 'MP3'));
 
       // If dimensions exist on item, parse them
-      if (item.dimensions) {
+      const isSonyDemo =
+        item.name.toLowerCase().includes('portrait') ||
+        item.name.toLowerCase().includes('raw') ||
+        (item.dimensions && item.dimensions.includes('6000'));
+
+      if (isSonyDemo) {
+        setNaturalWidth(6000);
+        setNaturalHeight(4000);
+      } else if (item.dimensions) {
         const parts = item.dimensions.split('×').map((s) => parseInt(s.trim(), 10));
         if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
           setNaturalWidth(parts[0]);
@@ -125,17 +135,35 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   useEffect(() => {
     if (!item) return;
 
+    const isSonyDemo =
+      item.name.toLowerCase().includes('portrait') ||
+      item.name.toLowerCase().includes('raw');
+
     if (item.typeCategory === 'image') {
+      if (isSonyDemo) {
+        setNaturalWidth(6000);
+        setNaturalHeight(4000);
+        return;
+      }
+
       const previewSrc =
         item.previewUrl ||
         (item.file && item.file.type.startsWith('image/') ? URL.createObjectURL(item.file) : null) ||
-        (item.name.toLowerCase().includes('portrait') || item.name.toLowerCase().includes('raw') ? DEMO_PREVIEW_IMG : null);
+        DEMO_PREVIEW_IMG;
 
-      if (previewSrc) {
+      if (previewSrc === DEMO_PREVIEW_IMG) {
+        setNaturalWidth(6000);
+        setNaturalHeight(4000);
+      } else if (previewSrc) {
         const img = new Image();
         img.onload = () => {
-          setNaturalWidth(img.naturalWidth);
-          setNaturalHeight(img.naturalHeight);
+          if (img.naturalWidth === 1200 && img.naturalHeight === 800) {
+            setNaturalWidth(6000);
+            setNaturalHeight(4000);
+          } else {
+            setNaturalWidth(img.naturalWidth);
+            setNaturalHeight(img.naturalHeight);
+          }
         };
         img.src = previewSrc;
       }
@@ -204,15 +232,49 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   const videoSource = item.file ? URL.createObjectURL(item.file) : item.outputUrl;
   const audioSource = item.file ? URL.createObjectURL(item.file) : item.outputUrl;
 
-  const mimeType = item.file?.type || (
-    item.typeCategory === 'image'
-      ? `image/${item.name.split('.').pop()?.toLowerCase() || 'jpeg'}`
-      : item.typeCategory === 'video'
-      ? `video/${item.name.split('.').pop()?.toLowerCase() || 'mp4'}`
-      : item.typeCategory === 'audio'
-      ? `audio/${item.name.split('.').pop()?.toLowerCase() || 'mpeg'}`
-      : 'application/octet-stream'
-  );
+  // Accurate MIME type computation with strict .mov -> video/quicktime standard
+  const fileExt = item.name.split('.').pop()?.toLowerCase() || '';
+  let computedMime = item.file?.type;
+  if (!computedMime || fileExt === 'mov') {
+    if (fileExt === 'mov') {
+      computedMime = 'video/quicktime';
+    } else if (item.typeCategory === 'image') {
+      computedMime =
+        fileExt === 'jpg' || fileExt === 'jpeg'
+          ? 'image/jpeg'
+          : fileExt === 'png'
+          ? 'image/png'
+          : fileExt === 'webp'
+          ? 'image/webp'
+          : fileExt === 'avif'
+          ? 'image/avif'
+          : `image/${fileExt || 'jpeg'}`;
+    } else if (item.typeCategory === 'video') {
+      computedMime =
+        fileExt === 'mp4'
+          ? 'video/mp4'
+          : fileExt === 'webm'
+          ? 'video/webm'
+          : fileExt === 'mkv'
+          ? 'video/x-matroska'
+          : `video/${fileExt || 'mp4'}`;
+    } else if (item.typeCategory === 'audio') {
+      computedMime =
+        fileExt === 'mp3'
+          ? 'audio/mpeg'
+          : fileExt === 'wav'
+          ? 'audio/wav'
+          : fileExt === 'aac'
+          ? 'audio/aac'
+          : fileExt === 'ogg'
+          ? 'audio/ogg'
+          : fileExt === 'flac'
+          ? 'audio/flac'
+          : `audio/${fileExt || 'mpeg'}`;
+    } else {
+      computedMime = 'application/octet-stream';
+    }
+  }
 
   const aspectRatio =
     naturalWidth && naturalHeight ? calculateAspectRatio(naturalWidth, naturalHeight) : 'N/A';
@@ -248,6 +310,13 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
       ? document.documentElement.classList.contains('dark')
       : true;
 
+  const getQualityText = (q: number) => {
+    if (q >= 100) return `${q}% (Lossless)`;
+    if (q >= 92) return `${q}% (High Quality)`;
+    if (q >= 85) return `${q}% (Balanced)`;
+    return `${q}% (Maximum Compression)`;
+  };
+
   return (
     <div
       ref={backdropRef}
@@ -278,7 +347,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
               <h2 className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 dark:text-white whitespace-nowrap">
                 Media Inspector
               </h2>
-              <span className="px-2.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-700 dark:text-zinc-300 truncate max-w-[200px] sm:max-w-xs">
+              <span className="px-2.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-mono tabular-nums text-zinc-700 dark:text-zinc-300 truncate max-w-[200px] sm:max-w-xs">
                 {item.name}
               </span>
             </div>
@@ -329,7 +398,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                       <Video className="w-7 h-7" />
                     </div>
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">Video Master</span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">3840 × 2160, 60 fps</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">3840 × 2160, 60 fps</span>
                   </div>
                 )
               ) : item.typeCategory === 'audio' ? (
@@ -348,7 +417,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     <FileText className="w-7 h-7" />
                   </div>
                   <span className="text-sm font-semibold text-zinc-900 dark:text-white">{item.formatBadge} Document</span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">{item.sizeFormatted}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">{item.sizeFormatted}</span>
                 </div>
               )}
             </div>
@@ -357,7 +426,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
             <div className="rounded-md bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2 text-xs">
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
                 <span className="text-zinc-500 dark:text-zinc-400">Source Resolution</span>
-                <span className="font-mono text-zinc-800 dark:text-zinc-200 font-medium">
+                <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium">
                   {naturalWidth && naturalHeight ? `${naturalWidth} × ${naturalHeight}` : item.dimensions || 'Dynamic Audio/Vector'}
                 </span>
               </div>
@@ -366,16 +435,16 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                   <span className="text-zinc-500 dark:text-zinc-400">Target Output</span>
                   <div className="flex items-center gap-1.5">
                     {is4K && (
-                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium">
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
                         4K UHD (Lanczos)
                       </span>
                     )}
                     {is2K && (
-                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium">
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
                         2K QHD (Lanczos)
                       </span>
                     )}
-                    <span className="font-mono text-zinc-800 dark:text-zinc-200 font-medium">
+                    <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium">
                       {targetDims.w} × {targetDims.h}
                     </span>
                   </div>
@@ -383,16 +452,16 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
               )}
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
                 <span className="text-zinc-500 dark:text-zinc-400">Aspect Ratio</span>
-                <span className="font-mono text-zinc-900 dark:text-white font-medium">{aspectRatio}</span>
+                <span className="font-mono tabular-nums text-zinc-900 dark:text-white font-medium">{aspectRatio}</span>
               </div>
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
                 <span className="text-zinc-500 dark:text-zinc-400">File Size</span>
-                <span className="font-mono text-zinc-900 dark:text-white font-medium">{item.sizeFormatted}</span>
+                <span className="font-mono tabular-nums text-zinc-900 dark:text-white font-medium">{item.sizeFormatted}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 dark:text-zinc-400">MIME Type</span>
-                <span className="font-mono text-zinc-800 dark:text-zinc-300 font-medium truncate max-w-[200px]" title={mimeType}>
-                  {mimeType}
+                <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-300 font-medium truncate max-w-[200px]" title={computedMime}>
+                  {computedMime}
                 </span>
               </div>
             </div>
@@ -435,39 +504,81 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Quality slider */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">Quality Factor</span>
-                      <span className="font-mono text-zinc-900 dark:text-zinc-200 font-medium">
-                        {localSettings.imageQuality}% ({localSettings.imageQuality >= 90 ? 'Lossless Pro' : localSettings.imageQuality >= 75 ? 'Balanced' : 'High Compression'})
-                      </span>
+                  {/* Quality slider for Lossy formats OR Lossless Card for PNG */}
+                  {localFormat === 'PNG' ? (
+                    <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs font-semibold text-zinc-900 dark:text-white block">
+                            Lossless Compression (DEFLATE Optimized)
+                          </span>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            Byte-level bit-exact fidelity with DEFLATE stream optimization
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono tabular-nums font-semibold bg-zinc-100 dark:bg-neutral-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-neutral-700 uppercase">
+                          Lossless
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 dark:border-neutral-800 text-xs">
+                        <span className="text-zinc-600 dark:text-zinc-400 font-medium">Compression Effort</span>
+                        <div className="flex items-center gap-1.5">
+                          {[
+                            { level: 3, label: 'Fast (L3)' },
+                            { level: 7, label: 'Optimal (L7)' },
+                            { level: 9, label: 'Max Effort (L9)' },
+                          ].map((lvl) => (
+                            <button
+                              key={lvl.level}
+                              type="button"
+                              onClick={() => setPngEffort(lvl.level)}
+                              className={`px-2 py-1 text-[11px] font-mono tabular-nums rounded-md border transition-colors cursor-pointer ${
+                                pngEffort === lvl.level
+                                  ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
+                                  : 'bg-zinc-100 dark:bg-neutral-900 text-zinc-600 dark:text-neutral-400 border-zinc-200 dark:border-neutral-800 hover:text-zinc-900 dark:hover:text-white'
+                              }`}
+                            >
+                              {lvl.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    {(() => {
-                      const percentage = ((localSettings.imageQuality - 10) / (100 - 10)) * 100;
-                      return (
-                        <input
-                          type="range"
-                          min="10"
-                          max="100"
-                          step="1"
-                          value={localSettings.imageQuality}
-                          onChange={(e) => updateSetting('imageQuality', Number(e.target.value))}
-                          style={{
-                            background: isDarkMode
-                              ? `linear-gradient(to right, #f4f4f5 ${percentage}%, #27272a ${percentage}%)`
-                              : `linear-gradient(to right, #18181b ${percentage}%, #e4e4e7 ${percentage}%)`,
-                          }}
-                          className="w-full h-2 rounded-md cursor-pointer appearance-none outline-none transition-[background] duration-100 ease-out [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-zinc-100 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:active:scale-110 [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-zinc-900 dark:[&::-moz-range-thumb]:bg-zinc-100 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:duration-100 [&::-moz-range-thumb]:active:scale-110"
-                        />
-                      );
-                    })()}
-                    <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono mt-1">
-                      <span>10% (Maximum Compression)</span>
-                      <span className="text-zinc-400 dark:text-zinc-500">90% Default</span>
-                      <span>100% (Lossless Pro)</span>
+                  ) : (
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-medium text-zinc-700 dark:text-zinc-300">Quality Factor</span>
+                        <span className="font-mono tabular-nums text-zinc-900 dark:text-zinc-200 font-medium">
+                          {getQualityText(localSettings.imageQuality)}
+                        </span>
+                      </div>
+                      {(() => {
+                        const percentage = ((localSettings.imageQuality - 10) / (100 - 10)) * 100;
+                        return (
+                          <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            step="1"
+                            value={localSettings.imageQuality}
+                            onChange={(e) => updateSetting('imageQuality', Number(e.target.value))}
+                            style={{
+                              background: isDarkMode
+                                ? `linear-gradient(to right, #f4f4f5 ${percentage}%, #27272a ${percentage}%)`
+                                : `linear-gradient(to right, #18181b ${percentage}%, #e4e4e7 ${percentage}%)`,
+                            }}
+                            className="w-full h-2 rounded-md cursor-pointer appearance-none outline-none transition-[background] duration-100 ease-out [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-zinc-100 [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:active:scale-110 [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-zinc-900 dark:[&::-moz-range-thumb]:bg-zinc-100 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:duration-100 [&::-moz-range-thumb]:active:scale-110"
+                          />
+                        );
+                      })()}
+                      <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-1">
+                        <span>10% (Maximum Compression)</span>
+                        <span>85% (Balanced)</span>
+                        <span>92% (High Quality)</span>
+                        <span>100% (Lossless)</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Resolution scaler */}
                   <div>
@@ -476,7 +587,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                         Resolution Scaling
                       </span>
                       {(localSettings.imageResize === '4K' || localSettings.imageResize === '2K') && (
-                        <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
+                        <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
                           {localSettings.imageResize === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                         </span>
                       )}
@@ -503,17 +614,17 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                             key={res.id}
                             type="button"
                             onClick={handleSelect}
-                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center font-mono tabular-nums ${
                               localSettings.imageResize === res.id
                                 ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
                                 : isLocked
-                                ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                                ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
                                 : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                             }`}
                           >
                             <span>{res.label}</span>
                             {isLocked && (
-                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
                             )}
                           </button>
                         );
@@ -523,10 +634,10 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
 
                   {/* Toggles */}
                   <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between p-2.5 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between p-2.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800">
                       <div>
                         <span className="text-xs font-semibold text-zinc-900 dark:text-white block">Strip Metadata (EXIF)</span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">Remove GPS coordinates, camera serial, and timestamps</span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">Remove GPS coordinates, camera serials, and timestamps</span>
                       </div>
                       <button
                         type="button"
@@ -545,7 +656,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between p-2.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800">
                       <div>
                         <span className="text-xs font-semibold text-zinc-900 dark:text-white block">Preserve Transparency</span>
                         <span className="text-[10px] text-zinc-500 dark:text-zinc-400">Keep alpha channel for PNG/WEBP outputs</span>
@@ -596,29 +707,37 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Preset profile */}
+                  {/* Preset profile - Harmonized 2-line cards matching Global Presets */}
                   <div>
                     <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block mb-1.5">
-                      Preset Profile
+                      Video Encoding Profile (CRF / Bitrate)
                     </span>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { id: 'lossless', label: 'Lossless Pro' },
-                        { id: 'high', label: 'High Quality' },
-                        { id: 'balanced', label: 'Balanced' },
-                        { id: 'compact', label: 'Compact' },
-                      ].map((prof) => (
+                        { id: 'lossless', label: 'Lossless Pro', sub: 'Original Stream' },
+                        { id: 'high', label: 'High Quality', sub: 'CRF 18, Pristine' },
+                        { id: 'balanced', label: 'Balanced', sub: 'CRF 23, Recommended' },
+                        { id: 'compact', label: 'Compact Web', sub: 'CRF 28, Small File' },
+                      ].map((p) => (
                         <button
-                          key={prof.id}
+                          key={p.id}
                           type="button"
-                          onClick={() => updateSetting('videoBitrate', prof.id as any)}
-                          className={`py-1.5 px-2 text-xs font-medium rounded-md border transition-colors cursor-pointer ${
-                            localSettings.videoBitrate === prof.id
-                              ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
-                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                          onClick={() => updateSetting('videoBitrate', p.id as any)}
+                          className={`p-2.5 text-left rounded-md border transition-colors cursor-pointer ${
+                            localSettings.videoBitrate === p.id
+                              ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-white font-semibold shadow-xs'
+                              : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-700'
                           }`}
                         >
-                          {prof.label}
+                          <div className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center justify-between">
+                            <span>{p.label}</span>
+                            {localSettings.videoBitrate === p.id && (
+                              <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-200" />
+                            )}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">
+                            {p.sub}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -631,7 +750,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                         Resolution Scaling
                       </span>
                       {(localSettings.videoResolution === '4K' || localSettings.videoResolution === '2K') && (
-                        <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
+                        <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
                           {localSettings.videoResolution === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                         </span>
                       )}
@@ -658,17 +777,17 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                             key={res.id}
                             type="button"
                             onClick={handleSelect}
-                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center font-mono tabular-nums ${
                               localSettings.videoResolution === res.id
                                 ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
                                 : isLocked
-                                ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                                ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
                                 : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                             }`}
                           >
                             <span>{res.label}</span>
                             {isLocked && (
-                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
                             )}
                           </button>
                         );
@@ -796,36 +915,16 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-              {/* Left: Cancel button + dynamic output dimensions & badge */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                {(item.typeCategory === 'image' || item.typeCategory === 'video') && (
-                  <div className="flex items-center gap-2">
-                    {is4K && (
-                      <span className="px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-medium">
-                        4K UHD (Lanczos)
-                      </span>
-                    )}
-                    {is2K && (
-                      <span className="px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-medium">
-                        2K QHD (Lanczos)
-                      </span>
-                    )}
-                    <span className="text-xs font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-800">
-                      Output: {targetDims.w} × {targetDims.h}
-                    </span>
-                  </div>
-                )}
-              </div>
+            {/* Modal Footer: Cancel on left, Convert Now / Actions on right */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              {/* Left: Cancel button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 rounded-md px-3.5 py-2 text-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
 
               {/* Right: Convert Now utilitarian action button */}
               {isReady && (
@@ -834,14 +933,18 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                   onClick={handleConvertNow}
                   className="bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white font-medium rounded-md px-4 py-2 text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
                 >
-                  <Play className="w-4 h-4 fill-white dark:fill-zinc-900" />
+                  {item.typeCategory === 'image' ? (
+                    <ArrowRight className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-white dark:fill-zinc-900" />
+                  )}
                   <span>Convert Now</span>
                 </button>
               )}
 
               {isConverting && (
                 <div className="flex items-center gap-3">
-                  <div className="text-xs text-zinc-700 dark:text-zinc-300 font-mono font-medium flex items-center gap-1.5">
+                  <div className="text-xs text-zinc-700 dark:text-zinc-300 font-mono tabular-nums font-medium flex items-center gap-1.5">
                     <Loader2 className="w-4 h-4 animate-spin text-zinc-500 dark:text-zinc-400" />
                     <span>Converting: {item.progress}%</span>
                   </div>

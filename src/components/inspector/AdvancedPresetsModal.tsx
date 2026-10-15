@@ -4,7 +4,6 @@ import {
   X,
   Image as ImageIcon,
   Video,
-  ShieldCheck,
   RotateCcw,
   Check,
   Lock,
@@ -91,9 +90,9 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
   };
 
   const getQualityLabel = (quality: number) => {
-    if (quality >= 95) return `${quality}% (Near Lossless)`;
-    if (quality >= 85) return `${quality}% (High Quality)`;
-    if (quality >= 70) return `${quality}% (Balanced)`;
+    if (quality >= 100) return `${quality}% (Lossless)`;
+    if (quality >= 92) return `${quality}% (High Quality)`;
+    if (quality >= 85) return `${quality}% (Balanced)`;
     return `${quality}% (Maximum Compression)`;
   };
 
@@ -221,7 +220,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs sm:text-sm">
                   <span className="font-medium text-zinc-700 dark:text-zinc-300">Compression Quality</span>
-                  <span className="font-mono font-medium text-zinc-900 dark:text-zinc-200">
+                  <span className="font-mono tabular-nums font-medium text-zinc-900 dark:text-zinc-200">
                     {getQualityLabel(settings.imageQuality)}
                   </span>
                 </div>
@@ -248,10 +247,11 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                   );
                 })()}
 
-                <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono pt-0.5">
+                <div className="flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums pt-1">
                   <span>10% (Maximum Compression)</span>
-                  <span className="text-zinc-400 dark:text-zinc-500">90% Default</span>
-                  <span>100% (Lossless Pro)</span>
+                  <span>85% (Balanced)</span>
+                  <span>92% (High Quality)</span>
+                  <span>100% (Lossless)</span>
                 </div>
               </div>
 
@@ -262,7 +262,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                     Target Resolution Scaling
                   </label>
                   {(settings.imageResize === '4K' || settings.imageResize === '2K') && (
-                    <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
+                    <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
                       {settings.imageResize === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                     </span>
                   )}
@@ -277,17 +277,17 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                         key={res.id}
                         type="button"
                         onClick={() => handleResolutionClick(res.label, res.id, false)}
-                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
                           settings.imageResize === res.id
                             ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
                             : isLocked
-                            ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                            ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
                             : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                         }`}
                       >
                         <span>{res.label}</span>
                         {isLocked && (
-                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
                         )}
                       </button>
                     );
@@ -295,18 +295,15 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 </div>
               </div>
 
-              {/* Privacy Toggle: Strip Metadata */}
-              <div className="p-3.5 rounded-md bg-zinc-50 border-zinc-200 dark:bg-zinc-900/50 dark:border-zinc-800 border flex items-center justify-between">
-                <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white">
-                      Strip EXIF Metadata
-                    </h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                      Removes GPS locations, camera serials, and timestamp tags.
-                    </p>
-                  </div>
+              {/* Privacy Toggle: Strip Metadata (EXIF) */}
+              <div className="p-3.5 rounded-md bg-zinc-50 border-zinc-200 dark:bg-[#171717] dark:border-neutral-800 border flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white">
+                    Strip Metadata (EXIF)
+                  </h4>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                    Remove GPS coordinates, camera serials, and timestamps
+                  </p>
                 </div>
 
                 <button
@@ -366,7 +363,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                           <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-200" />
                         )}
                       </div>
-                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">{p.sub}</div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">{p.sub}</div>
                     </button>
                   ))}
                 </div>
@@ -379,7 +376,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                     Target Max Video Resolution
                   </label>
                   {(settings.videoResolution === '4K' || settings.videoResolution === '2K') && (
-                    <span className="text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
+                    <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
                       {settings.videoResolution === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                     </span>
                   )}
@@ -394,17 +391,17 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                         key={res.id}
                         type="button"
                         onClick={() => handleResolutionClick(res.label, res.id, true)}
-                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
                           settings.videoResolution === res.id
                             ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
                             : isLocked
-                            ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                            ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
                             : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                         }`}
                       >
                         <span>{res.label}</span>
                         {isLocked && (
-                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
                         )}
                       </button>
                     );
@@ -436,7 +433,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Audio Bitrate</label>
-                    <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+                    <span className="text-[11px] font-mono tabular-nums text-zinc-500 dark:text-zinc-400">
                       {settings.audioBitrate === '320k'
                         ? '320 kbps (Studio)'
                         : settings.audioBitrate === '192k'
@@ -463,17 +460,17 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                           onClick={() =>
                             handleAudioBitrateClick(bitrate.id as PresetSettings['audioBitrate'], bitrate.label)
                           }
-                          className={`py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                          className={`py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
                             settings.audioBitrate === bitrate.id
                               ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
                               : isLocked
-                              ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                              ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
                               : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
                           }`}
                         >
                           <span>{bitrate.label}</span>
                           {isLocked && (
-                            <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-zinc-500 shrink-0" />
+                            <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
                           )}
                         </button>
                       );

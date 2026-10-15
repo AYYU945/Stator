@@ -30,7 +30,6 @@ export const StatusFooter: React.FC<StatusFooterProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-400">
         {/* Left Side: Plain utility notice */}
         <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 font-medium">
-          <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-sm" />
           <span>Stator. Client-side utility.</span>
         </div>
 

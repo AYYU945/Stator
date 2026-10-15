@@ -3,9 +3,9 @@ import {
   History,
   Settings,
   User,
-  Loader2,
   Sun,
   Moon,
+  HelpCircle,
 } from 'lucide-react';
 import { WasmStatus } from '../../utils/ffmpegManager.ts';
 import { ThemeMode } from '../../lib/theme.ts';
@@ -19,6 +19,8 @@ export interface HeaderProps {
   historyCount?: number;
   onOpenHistory?: () => void;
   isHistoryOpen?: boolean;
+  onOpenHelp?: () => void;
+  isHelpOpen?: boolean;
   onOpenPresets?: () => void;
   wasmStatus?: WasmStatus;
   theme?: ThemeMode;
@@ -31,6 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   historyCount = 0,
   onOpenHistory,
   isHistoryOpen = false,
+  onOpenHelp,
+  isHelpOpen = false,
   onOpenPresets,
   wasmStatus = 'active',
   onThemeChange,
@@ -111,24 +115,9 @@ export const Header: React.FC<HeaderProps> = ({
               </svg>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="font-semibold tracking-tight text-zinc-900 dark:text-white text-base">
-                Stator
-              </span>
-
-              {/* Static Solid 6px Status Dot with Tooltip */}
-              <div
-                className="relative flex items-center justify-center p-0.5 cursor-help"
-                title={wasmStatus === 'loading' ? 'Loading WASM Core...' : 'WASM Engine Active (100% Client-Side)'}
-                aria-label="WASM Engine Active"
-              >
-                {wasmStatus === 'loading' ? (
-                  <Loader2 className="w-3 h-3 text-zinc-500 dark:text-zinc-400 animate-spin" />
-                ) : (
-                  <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-sm" />
-                )}
-              </div>
-            </div>
+            <span className="font-semibold tracking-tight text-zinc-900 dark:text-white text-base">
+              Stator
+            </span>
           </div>
         </div>
 
@@ -190,6 +179,20 @@ export const Header: React.FC<HeaderProps> = ({
                 {historyCount}
               </span>
             )}
+          </button>
+
+          {/* Help & FAQ Trigger Button */}
+          <button
+            onClick={onOpenHelp}
+            className={`w-8 h-8 flex items-center justify-center border cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:scale-[0.97] transition-all duration-150 ease-out rounded-md ${
+              isHelpOpen
+                ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+            }`}
+            title="Help & FAQ"
+            aria-label="Help & FAQ"
+          >
+            <HelpCircle className="w-4 h-4" />
           </button>
 
           {/* Settings Gear Button */}
