@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Scale, ShieldAlert, FileText, Mail, ShoppingCart, RefreshCw, Cpu, Shield, Globe } from 'lucide-react';
+import { ArrowLeft, Scale, ShieldAlert, FileText, Mail, Cpu, Shield, Sparkles } from 'lucide-react';
 
 export interface TermsOfServiceProps {
   onBack: () => void;
@@ -16,7 +16,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Engine</span>
         </button>
-        <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500">Effective Date: October 2026</span>
+        <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500">MIT Open Source • v1.0.0</span>
       </div>
 
       <div className="space-y-6">
@@ -25,18 +25,18 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             Terms of Service
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Please read these terms carefully before utilizing the Stator utility or purchasing a commercial license.
+            Stator is an independent, MIT-licensed open-source media utility maintained by its contributors (contact: hanan.ahmed.pak@gmail.com).
           </p>
         </div>
 
-        {/* Section 1: Acceptance & License */}
+        {/* Section 1: Open-Source MIT License & Local Execution */}
         <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
             <Scale className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>1. License and Local Client Execution</h2>
+            <h2>1. Open-Source MIT License and Local Execution</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Stator, LLC grants you a personal, non-exclusive, revocable, and non-transferable license to access and use the software utility directly within your web browser. All execution happens on your local client machine without transmission of file payloads. You agree not to reverse-engineer, exploit, or disrupt any delivery mechanisms or underlying APIs beyond normal browser interactions.
+            Stator’s source code is licensed under the MIT License, granting you permission to use, copy, modify, merge, publish, distribute, and self-host the software subject to the conditions in the repository LICENSE file. All conversion execution happens strictly on your local client machine without transmission of file payloads across any network.
           </p>
         </div>
 
@@ -44,10 +44,10 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
         <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
             <ShieldAlert className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>2. Intellectual Property and Content Responsibility</h2>
+            <h2>2. Intellectual Property and Content Ownership</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            You maintain full ownership of all files, images, videos, audio recordings, and documents processed using this utility. Stator, LLC never acquires any copyright, trademark, or license rights in or to your uploaded or converted files.
+            You maintain full, unencumbered ownership of all files, images, videos, audio recordings, and documents processed using this utility. Stator never acquires any copyright, trademark, or license rights in or to your selected or converted files.
           </p>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
             You represent and warrant that you hold all necessary licenses, copyrights, permissions, and rights to convert and process the files you supply. You agree not to process material that infringes third-party intellectual property rights or violates applicable local, national, or international regulations.
@@ -61,7 +61,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <h2>3. Browser Performance and Hardware Limitations</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            All media transformations depend directly on your local device hardware, including available CPU threads, RAM allocation, and WebAssembly runtime support in your browser. Stator cannot guarantee identical conversion speed or memory limits across differing hardware architectures or legacy browser platforms.
+            All media transformations depend directly on your local device hardware, including available CPU threads, RAM allocation, and WebAssembly runtime support in your browser. Conversion speed and available memory are bounded by your client hardware and browser heap limits.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <h2>4. Acceptable Use and Security Integrity</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Users must not attempt to inject malicious code, exploit WebAssembly memory sandboxes, bypass license verification checks, or distribute automated scrapers that degrade application availability.
+            Users must not attempt to inject malicious code, exploit WebAssembly memory sandboxes, bypass application integrity checks, or distribute automated scrapers that degrade application availability.
           </p>
         </div>
 
@@ -83,97 +83,41 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
             <h2>5. Disclaimer of Warranty and Limitation of Liability</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Stator is provided on an as-is and as-available basis without warranties of any kind, whether express, statutory, or implied. In no event shall Stator, LLC or its contributors be liable for direct, indirect, incidental, special, exemplary, or consequential damages arising out of the performance, failure, or use of the client-side conversion routines.
+            Stator is provided on an as-is and as-available basis without warranties of any kind, whether express, statutory, or implied. In no event shall the developer or contributors be liable for direct, indirect, incidental, special, exemplary, or consequential damages arising out of the performance, failure, or use of the client-side conversion routines.
           </p>
         </div>
 
-        {/* Section 6: DMCA Designated Agent Notification Procedure */}
+        {/* Section 6: DMCA Notification Procedure */}
         <div id="dmca-notice" className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-4 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
             <FileText className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>6. DMCA Designated Agent Notification Procedure</h2>
+            <h2>6. DMCA Notification Procedure</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Because Stator processes all files strictly client-side inside the user browser, our servers do not host, store, cache, or transmit user media. However, in full accordance with the Digital Millennium Copyright Act (17 U.S.C. Section 512), Stator, LLC maintains a designated notification agent for copyright compliance notices.
+            Because Stator processes all files strictly client-side inside the user's browser, external servers do not host, store, cache, or transmit user media. However, in accordance with the Digital Millennium Copyright Act (17 U.S.C. Section 512), inquiries may be directed to our designated contact:
           </p>
 
           <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-md p-4 text-xs font-mono text-zinc-700 dark:text-zinc-300 space-y-1">
-            <div className="text-zinc-900 dark:text-white font-semibold mb-1">DMCA Designated Agent Contact:</div>
-            <div>DMCA Designated Agent, Stator, LLC</div>
-            <div>100 Main Street, Suite 400</div>
-            <div>Dover, DE 19901</div>
-            <div>Email: dmca@stator.media</div>
+            <div className="text-zinc-900 dark:text-white font-semibold mb-1">Designated Agent Contact:</div>
+            <div>Hanan Ahmed (Developer & Maintainer)</div>
+            <div>Email: hanan.ahmed.pak@gmail.com</div>
           </div>
-
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            To submit an effective notice of claimed infringement, please furnish our Designated Agent with a written communication containing the following statutory elements:
-          </p>
-          <ol className="list-decimal list-inside space-y-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 pl-2">
-            <li>A physical or electronic signature of a person authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.</li>
-            <li>Identification of the copyrighted work claimed to have been infringed, or a representative list of works.</li>
-            <li>Identification of the material claimed to be infringing and information reasonably sufficient to allow us to locate the material.</li>
-            <li>Information reasonably sufficient to permit contact with you, including your physical address, telephone number, and valid email address.</li>
-            <li>A statement that you have a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.</li>
-            <li>A statement that the information in the notification is accurate, and under penalty of perjury, that you are authorized to act on behalf of the owner of the infringed right.</li>
-          </ol>
         </div>
 
-        {/* Section 7: Privacy and Local Data Handling */}
+        {/* Section 7: Third-Party WebAssembly Codecs */}
         <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
           <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <Shield className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>7. Privacy and Local Data Handling</h2>
+            <Sparkles className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+            <h2>7. Third-Party WebAssembly Codecs</h2>
           </div>
           <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Zero file content or converted output leaves your browser. All conversion tasks occur within volatile WebAssembly memory and HTML5 canvas buffers. No telemetry captures your filenames, visual contents, audio tracks, or metadata.
+            While Stator’s application codebase is released under the MIT License, browser-side video and audio transcoding dynamically loads third-party @ffmpeg/core WebAssembly binaries at runtime. Standard @ffmpeg/core distributions include codecs such as libx264 licensed under the GNU General Public License (GPL). Refer to the LICENSE and README.md files in the source repository for full third-party notices.
           </p>
-        </div>
-
-        {/* Section 8: Governing Law and Severability */}
-        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <Globe className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>8. Governing Law and Severability</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            These Terms are governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to conflict of law principles. If any provision is deemed unenforceable, the remaining provisions remain in full force.
-          </p>
-        </div>
-
-        {/* Section 9: Terms of Commercial Sale */}
-        <div className="bg-zinc-50 dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 space-y-4 shadow-xs">
-          <div className="flex items-center gap-2.5 text-zinc-900 dark:text-white font-semibold text-base">
-            <ShoppingCart className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-            <h2>9. Terms of Commercial Sale</h2>
-          </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            Digital licenses grant a personal or commercial, non-exclusive, non-transferable authorization to access advanced local browser features, including expanded batch limits, high-fidelity audio encoders, unrestricted multi-core concurrency, and Lanczos-3 resolution upscaling.
-          </p>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-            All orders, transactions, and payments are billed and invoiced by our authorized Merchant of Record. The Merchant of Record serves as the merchant of record for customer support, tax collection, VAT compliance, and electronic invoicing.
-          </p>
-          <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-md p-4 text-xs font-mono text-zinc-700 dark:text-zinc-300 space-y-2">
-            <div className="font-semibold text-zinc-900 dark:text-white uppercase tracking-wider">
-              Statutory Right of Withdrawal Waiver (EU / UK)
-            </div>
-            <p className="leading-relaxed">
-              Purchasers acknowledge and agree that digital services begin immediately upon key issuance and waive the statutory 14-day right of withdrawal under EU Directive 2011/83/EU.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-white">
-              <RefreshCw className="w-4 h-4 text-zinc-500" />
-              <span>Subscription Auto-Renewal Terms</span>
-            </div>
-            <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-              Monthly subscriptions renew automatically every 30 days unless cancelled prior to the renewal date via the customer billing portal. Lifetime passes represent a single, non-recurring purchase with no recurring fees.
-            </p>
-          </div>
         </div>
 
         {/* Contact info */}
         <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500">
-          <p>For legal inquiries, contact legal@stator.media.</p>
+          <p>For questions or feedback, contact Hanan Ahmed at hanan.ahmed.pak@gmail.com.</p>
         </div>
       </div>
     </div>

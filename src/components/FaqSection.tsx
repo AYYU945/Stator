@@ -20,7 +20,7 @@ export const FAQS: FaqItem[] = [
     id: 'faq-size-limit',
     question: 'Is there a file size limit?',
     answer:
-      "Free accounts can process files up to 2 GB. Stator Pro handles files up to 4 GB, bounded only by your browser's available memory (RAM) and 32-bit WebAssembly heap allocations. For optimal stability with multi-gigabyte 4K footage, we recommend closing unused browser tabs.",
+      "Stator enforces no arbitrary file size caps. Maximum file size (typically up to 2–4 GB) is bounded only by your browser's available memory (RAM) and 32-bit WebAssembly heap allocations. For optimal stability with multi-gigabyte 4K footage, we recommend closing unused browser tabs.",
   },
   {
     id: 'faq-offline',
@@ -48,22 +48,22 @@ export const FAQS: FaqItem[] = [
       'Mobile browsers are currently supported for basic audio and image tasks, but desktop hardware is strongly recommended for heavy video encoding.',
   },
   {
-    id: 'faq-tiers',
-    question: 'What is the difference between the Free tier and Stator Pro?',
+    id: 'faq-open-source',
+    question: 'Is Stator open source and free to use?',
     answer:
-      'The Free tier includes standard encoding presets, up to 1080p video exports, 2 concurrent worker threads, and a 3-file batch queue. Stator Pro unlocks 4K resolutions, full hardware thread utilization (N cores), studio-grade audio bitrates (up to 320 kbps), custom export presets, and batch queues exceeding 50 items.',
+      'Yes. Stator is 100% free and open-source software licensed under the MIT License. All capabilities—including 4K/2K scaling, 120 FPS output, 320 kbps audio encoding, full hardware CPU threads, and unlimited batch queues—are unlocked for everyone with no paywalls or watermarks.',
   },
   {
-    id: 'faq-lifetime',
-    question: 'How does the Lifetime Pass work?',
+    id: 'faq-codecs-license',
+    question: 'What about third-party WebAssembly codecs?',
     answer:
-      'The Lifetime Pass is a single, one-time payment of €59. It grants perpetual access to all current and upcoming Pro features with no recurring monthly software debt. You receive a cryptographic license key that verifies locally in your browser.',
+      'Stator dynamically loads @ffmpeg/core in browser memory at runtime. Standard FFmpeg builds include GPL-licensed encoders such as libx264. Full attribution and license boundaries are documented in LICENSE and README.md.',
   },
   {
-    id: 'faq-transfer',
-    question: 'Can I move my license to a new computer?',
+    id: 'faq-contributing',
+    question: 'How can I contribute or self-host Stator?',
     answer:
-      'Yes. Simply enter your license key on your new device or browser to activate your entitlement. We permit reasonable multi-device use for personal setups (such as a primary workstation and a laptop).',
+      'You can clone the GitHub repository, inspect the source code, submit pull requests, or deploy the static build to any host that serves Cross-Origin Isolation (COOP/COEP) headers. See CONTRIBUTING.md for development guidelines.',
   },
 ];
 
@@ -109,7 +109,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto">
-          Direct answers on privacy, local processing performance, and licensing.
+          Direct answers on privacy, local processing performance, and open-source licensing.
         </p>
       </div>
 

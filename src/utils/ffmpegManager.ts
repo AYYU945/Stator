@@ -19,7 +19,6 @@ if (typeof window !== 'undefined' && !(window as any).__workerShimmed) {
 
 import { calculateReductionBadge } from './converter.ts';
 import { PresetSettings } from '../types/queue.ts';
-import { getStoredLicense, FREE_LIMITS } from '../lib/license.ts';
 
 export type WasmStatus = 'loading' | 'active' | 'ready' | 'idle' | 'error';
 
@@ -124,6 +123,8 @@ class FFmpegManager {
         return 'video/x-matroska';
       case 'mov':
         return 'video/quicktime';
+      case 'avi':
+        return 'video/x-msvideo';
       default:
         return 'application/octet-stream';
     }
@@ -197,27 +198,26 @@ class FFmpegManager {
         channelArgs.push('-ac', '2');
       }
 
-      // Configure hardware concurrency allocation:
-      // Pro users get full multi-core threads (navigator.hardwareConcurrency || 4)
-      // Free users are capped to FREE_LIMITS.hardwareThreads (2 threads)
-      const currentLicense = getStoredLicense();
-      const allocatedThreads = currentLicense.isPro
-        ? (typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4)
-        : FREE_LIMITS.hardwareThreads;
+      // Allocate full available local CPU concurrency for WebAssembly transcoding
+      const allocatedThreads =
+        typeof navigator !== 'undefined'
+          ? Math.min(8, navigator.hardwareConcurrency || 4)
+          : 4;
       const threadArgs = ['-threads', allocatedThreads.toString()];
 
       const normInputExt = inputExt.toLowerCase();
       const normTargetExt = ext.toLowerCase();
 
-      // Check if Fast-Path Stream Remuxing can be used:
-      // Compatible containers with no video resolution, framerate, or audio filter modifications
       const hasVideoTransform = Boolean(
         videoScaleFilter ||
         (preset?.fpsLimiter && preset.fpsLimiter !== 'original') ||
+        preset?.videoBitrate === 'high' ||
+        preset?.videoBitrate === 'balanced' ||
         preset?.videoBitrate === 'compact'
       );
       const hasAudioTransform = Boolean(
         preset?.videoAudioBitrate === 'mute' ||
+        (preset?.videoAudioBitrate && preset.videoAudioBitrate !== 'original') ||
         Boolean(preset?.audioChannels) ||
         (preset?.audioBitrate && preset.audioBitrate !== '192k')
       );
@@ -299,6 +299,8 @@ class FFmpegManager {
           // Audio stream handling: use stream copy if audio settings are unchanged
           if (preset?.videoAudioBitrate === 'mute') {
             args.push('-an');
+          } else if (preset?.videoAudioBitrate && preset.videoAudioBitrate !== 'original') {
+            args.push('-c:a', 'aac', '-b:a', preset.videoAudioBitrate);
           } else if (
             normInputExt === 'mp4' ||
             normInputExt === 'm4v' ||
@@ -308,8 +310,7 @@ class FFmpegManager {
             // Keep source audio intact using -c:a copy
             args.push('-c:a', 'copy');
           } else {
-            const vAudio = preset?.videoAudioBitrate && preset.videoAudioBitrate !== 'original' ? preset.videoAudioBitrate : audioBitrate;
-            args.push('-c:a', 'aac', '-b:a', vAudio);
+            args.push('-c:a', 'aac', '-b:a', audioBitrate);
           }
           args.push(outputName);
 
@@ -331,8 +332,60 @@ class FFmpegManager {
           if (exitCode !== 0) {
             await ffmpeg.exec(['-i', inputName, outputName]);
           }
+        } else if (cleanTarget === 'MOV') {
+          let crf = '18';
+          if (preset?.videoBitrate === 'lossless') crf = '0';
+          else if (preset?.videoBitrate === 'balanced') crf = '23';
+          else if (preset?.videoBitrate === 'compact') crf = '28';
+
+          const args: string[] = ['-i', inputName, ...threadArgs];
+          if (videoScaleFilter) {
+            args.push('-vf', videoScaleFilter);
+          }
+          if (preset?.fpsLimiter && preset.fpsLimiter !== 'original') {
+            args.push('-r', preset.fpsLimiter);
+          }
+          args.push(
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', crf,
+            '-pix_fmt', 'yuv420p'
+          );
+          if (preset?.videoAudioBitrate === 'mute') {
+            args.push('-an');
+          } else if (preset?.videoAudioBitrate && preset.videoAudioBitrate !== 'original') {
+            args.push('-c:a', 'aac', '-b:a', preset.videoAudioBitrate);
+          } else {
+            args.push('-c:a', 'aac', '-b:a', audioBitrate);
+          }
+          args.push(outputName);
+          const exitCode = await ffmpeg.exec(args);
+          if (exitCode !== 0) {
+            await ffmpeg.exec(['-i', inputName, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', outputName]);
+          }
+        } else if (cleanTarget === 'AVI') {
+          const args: string[] = ['-i', inputName, ...threadArgs];
+          if (videoScaleFilter) {
+            args.push('-vf', videoScaleFilter);
+          }
+          if (preset?.fpsLimiter && preset.fpsLimiter !== 'original') {
+            args.push('-r', preset.fpsLimiter);
+          }
+          args.push('-c:v', 'mpeg4', '-vtag', 'xvid');
+          if (preset?.videoAudioBitrate === 'mute') {
+            args.push('-an');
+          } else if (preset?.videoAudioBitrate && preset.videoAudioBitrate !== 'original') {
+            args.push('-c:a', 'libmp3lame', '-b:a', preset.videoAudioBitrate);
+          } else {
+            args.push('-c:a', 'libmp3lame', '-b:a', '192k');
+          }
+          args.push(outputName);
+          const exitCode = await ffmpeg.exec(args);
+          if (exitCode !== 0) {
+            await ffmpeg.exec(['-i', inputName, outputName]);
+          }
         } else if (cleanTarget === 'MP3') {
-          const args = ['-i', inputName, '-vn', '-c:a', 'libmp3lame', '-b:a', audioBitrate, ...channelArgs, outputName];
+          const args = ['-i', inputName, '-vn', '-c:a', 'libmp3lame', '-q:a', '2', ...channelArgs, outputName];
           const exitCode = await ffmpeg.exec(args);
           if (exitCode !== 0) {
             await ffmpeg.exec(['-i', inputName, outputName]);
@@ -361,7 +414,7 @@ class FFmpegManager {
             await ffmpeg.exec(['-i', inputName, outputName]);
           }
         } else if (cleanTarget === 'WAV') {
-          const args = ['-i', inputName, '-vn', ...channelArgs, outputName];
+          const args = ['-i', inputName, '-vn', '-c:a', 'pcm_s16le', ...channelArgs, outputName];
           const exitCode = await ffmpeg.exec(args);
           if (exitCode !== 0) {
             throw new Error(`WAV export exited with error code ${exitCode}`);

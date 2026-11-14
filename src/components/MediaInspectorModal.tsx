@@ -11,7 +11,6 @@ import {
   FileText,
   RotateCcw,
   Loader2,
-  Lock,
 } from 'lucide-react';
 import {
   QueueItem,
@@ -21,7 +20,6 @@ import {
 import { CustomSelect } from './CustomSelect.tsx';
 import { calculateTargetDimensions } from '../utils/converter.ts';
 import { resolutionToResizeKey } from '../lib/presets.ts';
-import { useLicense } from '../lib/license.ts';
 
 interface MediaInspectorModalProps {
   isOpen: boolean;
@@ -65,15 +63,15 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
   onStartConversion,
   onCancelConversion,
 }) => {
-  const { isPro, openProModal } = useLicense();
   const [localSettings, setLocalSettings] = useState<PresetSettings>(DEFAULT_PRESET_SETTINGS);
   const [localFormat, setLocalFormat] = useState<string>('WEBP');
   const [pngEffort, setPngEffort] = useState<number>(7);
-  const [naturalWidth, setNaturalWidth] = useState<number | null>(null);
-  const [naturalHeight, setNaturalHeight] = useState<number | null>(null);
+  const [sourceWidth, setSourceWidth] = useState<number | null>(null);
+  const [sourceHeight, setSourceHeight] = useState<number | null>(null);
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const lastItemIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -87,9 +85,11 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
     }
   }, [isOpen]);
 
-  // Sync state when item changes or modal opens
+  // Sync state ONLY when modal opens or item.id changes to prevent controls from getting stuck
   useEffect(() => {
-    if (item) {
+    if (item && item.id !== lastItemIdRef.current) {
+      lastItemIdRef.current = item.id;
+
       const mergedSettings: PresetSettings = {
         ...DEFAULT_PRESET_SETTINGS,
         ...(item.presetSettings || {}),
@@ -97,88 +97,99 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
       if (item.quality !== undefined) {
         mergedSettings.imageQuality = item.quality;
       }
-      if (item.resolution !== undefined) {
+      if (item.presetSettings?.videoResolution) {
+        mergedSettings.videoResolution = item.presetSettings.videoResolution;
+      } else if (item.resolution && item.typeCategory === 'video') {
+        const resizeKey = resolutionToResizeKey(item.resolution);
+        mergedSettings.videoResolution = resizeKey === 'custom' ? 'original' : (resizeKey as any);
+      }
+      if (item.presetSettings?.imageResize) {
+        mergedSettings.imageResize = item.presetSettings.imageResize;
+      } else if (item.resolution && item.typeCategory === 'image') {
         const resizeKey = resolutionToResizeKey(item.resolution);
         mergedSettings.imageResize = resizeKey;
-        mergedSettings.videoResolution = resizeKey === 'custom' ? 'original' : (resizeKey as any);
       }
       if (item.stripExif !== undefined) {
         mergedSettings.stripMetadata = item.stripExif;
       }
 
       setLocalSettings(mergedSettings);
-      setLocalFormat(item.targetFormat || (item.typeCategory === 'image' ? 'WEBP' : item.typeCategory === 'video' ? 'MP4' : 'MP3'));
+      setLocalFormat(
+        item.targetFormat ||
+          (item.typeCategory === 'image' ? 'WEBP' : item.typeCategory === 'video' ? 'MP4' : 'MP3')
+      );
 
-      // If dimensions exist on item, parse them
+      // Parse and preserve immutable source dimensions
       const isSonyDemo =
         item.name.toLowerCase().includes('portrait') ||
         item.name.toLowerCase().includes('raw') ||
         (item.dimensions && item.dimensions.includes('6000'));
 
+      const is4KDemo =
+        item.name.toLowerCase().includes('4k') ||
+        (item.technicalTag && (item.technicalTag.includes('3840') || item.technicalTag.includes('4K'))) ||
+        (item.dimensions && (item.dimensions.includes('3840') || item.dimensions.includes('4K')));
+
       if (isSonyDemo) {
-        setNaturalWidth(6000);
-        setNaturalHeight(4000);
-      } else if (item.dimensions) {
-        const parts = item.dimensions.split('×').map((s) => parseInt(s.trim(), 10));
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          setNaturalWidth(parts[0]);
-          setNaturalHeight(parts[1]);
+        setSourceWidth(6000);
+        setSourceHeight(4000);
+      } else if (is4KDemo) {
+        setSourceWidth(3840);
+        setSourceHeight(2160);
+      } else {
+        const rawDim = item.dimensions || '';
+        const rawTag = item.technicalTag || '';
+        const match =
+          rawDim.match(/(\d{2,5})\s*[x×]\s*(\d{2,5})/i) ||
+          rawTag.match(/(\d{2,5})\s*[x×]\s*(\d{2,5})/i);
+        if (match) {
+          setSourceWidth(parseInt(match[1], 10));
+          setSourceHeight(parseInt(match[2], 10));
+        } else if (rawDim.includes('1080p') || rawTag.includes('1080p') || item.name.includes('recording')) {
+          setSourceWidth(1920);
+          setSourceHeight(1080);
+        } else if (rawDim.includes('720p') || rawTag.includes('720p')) {
+          setSourceWidth(1280);
+          setSourceHeight(720);
+        } else if (rawDim.includes('4K') || rawDim.includes('2160p')) {
+          setSourceWidth(3840);
+          setSourceHeight(2160);
+        } else if (rawDim.includes('2K') || rawDim.includes('1440p')) {
+          setSourceWidth(2560);
+          setSourceHeight(1440);
+        } else if (item.typeCategory === 'video') {
+          setSourceWidth(1920);
+          setSourceHeight(1080);
+        } else {
+          setSourceWidth(null);
+          setSourceHeight(null);
         }
-      } else {
-        setNaturalWidth(null);
-        setNaturalHeight(null);
-      }
-    }
-  }, [item]);
-
-  // Dynamically calculate natural dimensions for images or videos
-  useEffect(() => {
-    if (!item) return;
-
-    const isSonyDemo =
-      item.name.toLowerCase().includes('portrait') ||
-      item.name.toLowerCase().includes('raw');
-
-    if (item.typeCategory === 'image') {
-      if (isSonyDemo) {
-        setNaturalWidth(6000);
-        setNaturalHeight(4000);
-        return;
       }
 
-      const previewSrc =
-        item.previewUrl ||
-        (item.file && item.file.type.startsWith('image/') ? URL.createObjectURL(item.file) : null) ||
-        DEMO_PREVIEW_IMG;
-
-      if (previewSrc === DEMO_PREVIEW_IMG) {
-        setNaturalWidth(6000);
-        setNaturalHeight(4000);
-      } else if (previewSrc) {
-        const img = new Image();
-        img.onload = () => {
-          if (img.naturalWidth === 1200 && img.naturalHeight === 800) {
-            setNaturalWidth(6000);
-            setNaturalHeight(4000);
-          } else {
-            setNaturalWidth(img.naturalWidth);
-            setNaturalHeight(img.naturalHeight);
-          }
-        };
-        img.src = previewSrc;
-      }
-    } else if (item.typeCategory === 'video') {
+      // If a real source File is available, measure intrinsic source dimensions once
       if (item.file) {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.onloadedmetadata = () => {
-          setNaturalWidth(video.videoWidth || 3840);
-          setNaturalHeight(video.videoHeight || 2160);
-        };
-        video.src = URL.createObjectURL(item.file);
-      } else {
-        setNaturalWidth(3840);
-        setNaturalHeight(2160);
+        if (item.typeCategory === 'image') {
+          const url = URL.createObjectURL(item.file);
+          const img = new Image();
+          img.onload = () => {
+            setSourceWidth(img.naturalWidth);
+            setSourceHeight(img.naturalHeight);
+            URL.revokeObjectURL(url);
+          };
+          img.src = url;
+        } else if (item.typeCategory === 'video') {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          const url = URL.createObjectURL(item.file);
+          video.onloadedmetadata = () => {
+            if (video.videoWidth && video.videoHeight) {
+              setSourceWidth(video.videoWidth);
+              setSourceHeight(video.videoHeight);
+            }
+            URL.revokeObjectURL(url);
+          };
+          video.src = url;
+        }
       }
     }
   }, [item]);
@@ -248,6 +259,12 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
           ? 'image/webp'
           : fileExt === 'avif'
           ? 'image/avif'
+          : fileExt === 'ico'
+          ? 'image/x-icon'
+          : fileExt === 'tiff' || fileExt === 'tif'
+          ? 'image/tiff'
+          : fileExt === 'bmp'
+          ? 'image/bmp'
           : `image/${fileExt || 'jpeg'}`;
     } else if (item.typeCategory === 'video') {
       computedMime =
@@ -257,6 +274,8 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
           ? 'video/webm'
           : fileExt === 'mkv'
           ? 'video/x-matroska'
+          : fileExt === 'avi'
+          ? 'video/x-msvideo'
           : `video/${fileExt || 'mp4'}`;
     } else if (item.typeCategory === 'audio') {
       computedMime =
@@ -276,8 +295,59 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
     }
   }
 
+  const getTargetMime = (fmt: string): string => {
+    switch (fmt.toUpperCase()) {
+      case 'MOV':
+        return 'video/quicktime';
+      case 'AVI':
+        return 'video/x-msvideo';
+      case 'MP4':
+        return 'video/mp4';
+      case 'WEBM':
+        return 'video/webm';
+      case 'MKV':
+        return 'video/x-matroska';
+      case 'GIF':
+        return 'image/gif';
+      case 'MP3':
+        return 'audio/mpeg';
+      case 'WAV':
+        return 'audio/wav';
+      case 'AAC':
+        return 'audio/aac';
+      case 'OGG':
+        return 'audio/ogg';
+      case 'FLAC':
+        return 'audio/flac';
+      case 'ICO':
+        return 'image/x-icon';
+      case 'TIFF':
+      case 'TIF':
+        return 'image/tiff';
+      case 'BMP':
+        return 'image/bmp';
+      case 'PNG':
+        return 'image/png';
+      case 'JPEG':
+      case 'JPG':
+        return 'image/jpeg';
+      case 'WEBP':
+        return 'image/webp';
+      case 'AVIF':
+        return 'image/avif';
+      case 'PDF':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
+    }
+  };
+
+  const isAudioExtraction =
+    item.typeCategory === 'video' && (localFormat === 'MP3' || localFormat === 'WAV');
+  const targetMime = getTargetMime(localFormat);
+
   const aspectRatio =
-    naturalWidth && naturalHeight ? calculateAspectRatio(naturalWidth, naturalHeight) : 'N/A';
+    sourceWidth && sourceHeight ? calculateAspectRatio(sourceWidth, sourceHeight) : 'N/A';
 
   const is4K =
     (item.typeCategory === 'image' && localSettings.imageResize === '4K') ||
@@ -290,8 +360,8 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
     item.typeCategory === 'image'
       ? localSettings.imageResize
       : localSettings.videoResolution;
-  const baseW = naturalWidth || (item.typeCategory === 'video' ? 1920 : 1280);
-  const baseH = naturalHeight || (item.typeCategory === 'video' ? 1080 : 720);
+  const baseW = sourceWidth || (item.typeCategory === 'video' ? 1920 : 1280);
+  const baseH = sourceHeight || (item.typeCategory === 'video' ? 1080 : 720);
   const targetDims = calculateTargetDimensions(
     baseW,
     baseH,
@@ -427,27 +497,36 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
                 <span className="text-zinc-500 dark:text-zinc-400">Source Resolution</span>
                 <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium">
-                  {naturalWidth && naturalHeight ? `${naturalWidth} × ${naturalHeight}` : item.dimensions || 'Dynamic Audio/Vector'}
+                  {sourceWidth && sourceHeight
+                    ? `${sourceWidth} × ${sourceHeight}`
+                    : item.dimensions || 'Dynamic Audio/Vector'}
                 </span>
               </div>
               {(item.typeCategory === 'image' || item.typeCategory === 'video') && (
                 <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
                   <span className="text-zinc-500 dark:text-zinc-400">Target Output</span>
-                  <div className="flex items-center gap-1.5">
-                    {is4K && (
-                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
-                        4K UHD (Lanczos)
-                      </span>
-                    )}
-                    {is2K && (
-                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
-                        2K QHD (Lanczos)
-                      </span>
-                    )}
-                    <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium">
-                      {targetDims.w} × {targetDims.h}
+                  {isAudioExtraction ? (
+                    <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium flex items-center gap-1.5">
+                      <Music className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
+                      Audio Stream ({localFormat})
                     </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      {is4K && (
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
+                          4K UHD (Lanczos)
+                        </span>
+                      )}
+                      {is2K && (
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#171717] border border-zinc-300 dark:border-neutral-800 text-zinc-800 dark:text-zinc-200 text-[10px] font-medium font-mono tabular-nums">
+                          2K QHD (Lanczos)
+                        </span>
+                      )}
+                      <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-200 font-medium">
+                        {targetDims.w} × {targetDims.h}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
@@ -459,9 +538,9 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                 <span className="font-mono tabular-nums text-zinc-900 dark:text-white font-medium">{item.sizeFormatted}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">MIME Type</span>
-                <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-300 font-medium truncate max-w-[200px]" title={computedMime}>
-                  {computedMime}
+                <span className="text-zinc-500 dark:text-zinc-400">Target MIME</span>
+                <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-300 font-medium truncate max-w-[200px]" title={targetMime}>
+                  {targetMime}
                 </span>
               </div>
             </div>
@@ -486,16 +565,16 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block mb-2">
                       Target Format
                     </label>
-                    <div className="grid grid-cols-4 gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-                      {['WEBP', 'PNG', 'JPEG', 'AVIF'].map((fmt) => (
+                    <div className="grid grid-cols-4 gap-1.5 w-full">
+                      {['WEBP', 'PNG', 'JPEG', 'AVIF', 'ICO', 'TIFF', 'BMP'].map((fmt) => (
                         <button
                           key={fmt}
                           type="button"
                           onClick={() => handleFormatSelect(fmt)}
-                          className={`py-1.5 text-xs font-medium rounded-md transition-colors text-center cursor-pointer ${
+                          className={`text-xs py-1.5 rounded-md transition-colors text-center cursor-pointer ${
                             localFormat === fmt
-                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                              ? 'bg-white text-neutral-950 font-medium shadow-sm'
+                              : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800'
                           }`}
                         >
                           {fmt}
@@ -504,7 +583,7 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Quality slider for Lossy formats OR Lossless Card for PNG */}
+                  {/* Encoder Behavior: Lossless Cards for PNG/ICO/TIFF/BMP OR Quality slider for Lossy formats (WEBP/JPEG/AVIF) */}
                   {localFormat === 'PNG' ? (
                     <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800 space-y-3">
                       <div className="flex items-center justify-between">
@@ -543,6 +622,48 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                           ))}
                         </div>
                       </div>
+                    </div>
+                  ) : localFormat === 'ICO' ? (
+                    <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+                          Multi-Resolution Icon Asset (.ico)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono tabular-nums font-semibold bg-zinc-100 dark:bg-neutral-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-neutral-700 uppercase">
+                          Lossless Mipmaps
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Packages 16×16, 32×32, and 48×48 icon mipmaps with 32-bit alpha transparency into a standard Windows icon container.
+                      </p>
+                    </div>
+                  ) : localFormat === 'TIFF' ? (
+                    <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+                          Baseline Uncompressed TIFF (.tiff)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono tabular-nums font-semibold bg-zinc-100 dark:bg-neutral-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-neutral-700 uppercase">
+                          Lossless Raw
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Bit-exact 32-bit raster buffer packed with standard baseline IFD directory headers without lossy quantization.
+                      </p>
+                    </div>
+                  ) : localFormat === 'BMP' ? (
+                    <div className="p-3.5 rounded-md bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-neutral-800 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+                          Windows Bitmap (.bmp)
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono tabular-nums font-semibold bg-zinc-100 dark:bg-neutral-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-neutral-700 uppercase">
+                          Lossless
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Uncompressed 24-bit RGB raster format with standard BITMAPINFOHEADER structure.
+                      </p>
                     </div>
                   ) : (
                     <div>
@@ -594,41 +715,27 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                       {[
-                        { id: 'original', label: 'Original', isGated: false },
-                        { id: '4K', label: '4K (2160p)', isGated: true },
-                        { id: '2K', label: '2K (1440p)', isGated: true },
-                        { id: '1080p', label: '1080p', isGated: false },
-                        { id: '720p', label: '720p', isGated: false },
-                      ].map((res) => {
-                        const isLocked = !isPro && res.isGated;
-                        const handleSelect = () => {
-                          if (isLocked) {
-                            openProModal('Resolution upscaling beyond 1080p requires Stator Pro.');
-                            return;
-                          }
-                          updateSetting('imageResize', res.id as any);
-                        };
-
-                        return (
-                          <button
-                            key={res.id}
-                            type="button"
-                            onClick={handleSelect}
-                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center font-mono tabular-nums ${
-                              localSettings.imageResize === res.id
-                                ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
-                                : isLocked
-                                ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
-                                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                            }`}
-                          >
-                            <span>{res.label}</span>
-                            {isLocked && (
-                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
-                            )}
-                          </button>
-                        );
-                      })}
+                        { id: 'original', label: 'Original' },
+                        { id: '4K', label: '4K (2160p)' },
+                        { id: '2K', label: '2K (1440p)' },
+                        { id: '1080p', label: '1080p' },
+                        { id: '720p', label: '720p' },
+                      ].map((res) => (
+                        <button
+                          key={res.id}
+                          type="button"
+                          onClick={() => updateSetting('imageResize', res.id as any)}
+                          className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                            res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
+                          } ${
+                            localSettings.imageResize === res.id
+                              ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
+                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                          }`}
+                        >
+                          <span className={res.id === 'original' ? 'font-sans' : 'font-mono'}>{res.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -689,16 +796,16 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     <label className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block mb-2">
                       Target Format
                     </label>
-                    <div className="grid grid-cols-4 gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md">
-                      {['MP4', 'WEBM', 'MKV', 'GIF'].map((fmt) => (
+                    <div className="grid grid-cols-4 gap-1.5 w-full">
+                      {['MP4', 'WEBM', 'MOV', 'MKV', 'GIF', 'AVI', 'MP3', 'WAV'].map((fmt) => (
                         <button
                           key={fmt}
                           type="button"
                           onClick={() => handleFormatSelect(fmt)}
-                          className={`py-1.5 text-xs font-medium rounded-md transition-colors text-center cursor-pointer ${
+                          className={`text-xs py-1.5 rounded-md transition-colors text-center cursor-pointer ${
                             localFormat === fmt
-                              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-xs'
-                              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                              ? 'bg-white text-neutral-950 font-medium shadow-sm'
+                              : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800'
                           }`}
                         >
                           {fmt}
@@ -707,110 +814,131 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Preset profile - Harmonized 2-line cards matching Global Presets */}
-                  <div>
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block mb-1.5">
-                      Video Encoding Profile (CRF / Bitrate)
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { id: 'lossless', label: 'Lossless Pro', sub: 'Original Stream' },
-                        { id: 'high', label: 'High Quality', sub: 'CRF 18, Pristine' },
-                        { id: 'balanced', label: 'Balanced', sub: 'CRF 23, Recommended' },
-                        { id: 'compact', label: 'Compact Web', sub: 'CRF 28, Small File' },
-                      ].map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => updateSetting('videoBitrate', p.id as any)}
-                          className={`p-2.5 text-left rounded-md border transition-colors cursor-pointer ${
-                            localSettings.videoBitrate === p.id
-                              ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-white font-semibold shadow-xs'
-                              : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-700'
-                          }`}
-                        >
-                          <div className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center justify-between">
-                            <span>{p.label}</span>
-                            {localSettings.videoBitrate === p.id && (
-                              <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-200" />
-                            )}
-                          </div>
-                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">
-                            {p.sub}
-                          </div>
-                        </button>
-                      ))}
+                  {/* Audio extraction badge when MP3 or WAV is selected */}
+                  {isAudioExtraction ? (
+                    <div className="flex items-center gap-2 p-2.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs">
+                      <Music className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span className="font-medium text-neutral-200">Extracting audio track from video stream</span>
+                      <span className="text-[10px] text-neutral-400 font-mono ml-auto">Audio demux (-vn)</span>
                     </div>
-                  </div>
-
-                  {/* Resolution scale */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300">
-                        Resolution Scaling
-                      </span>
-                      {(localSettings.videoResolution === '4K' || localSettings.videoResolution === '2K') && (
-                        <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
-                          {localSettings.videoResolution === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
+                  ) : (
+                    <>
+                      {/* Preset profile - Harmonized 2-line cards matching Global Presets */}
+                      <div>
+                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block mb-1.5">
+                          Video Encoding Profile (CRF / Bitrate)
                         </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                      {[
-                        { id: 'original', label: 'Original', isGated: false },
-                        { id: '4K', label: '4K (2160p)', isGated: true },
-                        { id: '2K', label: '2K (1440p)', isGated: true },
-                        { id: '1080p', label: '1080p', isGated: false },
-                        { id: '720p', label: '720p', isGated: false },
-                      ].map((res) => {
-                        const isLocked = !isPro && res.isGated;
-                        const handleSelect = () => {
-                          if (isLocked) {
-                            openProModal('Resolution upscaling beyond 1080p requires Stator Pro.');
-                            return;
-                          }
-                          updateSetting('videoResolution', res.id as any);
-                        };
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'lossless', label: 'Lossless Copy', sub: 'Original Stream' },
+                            { id: 'high', label: 'High Quality', sub: 'CRF 18, Pristine' },
+                            { id: 'balanced', label: 'Balanced', sub: 'CRF 23, Recommended' },
+                            { id: 'compact', label: 'Compact Web', sub: 'CRF 28, Small File' },
+                          ].map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => updateSetting('videoBitrate', p.id as any)}
+                              className={`p-2.5 text-left rounded-md border transition-colors cursor-pointer ${
+                                localSettings.videoBitrate === p.id
+                                  ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-white font-semibold shadow-xs'
+                                  : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-700'
+                              }`}
+                            >
+                              <div className="text-xs font-semibold text-zinc-900 dark:text-white flex items-center justify-between">
+                                <span>{p.label}</span>
+                                {localSettings.videoBitrate === p.id && (
+                                  <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-200" />
+                                )}
+                              </div>
+                              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums mt-0.5">
+                                {p.sub}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        {/* Lossless Copy notice if active */}
+                        {localSettings.videoBitrate === 'lossless' && (
+                          <div className="mt-2 bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs p-2.5 rounded-md">
+                            <span className="font-semibold text-neutral-200">Lossless Copy active: </span>
+                            <span>Resolution & audio adjustments require re-encoding (switches from Lossless Copy to High Quality).</span>
+                          </div>
+                        )}
+                      </div>
 
-                        return (
-                          <button
-                            key={res.id}
-                            type="button"
-                            onClick={handleSelect}
-                            className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center font-mono tabular-nums ${
-                              localSettings.videoResolution === res.id
-                                ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
-                                : isLocked
-                                ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
-                                : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                            }`}
-                          >
-                            <span>{res.label}</span>
-                            {isLocked && (
-                              <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                      {/* Resolution scale */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300">
+                            Resolution Scaling
+                          </span>
+                          {(localSettings.videoResolution === '4K' || localSettings.videoResolution === '2K') && (
+                            <span className="text-[11px] font-mono tabular-nums text-zinc-700 dark:text-zinc-300">
+                              {localSettings.videoResolution === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                          {[
+                            { id: 'original', label: 'Original' },
+                            { id: '4K', label: '4K (2160p)' },
+                            { id: '2K', label: '2K (1440p)' },
+                            { id: '1080p', label: '1080p' },
+                            { id: '720p', label: '720p' },
+                          ].map((res) => {
+                            const handleSelect = () => {
+                              const updated = {
+                                ...localSettings,
+                                videoResolution: res.id as any,
+                              };
+                              // If in lossless mode and user selects a downscale resolution,
+                              // automatically switch presetProfile from Lossless Copy to High Quality
+                              if (localSettings.videoBitrate === 'lossless' && res.id !== 'original') {
+                                updated.videoBitrate = 'high';
+                              }
+                              setLocalSettings(updated);
+                              onUpdatePresetSettings(item.id, updated);
+                            };
 
-                  {/* Frame rate cap */}
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block">
-                      Frame Rate Cap
-                    </span>
-                    <CustomSelect
-                      value={localSettings.fpsLimiter}
-                      onChange={(fps) => updateSetting('fpsLimiter', fps as any)}
-                      options={[
-                        { value: 'original', label: 'Source FPS', description: 'Preserve input frame rate' },
-                        { value: '60', label: '60 fps (Smooth)', description: 'High framerate' },
-                        { value: '30', label: '30 fps (Standard)', description: 'Standard playback' },
-                        { value: '24', label: '24 fps (Cinematic)', description: 'Motion picture rate' },
-                      ]}
-                    />
-                  </div>
+                            return (
+                              <button
+                                key={res.id}
+                                type="button"
+                                onClick={handleSelect}
+                                className={`py-1.5 px-1 text-xs font-medium rounded-md border transition-colors cursor-pointer text-center flex items-center justify-center ${
+                                  res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
+                                } ${
+                                  localSettings.videoResolution === res.id
+                                    ? 'bg-zinc-900 text-white font-semibold border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-xs'
+                                    : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                                }`}
+                              >
+                                <span className={res.id === 'original' ? 'font-sans' : 'font-mono'}>{res.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Frame rate cap */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-300 block">
+                          Frame Rate Cap
+                        </span>
+                        <CustomSelect
+                          value={localSettings.fpsLimiter}
+                          onChange={(fps) => updateSetting('fpsLimiter', fps as any)}
+                          options={[
+                            { value: 'original', label: 'Source FPS', description: 'Preserve input frame rate' },
+                            { value: '120', label: '120 fps (Ultra Smooth)', description: 'Ultra high refresh rate' },
+                            { value: '60', label: '60 fps (Smooth)', description: 'High framerate' },
+                            { value: '30', label: '30 fps (Standard)', description: 'Standard playback' },
+                            { value: '24', label: '24 fps (Cinematic)', description: 'Motion picture rate' },
+                          ]}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Audio bitrate */}
                   <div className="space-y-1.5">
@@ -819,12 +947,25 @@ export const MediaInspectorModal: React.FC<MediaInspectorModalProps> = ({
                     </span>
                     <CustomSelect
                       value={localSettings.videoAudioBitrate || 'original'}
-                      onChange={(ab) => updateSetting('videoAudioBitrate', ab as any)}
+                      onChange={(ab) => {
+                        const updated = {
+                          ...localSettings,
+                          videoAudioBitrate: ab as any,
+                        };
+                        // If an audio bitrate other than "Keep Original" or "Mute" is selected while in Lossless Copy mode,
+                        // automatically switch profile to High Quality so the audio re-encoding pipeline activates.
+                        if (localSettings.videoBitrate === 'lossless' && ab !== 'original' && ab !== 'mute') {
+                          updated.videoBitrate = 'high';
+                        }
+                        setLocalSettings(updated);
+                        onUpdatePresetSettings(item.id, updated);
+                      }}
                       options={[
                         { value: 'original', label: 'Keep Original Audio Stream' },
                         { value: '320k', label: '320 kbps (Studio Master)' },
                         { value: '192k', label: '192 kbps (High Fidelity)' },
                         { value: '128k', label: '128 kbps (Standard)' },
+                        { value: '64k', label: '64 kbps (Compact)' },
                         { value: 'mute', label: 'Mute Audio Track' },
                       ]}
                     />

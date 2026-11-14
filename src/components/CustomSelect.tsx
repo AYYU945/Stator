@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Lock } from 'lucide-react';
 
 export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  isLocked?: boolean;
 }
 
 export interface CustomSelectProps {
   value: string;
   onChange: (value: string) => void;
+  onLockedSelect?: (option: SelectOption) => void;
   options: SelectOption[];
   placeholder?: string;
   className?: string;
@@ -21,6 +23,7 @@ export interface CustomSelectProps {
 export const CustomSelect: React.FC<CustomSelectProps> = ({
   value,
   onChange,
+  onLockedSelect,
   options,
   placeholder = 'Select option...',
   className = '',
@@ -104,15 +107,31 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 key={option.value}
                 role="option"
                 aria-selected={isSelected}
-                onClick={() => handleSelect(option.value)}
+                onClick={() => {
+                  if (option.isLocked) {
+                    if (onLockedSelect) {
+                      onLockedSelect(option);
+                    }
+                    setIsOpen(false);
+                    return;
+                  }
+                  handleSelect(option.value);
+                }}
                 className={`flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer transition-colors duration-100 ease-out ${
                   isSelected
                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium'
+                    : option.isLocked
+                    ? 'text-zinc-400 dark:text-neutral-400 hover:bg-zinc-100 dark:hover:bg-zinc-850'
                     : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-white'
                 }`}
               >
                 <div className="flex flex-col min-w-0 pr-2">
-                  <span className="truncate">{option.label}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate">{option.label}</span>
+                    {option.isLocked && (
+                      <Lock className="w-3 h-3 text-zinc-400 dark:text-neutral-500 shrink-0" />
+                    )}
+                  </div>
                   {option.description && (
                     <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                       {option.description}

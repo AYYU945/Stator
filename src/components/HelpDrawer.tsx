@@ -25,7 +25,7 @@ const ENGINE_PRIVACY_FAQS: FaqItemData[] = [
     id: 'file-size-limit',
     question: 'Is there a file size limit?',
     answer:
-      "Free accounts can process files up to 2 GB. Stator Pro handles files up to 4 GB, bounded only by your browser's available memory (RAM) and 32-bit WebAssembly heap allocations. For optimal stability with multi-gigabyte 4K footage, we recommend closing unused browser tabs.",
+      "Stator enforces no arbitrary file size caps. Maximum file size (typically up to 2–4 GB) is bounded only by your browser's available memory (RAM) and 32-bit WebAssembly heap allocations. For optimal stability with multi-gigabyte 4K footage, we recommend closing unused browser tabs.",
   },
   {
     id: 'offline-use',
@@ -54,32 +54,38 @@ const ENGINE_PRIVACY_FAQS: FaqItemData[] = [
   },
 ];
 
-const LICENSING_PRO_FAQS: FaqItemData[] = [
+const OPEN_SOURCE_FAQS: FaqItemData[] = [
   {
-    id: 'free-vs-pro',
-    question: 'What is the difference between the Free tier and Stator Pro?',
+    id: 'mit-license',
+    question: 'What open-source license does Stator use?',
     answer:
-      'The Free tier includes standard encoding presets, up to 1080p video exports, 2 concurrent worker threads, and a 3-file batch queue. Stator Pro unlocks 4K resolutions, full hardware thread utilization (N cores), studio-grade audio bitrates (up to 320 kbps), custom export presets, and batch queues exceeding 50 items.',
+      'Stator’s application code, UI components, and client-side pipelines are released under the permissive MIT License. You can inspect, fork, self-host, modify, and redistribute the codebase freely without paywalls or feature gates.',
   },
   {
-    id: 'lifetime-pass',
-    question: 'How does the Lifetime Pass work?',
+    id: 'all-features-unlocked',
+    question: 'Are 4K scaling, 120 FPS, or high-bitrate audio locked?',
     answer:
-      'The Lifetime Pass is a single, one-time payment of €59. It grants perpetual access to all current and upcoming Pro features with no recurring monthly software debt. You receive a cryptographic license key that verifies locally in your browser.',
+      'No. All encoding presets, 4K (2160p) and 2K (1440p) scaling, 120 FPS output, 320 kbps audio encoding, full hardware CPU thread allocation, and unlimited batch queues are completely unlocked for everyone.',
   },
   {
-    id: 'license-transfer',
-    question: 'Can I move my license to a new computer?',
+    id: 'third-party-codecs',
+    question: 'How are FFmpeg WebAssembly codecs licensed?',
     answer:
-      'Yes. Simply enter your license key on your new device or browser to activate your entitlement. We permit reasonable multi-device use for personal setups (such as a primary workstation and a laptop).',
+      'Stator dynamically loads @ffmpeg/core in the browser at runtime. Standard FFmpeg WebAssembly builds include GPL-licensed codecs such as libx264. See the LICENSE and README.md files in the repository for complete third-party attribution and license boundary details.',
+  },
+  {
+    id: 'contribute-sponsor',
+    question: 'How can I contribute or support Stator?',
+    answer:
+      'You can report bugs, submit pull requests, or request new container/codec presets directly on GitHub. Optional community sponsorships help cover maintenance and CI infrastructure without gating any software features.',
   },
 ];
 
 export const HelpDrawer: React.FC<HelpDrawerProps> = ({ isOpen, onClose }) => {
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<'engine' | 'licensing'>('engine');
-  const [openIds, setOpenIds] = useState<string[]>(['server-upload', 'free-vs-pro']);
+  const [activeTab, setActiveTab] = useState<'engine' | 'opensource'>('engine');
+  const [openIds, setOpenIds] = useState<string[]>(['server-upload', 'mit-license']);
 
   useEffect(() => {
     if (isOpen) {
@@ -112,7 +118,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = ({ isOpen, onClose }) => {
     );
   };
 
-  const currentList = activeTab === 'engine' ? ENGINE_PRIVACY_FAQS : LICENSING_PRO_FAQS;
+  const currentList = activeTab === 'engine' ? ENGINE_PRIVACY_FAQS : OPEN_SOURCE_FAQS;
 
   return (
     <div
@@ -152,7 +158,7 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = ({ isOpen, onClose }) => {
                   Help & FAQ
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
-                  On-device processing, privacy, and licensing.
+                  On-device processing, privacy, and open source.
                 </p>
               </div>
             </div>
@@ -182,14 +188,14 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = ({ isOpen, onClose }) => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('licensing')}
+              onClick={() => setActiveTab('opensource')}
               className={`py-1.5 px-3 rounded-md text-xs font-medium transition-colors cursor-pointer text-center ${
-                activeTab === 'licensing'
+                activeTab === 'opensource'
                   ? 'bg-white dark:bg-neutral-800 text-zinc-900 dark:text-white border border-zinc-200 dark:border-neutral-700/80 shadow-xs'
                   : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-neutral-200'
               }`}
             >
-              Licensing & Pro
+              Open Source
             </button>
           </div>
         </div>

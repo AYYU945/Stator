@@ -6,11 +6,9 @@ import {
   Video,
   RotateCcw,
   Check,
-  Lock,
 } from 'lucide-react';
 import { PresetSettings, DEFAULT_PRESET_SETTINGS, FileTypeCategory } from '../../types/queue.ts';
 import { CustomSelect } from '../CustomSelect.tsx';
-import { useLicense } from '../../lib/license.ts';
 
 export interface AdvancedPresetsModalProps {
   isOpen: boolean;
@@ -20,11 +18,10 @@ export interface AdvancedPresetsModalProps {
   activeItemId: string | null;
   activeItemName?: string;
   activeCategory?: FileTypeCategory;
-  onRequirePro?: (reason: string) => void;
 }
 
-export const GATED_RESOLUTIONS = ['4K (2160p)', '2K (1440p)'];
-export const GATED_AUDIO_BITRATES = ['192 kbps', '320 kbps'];
+export const GATED_RESOLUTIONS: string[] = [];
+export const GATED_AUDIO_BITRATES: string[] = [];
 
 export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
   isOpen,
@@ -34,9 +31,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
   activeItemId,
   activeItemName,
   activeCategory,
-  onRequirePro,
 }) => {
-  const { isPro, openProModal } = useLicense();
   const [settings, setSettings] = useState<PresetSettings>(initialSettings);
   const [activeTab, setActiveTab] = useState<'image' | 'video'>(
     activeCategory === 'video' || activeCategory === 'audio' ? 'video' : 'image'
@@ -96,33 +91,21 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
     return `${quality}% (Maximum Compression)`;
   };
 
-  const handleResolutionClick = (resLabel: string, resKey: string, isVideo: boolean) => {
-    if (!isPro && GATED_RESOLUTIONS.includes(resLabel)) {
-      const reason = 'Resolution upscaling beyond 1080p requires Stator Pro.';
-      if (onRequirePro) {
-        onRequirePro(reason);
-      } else {
-        openProModal(reason);
-      }
-      return;
-    }
+  const handleResolutionClick = (_resLabel: string, resKey: string, isVideo: boolean) => {
     if (isVideo) {
-      setSettings((prev) => ({ ...prev, videoResolution: resKey as any }));
+      setSettings((prev) => {
+        const next = { ...prev, videoResolution: resKey as any };
+        if (prev.videoBitrate === 'lossless' && resKey !== 'original') {
+          next.videoBitrate = 'high';
+        }
+        return next;
+      });
     } else {
       setSettings((prev) => ({ ...prev, imageResize: resKey as any }));
     }
   };
 
-  const handleAudioBitrateClick = (bitrateKey: PresetSettings['audioBitrate'], bitrateLabel: string) => {
-    if (!isPro && GATED_AUDIO_BITRATES.includes(bitrateLabel)) {
-      const reason = 'High-fidelity audio bitrates (192 kbps and 320 kbps) require Stator Pro.';
-      if (onRequirePro) {
-        onRequirePro(reason);
-      } else {
-        openProModal(reason);
-      }
-      return;
-    }
+  const handleAudioBitrateClick = (bitrateKey: PresetSettings['audioBitrate'], _bitrateLabel: string) => {
     setSettings((prev) => ({ ...prev, audioBitrate: bitrateKey }));
   };
 
@@ -268,30 +251,22 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                   )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {RESOLUTION_OPTIONS.map((res) => {
-                    const isGated = GATED_RESOLUTIONS.includes(res.label);
-                    const isLocked = !isPro && isGated;
-
-                    return (
-                      <button
-                        key={res.id}
-                        type="button"
-                        onClick={() => handleResolutionClick(res.label, res.id, false)}
-                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
-                          settings.imageResize === res.id
-                            ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
-                            : isLocked
-                            ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
-                            : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                        }`}
-                      >
-                        <span>{res.label}</span>
-                        {isLocked && (
-                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
+                  {RESOLUTION_OPTIONS.map((res) => (
+                    <button
+                      key={res.id}
+                      type="button"
+                      onClick={() => handleResolutionClick(res.label, res.id, false)}
+                      className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                        res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
+                      } ${
+                        settings.imageResize === res.id
+                          ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                      }`}
+                    >
+                      <span className={res.id === 'original' ? 'font-sans' : 'font-mono'}>{res.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -337,7 +312,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'lossless', label: 'Lossless Pro', sub: 'Original Stream' },
+                    { id: 'lossless', label: 'Lossless Copy', sub: 'Original Stream' },
                     { id: 'high', label: 'High Quality', sub: 'CRF 18, Pristine' },
                     { id: 'balanced', label: 'Balanced', sub: 'CRF 23, Recommended' },
                     { id: 'compact', label: 'Compact Web', sub: 'CRF 28, Small File' },
@@ -367,6 +342,12 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                     </button>
                   ))}
                 </div>
+                {settings.videoBitrate === 'lossless' && (
+                  <div className="mt-2 bg-neutral-900 border border-neutral-800 text-neutral-400 text-xs p-2.5 rounded-md">
+                    <span className="font-semibold text-neutral-200">Lossless Copy active: </span>
+                    <span>Resolution & audio adjustments require re-encoding (switches from Lossless Copy to High Quality).</span>
+                  </div>
+                )}
               </div>
 
               {/* Video Resolution Scaling */}
@@ -382,30 +363,22 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                   )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {RESOLUTION_OPTIONS.map((res) => {
-                    const isGated = GATED_RESOLUTIONS.includes(res.label);
-                    const isLocked = !isPro && isGated;
-
-                    return (
-                      <button
-                        key={res.id}
-                        type="button"
-                        onClick={() => handleResolutionClick(res.label, res.id, true)}
-                        className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
-                          settings.videoResolution === res.id
-                            ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
-                            : isLocked
-                            ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
-                            : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                        }`}
-                      >
-                        <span>{res.label}</span>
-                        {isLocked && (
-                          <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
+                  {RESOLUTION_OPTIONS.map((res) => (
+                    <button
+                      key={res.id}
+                      type="button"
+                      onClick={() => handleResolutionClick(res.label, res.id, true)}
+                      className={`py-2 px-2.5 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center ${
+                        res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
+                      } ${
+                        settings.videoResolution === res.id
+                          ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                      }`}
+                    >
+                      <span className={res.id === 'original' ? 'font-sans' : 'font-mono'}>{res.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -423,6 +396,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                     }
                     options={[
                       { value: 'original', label: 'Source FPS', description: 'Preserve input frame rate' },
+                      { value: '120', label: '120 fps (Ultra Smooth)', description: 'Ultra high refresh rate' },
                       { value: '60', label: '60 fps (Smooth)', description: 'High framerate' },
                       { value: '30', label: '30 fps (Standard)', description: 'Standard playback' },
                       { value: '24', label: '24 fps (Cinematic)', description: 'Motion picture rate' },
@@ -449,32 +423,22 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                       { id: '128k', label: '128 kbps' },
                       { id: '192k', label: '192 kbps' },
                       { id: '320k', label: '320 kbps' },
-                    ].map((bitrate) => {
-                      const isGated = GATED_AUDIO_BITRATES.includes(bitrate.label);
-                      const isLocked = !isPro && isGated;
-
-                      return (
-                        <button
-                          key={bitrate.id}
-                          type="button"
-                          onClick={() =>
-                            handleAudioBitrateClick(bitrate.id as PresetSettings['audioBitrate'], bitrate.label)
-                          }
-                          className={`py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
-                            settings.audioBitrate === bitrate.id
-                              ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
-                              : isLocked
-                              ? 'bg-zinc-100 dark:bg-[#171717] text-zinc-400 dark:text-neutral-400 border border-zinc-200 dark:border-neutral-800 hover:border-zinc-300 dark:hover:border-neutral-700'
-                              : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
-                          }`}
-                        >
-                          <span>{bitrate.label}</span>
-                          {isLocked && (
-                            <Lock className="w-3 h-3 ml-1.5 inline-block text-zinc-400 dark:text-neutral-400 shrink-0" />
-                          )}
-                        </button>
-                      );
-                    })}
+                    ].map((bitrate) => (
+                      <button
+                        key={bitrate.id}
+                        type="button"
+                        onClick={() =>
+                          handleAudioBitrateClick(bitrate.id as PresetSettings['audioBitrate'], bitrate.label)
+                        }
+                        className={`py-1.5 px-1 rounded-md text-xs font-medium border transition-colors text-center cursor-pointer flex items-center justify-center font-mono tabular-nums ${
+                          settings.audioBitrate === bitrate.id
+                            ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 font-semibold shadow-xs'
+                            : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:border-zinc-800'
+                        }`}
+                      >
+                        <span>{bitrate.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

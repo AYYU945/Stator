@@ -10,7 +10,7 @@ export interface PresetSettings {
   preserveTransparency?: boolean; // default true
   videoBitrate: 'lossless' | 'high' | 'balanced' | 'compact';
   videoResolution: 'original' | '4K' | '2K' | '1080p' | '720p' | '480p';
-  fpsLimiter: 'original' | '60' | '30' | '24';
+  fpsLimiter: 'original' | '120' | '60' | '30' | '24';
   videoAudioBitrate?: 'original' | '320k' | '192k' | '128k' | '64k' | 'mute';
   audioBitrate: '320k' | '256k' | '192k' | '128k' | '64k';
   audioChannels?: 'stereo' | 'mono';
@@ -55,7 +55,7 @@ export function getPresetLabel(
     }
     switch (preset.videoBitrate) {
       case 'lossless':
-        return 'Lossless Pro';
+        return 'Lossless Copy';
       case 'high':
         return 'High (CRF 18)';
       case 'balanced':
@@ -71,7 +71,7 @@ export function getPresetLabel(
 
   // Global / general label
   return preset.videoBitrate === 'lossless'
-    ? 'Lossless Pro'
+    ? 'Lossless Copy'
     : `Quality (${preset.imageQuality}%)`;
 }
 
@@ -93,6 +93,7 @@ export interface QueueItem {
   outputBlob?: Blob;
   previewUrl?: string;
   dimensions?: string;
+  outputDimensions?: string;
   outputName?: string;
   outputSizeBytes?: number;
   outputSizeFormatted?: string;
@@ -112,8 +113,8 @@ export interface QueueItem {
 }
 
 export const TARGET_FORMAT_OPTIONS: Record<FileTypeCategory, string[]> = {
-  image: ['WEBP', 'PNG', 'JPEG', 'AVIF'],
-  video: ['MP4', 'WEBM', 'MKV', 'GIF'],
+  image: ['WEBP', 'PNG', 'JPEG', 'AVIF', 'ICO', 'TIFF', 'BMP'],
+  video: ['MP4', 'WEBM', 'MOV', 'MKV', 'GIF', 'AVI', 'MP3', 'WAV'],
   audio: ['MP3', 'WAV', 'AAC', 'OGG', 'FLAC'],
   document: ['PDF', 'TXT'],
   other: ['ZIP', 'TXT', 'BIN'],

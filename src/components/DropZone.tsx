@@ -1,42 +1,21 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { GlobalPreset } from '../lib/presets.ts';
-import { useLicense, FREE_LIMITS } from '../lib/license.ts';
 
 export interface DropZoneProps {
   onFilesSelected: (files: File[]) => void;
   globalPreset?: GlobalPreset;
   currentQueueLength?: number;
-  onRequirePro?: (reason: string) => void;
 }
 
 export const DropZone: React.FC<DropZoneProps> = ({
   onFilesSelected,
-  currentQueueLength = 0,
-  onRequirePro,
 }) => {
-  const { isPro, openUpgradeModal } = useLicense();
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processIncomingFiles = (rawFiles: File[]) => {
     if (!rawFiles || rawFiles.length === 0) return;
-
-    if (!isPro && currentQueueLength + rawFiles.length > FREE_LIMITS.maxQueueBatch) {
-      const allowedCount = Math.max(0, FREE_LIMITS.maxQueueBatch - currentQueueLength);
-      const stagedFiles = rawFiles.slice(0, allowedCount);
-      if (stagedFiles.length > 0) {
-        onFilesSelected(stagedFiles);
-      }
-      const msg = 'Free tier is limited to 3 items per batch. Upgrade to Stator Pro for uncapped batch processing.';
-      if (onRequirePro) {
-        onRequirePro(msg);
-      } else {
-        openUpgradeModal(msg);
-      }
-      return;
-    }
-
     onFilesSelected(rawFiles);
   };
 

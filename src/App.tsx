@@ -11,8 +11,6 @@ import { HelpDrawer } from './components/HelpDrawer.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
 import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
-import { ProUpgradeModal } from './components/auth/ProUpgradeModal.tsx';
-import { useLicense, FREE_LIMITS } from './lib/license.ts';
 import {
   QueueItem,
   formatFileSize,
@@ -114,13 +112,6 @@ const DEMO_QUEUE: QueueItem[] = [
 
 export default function App() {
   const { theme, setTheme, toggleTheme } = useTheme();
-  const {
-    isPro,
-    isUpgradeModalOpen,
-    upgradeReason,
-    openUpgradeModal,
-    closeUpgradeModal,
-  } = useLicense();
   const [activeCategory, setActiveCategory] = useState('All Formats');
   const [batchMode, setBatchMode] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>(DEMO_QUEUE);
@@ -352,15 +343,8 @@ export default function App() {
 
   // Connect Drop Zone to accept real files with smart defaults and container metadata extraction
   const handleFilesSelected = (incomingFiles: File[]) => {
-    let files = incomingFiles;
-    if (!isPro && queue.length + files.length > FREE_LIMITS.maxQueueBatch) {
-      const allowedCount = Math.max(0, FREE_LIMITS.maxQueueBatch - queue.length);
-      files = files.slice(0, allowedCount);
-      openUpgradeModal(
-        `Free tier is limited to ${FREE_LIMITS.maxQueueBatch} items per batch. Upgrade to Stator Pro for uncapped queue processing.`
-      );
-      if (files.length === 0) return;
-    }
+    const files = incomingFiles;
+    if (!files || files.length === 0) return;
 
     const currentGlobalPreset = getStoredGlobalPreset();
     const globalSettings = globalPresetToSettings(currentGlobalPreset);
@@ -506,7 +490,7 @@ export default function App() {
           outputSizeBytes: result.sizeBytes,
           outputSizeFormatted: formatFileSize(result.sizeBytes),
           reductionBadge: badge,
-          dimensions: `${result.width} × ${result.height}`,
+          outputDimensions: `${result.width} × ${result.height}`,
           conversionTime: '1.2s',
           errorMessage: undefined,
         };
@@ -741,7 +725,6 @@ export default function App() {
         theme={theme}
         onThemeChange={setTheme}
         onToggleTheme={toggleTheme}
-        onOpenPro={() => openUpgradeModal()}
       />
 
       {/* Main Content Area or Legal View */}
@@ -762,7 +745,6 @@ export default function App() {
           <DropZone
             onFilesSelected={handleFilesSelected}
             currentQueueLength={queue.length}
-            onRequirePro={(reason) => openUpgradeModal(reason)}
           />
 
           {/* Responsive Active Queue Component */}
@@ -805,7 +787,9 @@ export default function App() {
                     presetSettings: settings,
                     preset: getPresetLabel(settings, item.typeCategory),
                     quality: settings.imageQuality,
-                    resolution: resizeKeyToResolution(settings.imageResize || settings.videoResolution),
+                    resolution: resizeKeyToResolution(
+                      item.typeCategory === 'video' ? settings.videoResolution : settings.imageResize
+                    ),
                     stripExif: settings.stripMetadata,
                   }
                 : item
@@ -831,17 +815,6 @@ export default function App() {
         activeItemId={activePresetItemId}
         activeItemName={activeTargetItem?.name}
         activeCategory={activeTargetItem?.typeCategory}
-        onRequirePro={(reason) => openUpgradeModal(reason)}
-      />
-
-      {/* Stator Pro Upgrade Modal */}
-      <ProUpgradeModal
-        isOpen={isUpgradeModalOpen}
-        onClose={closeUpgradeModal}
-        reason={upgradeReason}
-        onActivated={() => {
-          showToast('Stator Pro successfully activated');
-        }}
       />
 
       {/* Slide-out Conversion History Drawer */}

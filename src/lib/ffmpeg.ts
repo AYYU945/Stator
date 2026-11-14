@@ -1,23 +1,16 @@
 import { ffmpegManager, WasmStatus } from '../utils/ffmpegManager.ts';
 import { PresetSettings } from '../types/queue.ts';
-import { getStoredLicense, FREE_LIMITS } from './license.ts';
 
 export { ffmpegManager, type WasmStatus };
 
 /**
- * Resolves allocated WebAssembly worker threads based on active license tier:
- * Pro: navigator.hardwareConcurrency || 4
- * Free: FREE_LIMITS.hardwareThreads (2 threads)
+ * Resolves allocated WebAssembly worker threads based on local device concurrency
  */
 export function getAllocatedHardwareThreads(): number {
-  const license = getStoredLicense();
-  if (license.isPro) {
-    if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) {
-      return navigator.hardwareConcurrency;
-    }
-    return 4;
+  if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) {
+    return navigator.hardwareConcurrency;
   }
-  return FREE_LIMITS.hardwareThreads;
+  return 4;
 }
 
 /**

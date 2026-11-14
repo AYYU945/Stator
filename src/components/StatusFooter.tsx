@@ -56,7 +56,7 @@ export const StatusFooter: React.FC<StatusFooterProps> = ({
           >
             DMCA Notice
           </button>
-          <span className="font-mono text-zinc-400 dark:text-zinc-600 text-xs">v2.4.0</span>
+          <span className="font-mono text-zinc-400 dark:text-zinc-600 text-xs">MIT Open Source · v1.0.0</span>
         </div>
       </div>
     </footer>

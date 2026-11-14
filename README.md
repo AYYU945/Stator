@@ -1,38 +1,33 @@
 # Stator
 
-Stator is an offline, client-side media conversion engine built with WebAssembly and HTML5 Canvas. All processing runs entirely inside browser memory, ensuring zero network file uploads, zero server egress overhead, and complete data privacy.
+**100% client-side, MIT-licensed open-source media conversion engine.**
+
+Stator runs entirely inside browser memory via WebAssembly (`@ffmpeg/core`) and HTML5 Canvas / `OffscreenCanvas` Web Workers—with zero file uploads, zero telemetry, zero API keys, and zero gated features.
 
 ---
 
-## Technical Overview
+## Key Capabilities
 
-Modern browser capabilities enable performant in-memory media transformations. Stator eliminates server infrastructure costs and privacy liabilities by running conversion workloads locally on client hardware.
+All features are unlocked by default for every user and self-hosted deployment:
 
-* **Local Processing:** Files are processed in virtual memory through WebAssembly and Canvas pipelines. Raw media streams never leave the client environment.
-* **Stream Copy Fast-Path:** Container re-muxing (such as MKV to MP4 with compatible H.264 streams) uses stream copy (`-c copy`) without re-encoding, finishing tasks in under two seconds.
-* **Algorithmic Upscaling:** Image and video frames scale up to 2K (1440p) and 4K (2160p) using Lanczos-3 interpolation without generative AI models or server-side calls.
-* **Isolated Multi-Threading:** WebAssembly execution leverages `SharedArrayBuffer` via strict Cross-Origin Isolation (`COOP`/`COEP`), unlocking multi-core processing.
-* **Memory Safety & Sequential Cleanup:** WebAssembly memory is safeguarded with explicit virtual file unlinking (`ffmpeg.deleteFile`) after every run and sequential task execution during batch processing.
-
----
-
-## Core Capabilities
-
-* **Video and Audio Transcoding:** Convert container formats (MP4, WebM, MKV, MOV, MP3, WAV, FLAC, OGG) with user-defined presets, frame rates, and bitrates.
-* **Image Processing:** High-speed format conversion (PNG, JPEG, WebP, AVIF) with customizable compression sliders, EXIF metadata stripping, and resolution scaling.
-* **Non-Blocking Error Handling:** Resilient batch processing isolates individual stream errors and continues processing staged queue items without freezing.
-* **Metadata Readout:** Immediate natural resolution, duration, and file size extraction before transcoding begins.
-* **Neutral Theme Architecture:** Utilitarian, accessible dark and light interface with automatic system preference detection and zero layout shifts.
+* **Zero Network Egress:** Media streams never leave the user's device. Inspect the browser Network tab during conversion to verify zero media payload transmission.
+* **Video & Audio Conversion (`FFmpeg` WebAssembly):**
+  * **Video Containers:** `MP4`, `WEBM`, `MOV`, `MKV`, `GIF`, `AVI`
+  * **Audio Extraction & Conversion:** `MP3`, `WAV`, `FLAC`, `OGG`, `AAC`, `M4A`
+  * **Full Controls Unlocked:** Up to **4K (2160p)** & **2K (1440p)** scaling, **120 FPS (Ultra Smooth)** frame rate output, **320 kbps / 256 kbps / 192 kbps / 128 kbps / 64 kbps** audio bitrates, Mute Track (`-an`), and **Lossless Copy** container remuxing (`-c copy`).
+* **Image Processing (`OffscreenCanvas` Web Worker Pool):**
+  * **Formats:** `WEBP`, `PNG`, `JPEG`, `AVIF`, `ICO` (multi-size icon packaging), `TIFF`, `BMP`
+  * **Controls:** Custom lossy compression sliders, proportional Lanczos-style aspect scaling up to 4K/Original, and automatic EXIF metadata stripping.
+* **Uncapped Batch Queue & Multi-Threading:** Unlimited concurrent batch items processed sequentially with explicit virtual filesystem cleanup (`ffmpeg.deleteFile`) and full `navigator.hardwareConcurrency` thread utilization via `SharedArrayBuffer`.
+* **Neutral Dark/Light UI:** Self-hosted typography, accessible high-contrast tokens, and IndexedDB local conversion history.
 
 ---
 
 ## Technology Stack
 
-* **Core Framework:** React 19, TypeScript, Vite
-* **Styling:** Tailwind CSS (Neutral Dark/Light tokens, standard utility geometry)
-* **Processing Engines:** FFmpeg WebAssembly, HTML5 Canvas API
-* **Icons:** Lucide Icons (SVG only)
-* **Fonts:** Local Inter / System UI typography (zero third-party CDN connections)
+* **Frontend:** React 19, TypeScript, Vite, Tailwind CSS
+* **Processing Engines:** FFmpeg WebAssembly (`@ffmpeg/core@0.12.6` loaded at runtime), HTML5 Canvas & `OffscreenCanvas` Workers
+* **Utilities:** JSZip (batch archive exports), Lucide Icons (SVG)
 
 ---
 
@@ -40,85 +35,105 @@ Modern browser capabilities enable performant in-memory media transformations. S
 
 ```text
 stator/
+├── .github/
+│   ├── FUNDING.yml              # Optional community sponsorship links
+│   └── ISSUE_TEMPLATE/          # Bug report and feature request templates
 ├── public/
-│   ├── _headers             # Cloudflare Pages / Netlify security headers
-│   ├── _redirects           # SPA fallback routing
-│   └── favicon.svg          # Geometric industrial favicon
+│   ├── _headers                 # Cloudflare Pages / Netlify COOP & COEP headers
+│   ├── _redirects               # SPA fallback routing
+│   └── favicon.svg
 ├── src/
 │   ├── components/
-│   │   ├── converter/       # Drop zone, queue cards, aggregate progress bar
-│   │   ├── layout/          # Header, footer, navigation
-│   │   └── ui/              # Presets and advanced encoding controls
-│   ├── lib/
-│   │   ├── ffmpeg.ts        # Memory-safe WebAssembly worker pipeline
-│   │   ├── presets.ts       # Global preset store and persistence
-│   │   └── theme.ts         # Theme engine and matchMedia listeners
-│   ├── pages/
+│   │   ├── inspector/           # Advanced presets modal & controls
+│   │   ├── layout/              # Header (GitHub, Sponsor, theme, drawers)
+│   │   ├── DropZone.tsx         # Drag-and-drop file intake
+│   │   ├── ActiveQueue.tsx      # Sequential conversion queue & progress UI
+│   │   ├── MediaInspectorModal.tsx
+│   │   ├── HelpDrawer.tsx
+│   │   ├── HistoryDrawer.tsx
 │   │   ├── PrivacyPolicy.tsx
 │   │   └── TermsOfService.tsx
-│   ├── styles/
-│   │   └── fonts.css        # Clean local font definitions
+│   ├── lib/
+│   │   ├── ffmpeg.ts            # Thread allocation & virtual FS cleanup helpers
+│   │   ├── license.ts           # Open-source unlimited capability profile
+│   │   ├── presets.ts           # Global preset store and persistence
+│   │   └── theme.ts             # Dark/light theme state
+│   ├── types/
+│   │   └── queue.ts             # Queue items, formats, and presets
+│   ├── utils/
+│   │   ├── converter.ts         # Image conversion, ICO/TIFF/BMP encoders
+│   │   ├── ffmpegManager.ts     # WebAssembly FFmpeg lifecycle & commands
+│   │   ├── historyStorage.ts    # IndexedDB conversion history persistence
+│   │   ├── imageWorkerPool.ts   # OffscreenCanvas worker pool
+│   │   └── metadataExtractor.ts # Local media metadata inspection
+│   ├── workers/
+│   │   └── imageWorker.ts
 │   ├── App.tsx
 │   └── main.tsx
-├── vercel.json              # Vercel deployment COOP/COEP headers and rewrites
-├── vite.config.ts           # Development server headers and es2022 target
+├── vercel.json                  # Vercel COOP/COEP headers & SPA rewrites
+├── vite.config.ts               # Dev server headers & build config
 └── package.json
 ```
 
-## Local Development
+---
+
+## Local Development & Self-Hosting
+
+Stator requires **no database, backend server, paid services, or API keys**.
 
 ### Prerequisites
 
-Node.js 18.x or higher, npm or pnpm.
+* Node.js 18.x or higher
+* npm or pnpm
 
-### Installation
+### Run Locally
 
 ```bash
-git clone git@github.com:your-username/stator.git
+git clone https://github.com/stator-media/stator.git
 cd stator
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in a Chromium-based browser or Firefox.
+Open `http://localhost:3000` in Chrome, Edge, Firefox, or Safari.
 
-### Production Security Headers
+### Build & Verify
 
-Multi-threaded WebAssembly requires SharedArrayBuffer, which modern browsers restrict unless Cross-Origin Isolation is active.
+```bash
+npm run lint    # TypeScript type check (tsc --noEmit)
+npm run build   # Production static bundle in dist/
+npm run preview # Preview production build locally
+```
 
-Verify your server delivers these exact HTTP response headers:
+### Required Production Headers (`COOP` / `COEP`)
+
+Multi-threaded WebAssembly (`SharedArrayBuffer`) requires Cross-Origin Isolation. Any static host serving `dist/` (Vercel, Cloudflare Pages, Netlify, Nginx, Caddy) must send these HTTP response headers:
 
 ```http
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-### Verification
+Pre-configured templates are already included in `vercel.json` and `public/_headers`. Verify in DevTools Console that `window.crossOriginIsolated === true`.
 
-Open browser Developer Tools, switch to the Console tab, and run:
+---
 
-```javascript
-window.crossOriginIsolated
-```
+## License & Dependency Compatibility
 
-The output must evaluate to true. If false, the WebAssembly engine will fall back to single-threaded mode or fail to allocate memory.
-
-### Production Build
-
-To generate production-ready static assets:
+* **Stator Codebase:** Licensed under the **[MIT License](./LICENSE)**.
+* **Runtime WebAssembly Engine:** Video/audio transcoding dynamically fetches `@ffmpeg/core` at runtime in the browser. Standard `@ffmpeg/core` distributions include GPL-licensed codecs (such as `libx264`). See [`LICENSE`](./LICENSE) for full boundary details.
+* **Verify npm Dependency Licenses:**
 
 ```bash
-npm run build
+npx license-checker --summary
 ```
 
-The compiled output is located in the `dist/` directory and can be deployed directly to Vercel, Cloudflare Pages, Netlify, or AWS S3/CloudFront.
+All bundled JavaScript/TypeScript dependencies (`react`, `lucide-react`, `jszip`, `motion`, `canvas-confetti`, `tailwindcss`, `vite`) use permissive MIT, ISC, or BSD licenses compatible with MIT distribution.
 
-## Privacy and Regulatory Compliance
+---
 
-* **Zero External Dependencies:** No external font CDNs or analytics trackers are requested at runtime.
-* **No Telemetry by Default:** Tracking and telemetry scripts remain completely deactivated.
-* **Legal Disclosures:** Dedicated routes are included for Privacy Policy (`/privacy`), Terms of Service (`/terms`), and statutory DMCA notices (`/terms#dmca`).
+## Contributing & Support
 
-## License
+Contributions are welcome! Read [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md), and [`SECURITY.md`](./SECURITY.md) before submitting a pull request.
 
-Proprietary. All rights reserved.
+Optional non-gating sponsorships are configured in [`.github/FUNDING.yml`](./.github/FUNDING.yml)—all features in Stator remain 100% free and open source for everyone.
