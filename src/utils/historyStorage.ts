@@ -1,11 +1,10 @@
 import { HistoryEntry } from '../types/history.ts';
+import { HISTORY_STORE_NAME, openStatorDB } from './dbSchema.ts';
 
 const STORAGE_KEY = 'stator_conversion_history';
 const FALLBACK_STORAGE_KEY = 'omniconvert_history_v1';
 const EPHEMERAL_MODE_KEY = 'stator_ephemeral_privacy';
-const DB_NAME = 'stator_db';
-const STORE_NAME = 'history_entries';
-const DB_VERSION = 1;
+const STORE_NAME = HISTORY_STORE_NAME;
 
 export const HISTORY_BLOB_QUOTA_BYTES = 250 * 1024 * 1024; // 250 MB LRU cap
 export const HISTORY_MAX_ENTRIES = 50;
@@ -65,27 +64,7 @@ export function enforceHistoryBlobQuota(
 }
 
 function openDB(): Promise<IDBDatabase | null> {
-  if (typeof window === 'undefined' || !window.indexedDB) {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    try {
-      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        }
-      };
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => resolve(null);
-    } catch {
-      resolve(null);
-    }
-  });
+  return openStatorDB();
 }
 
 /**

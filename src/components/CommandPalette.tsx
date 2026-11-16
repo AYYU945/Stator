@@ -2,26 +2,37 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search,
-  Maximize2,
-  List,
+  Home,
+  FolderKanban,
+  History,
+  ArrowLeftRight,
+  Minimize2,
+  Video,
+  Image as ImageIcon,
+  Music,
+  Film,
+  Layers,
+  FlaskConical,
+  Workflow,
+  SlidersHorizontal,
+  Settings,
+  HelpCircle,
   FolderOpen,
   Sparkles,
   Zap,
-  Film,
-  History,
-  Settings2,
-  HelpCircle,
   Sun,
   Moon,
   Trash2,
+  Download,
+  FilePlus2,
 } from 'lucide-react';
-import { WorkspaceViewMode } from './layout/Header.tsx';
+import { NavToolId } from '../types/settings.ts';
 import { STATOR_SPRING, STATOR_TRANSITION } from '../lib/motion.ts';
 
 export interface CommandPaletteAction {
   id: string;
   label: string;
-  section: 'Workspace' | 'Conversion & Files' | 'Preferences & Navigation';
+  section: 'Navigation' | 'Studio & Files' | 'Preferences';
   shortcut?: string;
   keywords?: string;
   icon: React.ReactNode;
@@ -34,17 +45,15 @@ export interface CommandPaletteProps {
   onClose: () => void;
   hasQueuedFiles: boolean;
   readyCount: number;
-  stageViewMode: 'stage' | 'queue';
-  onSetStageViewMode: (mode: 'stage' | 'queue') => void;
-  workspaceMode: WorkspaceViewMode;
-  onSetWorkspaceMode: (mode: WorkspaceViewMode) => void;
+  activeNav: NavToolId;
+  onSelectNav: (nav: NavToolId) => void;
+  onCreateBlankProject: () => void;
   onChooseFiles: () => void;
   onLoadSamples: () => void;
   onConvertAll: () => void;
   onClearQueue: () => void;
+  onOpenExportCenter: () => void;
   onOpenPresets: () => void;
-  onOpenHistory: () => void;
-  onOpenHelp: () => void;
   onToggleTheme: () => void;
   isDark: boolean;
 }
@@ -54,17 +63,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onClose,
   hasQueuedFiles,
   readyCount,
-  stageViewMode,
-  onSetStageViewMode,
-  workspaceMode,
-  onSetWorkspaceMode,
+  activeNav,
+  onSelectNav,
+  onCreateBlankProject,
   onChooseFiles,
   onLoadSamples,
   onConvertAll,
   onClearQueue,
+  onOpenExportCenter,
   onOpenPresets,
-  onOpenHistory,
-  onOpenHelp,
   onToggleTheme,
   isDark,
 }) => {
@@ -82,71 +89,46 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }, [isOpen]);
 
   const actions = useMemo<CommandPaletteAction[]>(() => {
-    const items: CommandPaletteAction[] = [
+    const navMap: Array<{ id: NavToolId; label: string; icon: React.ReactNode; kw: string }> = [
+      { id: 'home', label: 'Go to Home Dashboard', icon: <Home className="w-4 h-4" />, kw: 'home start recent projects' },
+      { id: 'projects', label: 'Open Saved Projects', icon: <FolderKanban className="w-4 h-4" />, kw: 'projects library list' },
+      { id: 'converter', label: 'Open Converter Studio', icon: <ArrowLeftRight className="w-4 h-4" />, kw: 'convert transcode studio' },
+      { id: 'compressor', label: 'Open Smart Compressor', icon: <Minimize2 className="w-4 h-4" />, kw: 'compress shrink mb size' },
+      { id: 'video', label: 'Open Video Studio', icon: <Video className="w-4 h-4" />, kw: 'video trim split merge captions' },
+      { id: 'images', label: 'Open Image Studio', icon: <ImageIcon className="w-4 h-4" />, kw: 'image crop resize watermark icon' },
+      { id: 'audio', label: 'Open Audio Studio', icon: <Music className="w-4 h-4" />, kw: 'audio waveform lufs silence eq' },
+      { id: 'gif-studio', label: 'Open GIF & Animation Studio', icon: <Film className="w-4 h-4" />, kw: 'gif webp sprite animation' },
+      { id: 'batch', label: 'Open Batch Queue', icon: <Layers className="w-4 h-4" />, kw: 'batch queue zip multiple' },
+      { id: 'quality-lab', label: 'Open Quality Comparison Lab', icon: <FlaskConical className="w-4 h-4" />, kw: 'quality psnr compare split' },
+      { id: 'pipelines', label: 'Open Smart Pipelines', icon: <Workflow className="w-4 h-4" />, kw: 'pipelines recipe automation' },
+      { id: 'history', label: 'Open History & Cache Ledger', icon: <History className="w-4 h-4" />, kw: 'history indexeddb cache' },
+      { id: 'settings', label: 'Open Settings', icon: <Settings className="w-4 h-4" />, kw: 'settings preferences workers storage' },
+      { id: 'help', label: 'Open Architecture & Engine Guide', icon: <HelpCircle className="w-4 h-4" />, kw: 'help guide faq wasm' },
+    ];
+
+    const navActions: CommandPaletteAction[] = navMap.map((n) => ({
+      id: `nav-${n.id}`,
+      label: n.label,
+      section: 'Navigation',
+      shortcut: activeNav === n.id ? 'Active' : undefined,
+      keywords: n.kw,
+      icon: n.icon,
+      onSelect: () => onSelectNav(n.id),
+    }));
+
+    const fileAndStudio: CommandPaletteAction[] = [
       {
-        id: 'switch-stage',
-        label: 'Switch to Focus Canvas (Darkroom HUD)',
-        section: 'Workspace',
-        shortcut: stageViewMode === 'stage' && workspaceMode === 'converter' ? 'Active' : 'C',
-        keywords: 'stage darkroom canvas focus hud preview single',
-        icon: <Maximize2 className="w-4 h-4" />,
-        disabled: !hasQueuedFiles,
-        onSelect: () => {
-          onSetWorkspaceMode('converter');
-          onSetStageViewMode('stage');
-        },
-      },
-      {
-        id: 'switch-queue',
-        label: 'Switch to Batch Ledger View',
-        section: 'Workspace',
-        shortcut: stageViewMode === 'queue' && workspaceMode === 'converter' ? 'Active' : 'L',
-        keywords: 'queue batch ledger list table rows',
-        icon: <List className="w-4 h-4" />,
-        disabled: !hasQueuedFiles,
-        onSelect: () => {
-          onSetWorkspaceMode('converter');
-          onSetStageViewMode('queue');
-        },
-      },
-      {
-        id: 'switch-gif-studio',
-        label:
-          workspaceMode === 'gif-studio'
-            ? 'Return to Media Converter'
-            : 'Open GIF Sequence Studio',
-        section: 'Workspace',
-        keywords: 'gif studio maker palette recipe sequence',
-        icon: <Film className="w-4 h-4" />,
-        onSelect: () =>
-          onSetWorkspaceMode(workspaceMode === 'gif-studio' ? 'converter' : 'gif-studio'),
-      },
-      {
-        id: 'open-history',
-        label: 'Open History & Privacy Ledger',
-        section: 'Workspace',
-        keywords: 'indexeddb cache archive downloads history ephemeral',
-        icon: <History className="w-4 h-4" />,
-        onSelect: () => {
-          onSetWorkspaceMode('history');
-          onOpenHistory();
-        },
-      },
-      {
-        id: 'open-help',
-        label: 'Open Architecture & Technical Guide',
-        section: 'Workspace',
-        keywords: 'faq documentation ffmpeg privacy guide',
-        icon: <HelpCircle className="w-4 h-4" />,
-        onSelect: () => {
-          onSetWorkspaceMode('guide');
-          onOpenHelp();
-        },
+        id: 'new-blank-project',
+        label: 'Create New Blank Studio Project',
+        section: 'Studio & Files',
+        keywords: 'new project create',
+        icon: <FilePlus2 className="w-4 h-4" />,
+        onSelect: onCreateBlankProject,
       },
       {
         id: 'choose-files',
-        label: 'Choose Media Files from Disk',
-        section: 'Conversion & Files',
+        label: 'Import Media Files from Disk',
+        section: 'Studio & Files',
         shortcut: 'O',
         keywords: 'upload add open file browse',
         icon: <FolderOpen className="w-4 h-4" />,
@@ -155,15 +137,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       {
         id: 'load-samples',
         label: 'Load Sample Test Media',
-        section: 'Conversion & Files',
+        section: 'Studio & Files',
         keywords: 'demo test synthetic sample wav png',
         icon: <Sparkles className="w-4 h-4" />,
         onSelect: onLoadSamples,
       },
       {
+        id: 'open-export-center',
+        label: 'Open Unified Export Center',
+        section: 'Studio & Files',
+        keywords: 'export zip folder download',
+        icon: <Download className="w-4 h-4" />,
+        onSelect: onOpenExportCenter,
+      },
+      {
         id: 'convert-all',
-        label: `Convert All Staged Files${readyCount > 0 ? ` (${readyCount} ready)` : ''}`,
-        section: 'Conversion & Files',
+        label: `Run All Pending Conversions${readyCount > 0 ? ` (${readyCount})` : ''}`,
+        section: 'Studio & Files',
         keywords: 'run start encode transcode batch',
         icon: <Zap className="w-4 h-4" />,
         disabled: !hasQueuedFiles,
@@ -171,48 +161,50 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
       {
         id: 'clear-queue',
-        label: 'Clear Current Queue',
-        section: 'Conversion & Files',
+        label: 'Clear Current Studio Queue',
+        section: 'Studio & Files',
         keywords: 'reset remove empty queue',
         icon: <Trash2 className="w-4 h-4" />,
         disabled: !hasQueuedFiles,
         onSelect: onClearQueue,
       },
+    ];
+
+    const prefs: CommandPaletteAction[] = [
       {
         id: 'open-presets',
-        label: 'Configure Global Default Presets',
-        section: 'Preferences & Navigation',
-        keywords: 'settings defaults quality crf',
-        icon: <Settings2 className="w-4 h-4" />,
+        label: 'Configure Global Saved Presets',
+        section: 'Preferences',
+        keywords: 'presets defaults quality crf',
+        icon: <SlidersHorizontal className="w-4 h-4" />,
         onSelect: onOpenPresets,
       },
       {
         id: 'toggle-theme',
-        label: isDark ? 'Switch to Light Alabaster Studio' : 'Switch to Dark Carbon Obsidian',
-        section: 'Preferences & Navigation',
+        label: isDark ? 'Switch to Light (Soft Titanium)' : 'Switch to Dark (Obsidian)',
+        section: 'Preferences',
         shortcut: 'T',
         keywords: 'theme light dark color appearance',
         icon: isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />,
         onSelect: onToggleTheme,
       },
     ];
-    return items.filter((item) => !item.disabled);
+
+    return [...fileAndStudio, ...navActions, ...prefs].filter((item) => !item.disabled);
   }, [
+    activeNav,
     hasQueuedFiles,
     readyCount,
-    stageViewMode,
-    workspaceMode,
     isDark,
-    onSetStageViewMode,
-    onSetWorkspaceMode,
+    onSelectNav,
+    onCreateBlankProject,
     onChooseFiles,
     onLoadSamples,
+    onOpenExportCenter,
     onConvertAll,
     onClearQueue,
     onOpenPresets,
-    onOpenHistory,
     onToggleTheme,
-    onOpenHelp,
   ]);
 
   const filtered = useMemo(() => {
@@ -284,7 +276,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search studio actions, views, or presets…"
+                placeholder="Jump to project, tool, pipeline, or export…"
                 aria-label="Search commands"
                 className="w-full bg-transparent text-sm text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-subtle)] focus:outline-none"
               />
@@ -293,10 +285,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               </kbd>
             </div>
 
-            <div className="max-h-[340px] overflow-y-auto p-1.5 space-y-0.5">
+            <div className="max-h-[360px] overflow-y-auto p-1.5 space-y-0.5">
               {filtered.length === 0 ? (
                 <p className="py-8 text-center text-xs text-[var(--stator-fg-muted)]">
-                  No matching studio commands
+                  No matching workspace commands
                 </p>
               ) : (
                 filtered.map((action, idx) => {

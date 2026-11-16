@@ -5,33 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#F6F5F1" />
+    <meta name="theme-color" content="#F5F6F7" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Stator" />
-    <title>Stator | Local Media Studio</title>
-    <meta name="description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
-    <meta property="og:title" content="Stator | Local Media Studio" />
-    <meta property="og:description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
+    <title>Stator | Local Media Workspace</title>
+    <meta
+      name="description"
+      content="Privacy-first, open-source local media workspace. Edit, convert, compress, and compare video, audio, images, and GIFs directly in browser memory."
+    />
+    <meta property="og:title" content="Stator | Local Media Workspace" />
+    <meta
+      property="og:description"
+      content="Privacy-first, open-source local media workspace. Edit, convert, compress, and compare video, audio, images, and GIFs directly in browser memory."
+    />
     <meta property="og:site_name" content="Stator" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Stator | Local Media Studio" />
-    <meta name="twitter:description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
+    <meta name="twitter:title" content="Stator | Local Media Workspace" />
+    <meta
+      name="twitter:description"
+      content="Privacy-first, open-source local media workspace. Edit, convert, compress, and compare video, audio, and images directly in browser memory."
+    />
     <script>
-      (function() {
+      (function () {
         try {
-          var saved = localStorage.getItem('stator_theme') || localStorage.getItem('omniconvert_theme');
-          var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var saved = localStorage.getItem('stator_theme') || localStorage.getItem('omniconvert_theme') || 'system';
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = saved === 'dark' || (saved === 'system' && prefersDark);
           if (isDark) {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
           }
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#0D0E11' : '#F5F6F7');
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-[#F6F5F1] dark:bg-[#0A0B0E] text-[#111215] dark:text-[#F3F4F6] antialiased">
+  <body class="bg-[#F5F6F7] dark:bg-[#0D0E11] text-[#17191D] dark:text-[#F2F3F5] antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

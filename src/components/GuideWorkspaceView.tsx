@@ -57,9 +57,9 @@ export const GuideWorkspaceView: React.FC<GuideWorkspaceViewProps> = ({
   return (
     <section
       aria-label="Architecture & FAQ Guide"
-      className="w-full py-8 sm:py-10 space-y-12"
+      className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-12"
     >
-      {/* Editorial Header */}
+      {/* Header */}
       <div className="pb-6 border-b border-[var(--stator-border)]">
         <div className="flex items-center gap-2 text-xs font-mono text-[var(--stator-fg-subtle)] mb-2">
           <button
@@ -68,17 +68,14 @@ export const GuideWorkspaceView: React.FC<GuideWorkspaceViewProps> = ({
             className="inline-flex items-center gap-1 text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Converter</span>
+            <span>Workspace</span>
           </button>
           <span aria-hidden="true">/</span>
           <span>Engine Architecture &amp; FAQ</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--stator-fg)]">
-          Local Engine{' '}
-          <span className="font-serif italic font-normal text-[var(--stator-accent-fg)]">
-            Architecture &amp; Reference
-          </span>
+          Local Engine Architecture &amp; Reference
         </h1>
         <p className="text-xs sm:text-sm text-[var(--stator-fg-muted)] mt-1 max-w-2xl">
           How Stator processes high-resolution video, audio, and photography inside browser memory
@@ -86,13 +83,13 @@ export const GuideWorkspaceView: React.FC<GuideWorkspaceViewProps> = ({
         </p>
       </div>
 
-      {/* Two-Column Architectural Specification Sheet (No boxed 2x2 SaaS cards) */}
+      {/* Two-Column Architectural Specification Sheet */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         <aside className="lg:col-span-4 lg:sticky lg:top-20 space-y-3">
           <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-accent-fg)]">
             Runtime Specification
           </span>
-          <h2 className="font-serif text-xl font-semibold text-[var(--stator-fg)] tracking-tight">
+          <h2 className="text-xl font-semibold text-[var(--stator-fg)] tracking-tight">
             Designed around deterministic browser sandboxing.
           </h2>
           <p className="text-xs sm:text-[13px] text-[var(--stator-fg-muted)] leading-relaxed">
@@ -134,7 +131,7 @@ export const GuideWorkspaceView: React.FC<GuideWorkspaceViewProps> = ({
           <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-accent-fg)]">
             Technical FAQ
           </span>
-          <h2 className="font-serif text-xl font-semibold text-[var(--stator-fg)] tracking-tight">
+          <h2 className="text-xl font-semibold text-[var(--stator-fg)] tracking-tight">
             Codecs, Offline Storage &amp; Licensing
           </h2>
         </aside>

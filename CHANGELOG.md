@@ -4,18 +4,16 @@ All notable changes to Stator will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-11-14
+## [1.0.0] - 2026-11-16 — Stator 1.0 (First Public Release)
 
-### Changed
-* **Transitioned to MIT Open Source:** Released Stator application codebase under the permissive MIT License with transparent third-party attribution for dynamically loaded `@ffmpeg/core` WebAssembly codecs.
-* **Unlocked All Capabilities for Everyone:**
-  * Removed 3-file batch queue limit; unlimited batch queuing is now active by default.
-  * Unlocked **4K (2160p)**, **2K (1440p)**, and **Original** (>1080p) resolution scaling across video and image pipelines.
-  * Unlocked **120 FPS (Ultra Smooth)** frame rate output.
-  * Unlocked **320 kbps**, **256 kbps**, and **192 kbps** audio bitrates alongside **128 kbps**, **64 kbps**, and **Mute Track**.
-  * Unlocked full `navigator.hardwareConcurrency` CPU thread allocation for WebAssembly encoding.
-* **Header & Navigation:** Replaced commercial waitlist UI with direct **GitHub** repository and non-gating **Sponsor** links.
-* **Dependencies & Docs:** Removed unused server/AI dependencies (`@google/genai`, `express`, `dotenv`) from `package.json` and `.env.example`; added `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and GitHub issue/funding templates.
+### Added
+* **Multi-Workspace Studio Architecture:** Unified persistent sidebar (`Sidebar`), contextual workspace header (`TopBar`), Home dashboard, Saved Projects (`IndexedDB`), Adaptive Studio (`StatorStudio`), GIF & Animation Studio, Quality Lab, Smart Pipelines, History & Cache, Settings, and Command Palette (`Cmd/Ctrl+K`).
+* **Client-Side Image & Animation Tooling:** OffscreenCanvas Web Worker pool supporting `WEBP`, `PNG`, `JPEG`, native browser `AVIF`, multi-size `.ICO` packaging, baseline `TIFF`, 24-bit `BMP`, custom-tinted watermarks, sprite sheet generation, and Favicon/PWA icon pack ZIP exports.
+* **WebAssembly Video & Audio Studio:** Self-hosted `@ffmpeg/core@0.12.6` (multi-threaded `core-mt` with automatic single-threaded `core-st` fallback), timeline trim/split, multi-resolution ZIP export, `.SRT`/`.VTT` subtitle editor, `-16 LUFS` loudness normalization, silence removal, EQ profiles, and 2-pass `palettegen` GIF / Animated WebP compilation.
+* **Privacy & Accessibility:** Ephemeral Privacy Mode (volatile RAM only), automatic EXIF/container metadata stripping option, `Soft Titanium` (Light) & `Obsidian` (Dark) themes, Comfortable/Compact density modes, font scaling, high-contrast keyboard focus rings, and OS/manual reduced-motion compliance.
+* **Honest Browser Codec Probing:** Runtime encoder probing disables unsupported browser-dependent targets (such as native AVIF canvas encoding where absent) with clear capability feedback instead of silent fallbacks.
 
-### Removed
-* Removed `ProWaitlistModal`, `ProUpgradeModal`, local license key validation (`STTR-*`), and all paywall/beta lock prompts across `DropZone`, `MediaInspectorModal`, `AdvancedPresetsModal`, `HelpDrawer`, `FaqSection`, `PrivacyPolicy`, and `TermsOfService`.
+### Fixed
+* Wired default compression goals, audio normalization, and metadata-stripping preferences from Settings directly into newly staged conversion queue items.
+* Fixed responsive mobile inspector sizing below the `lg` breakpoint and added a horizontal mobile asset switcher strip when inspecting multi-file batches.
+* Wired Brand Kit accent colors directly into watermark canvas rendering and live CropOverlay previews.

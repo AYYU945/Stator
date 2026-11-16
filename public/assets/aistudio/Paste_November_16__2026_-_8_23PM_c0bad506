@@ -1,0 +1,1061 @@
+# STATOR 3.0 — THE ULTIMATE LOCAL MEDIA WORKSPACE
+## Complete Product Reinvention, Architecture, Implementation & Quality Assurance
+
+### YOUR ROLE
+
+You are the Lead Product Architect, Principal Frontend Engineer, Senior Media Processing Engineer, Creative Director, Motion Designer, and Quality Assurance Lead for **Stator 3.0**.
+
+You have full authority to rethink the frontend architecture, user experience, interaction model, and application structure while preserving existing working functionality and the user's data.
+
+This is a major product evolution, not a cosmetic redesign.
+
+**Our objective:** Make Stator a free, open-source, privacy-first, professional-quality local media studio that can genuinely compete with paid media utilities.
+
+We want the polish of exceptional commercial software, without requiring accounts, subscriptions, cloud uploads, API keys, or unnecessary remote infrastructure.
+
+## 1. PROJECT CONTEXT
+
+Repository: https://github.com/AYYU945/Stator
+
+Current foundation: Stator 2.0.
+
+Existing technologies include:
+
+- React 19 and TypeScript.
+- Vite and Tailwind CSS.
+- FFmpeg WebAssembly with multi-threaded and single-threaded fallbacks.
+- OffscreenCanvas and Web Workers.
+- IndexedDB local history.
+- Offline PWA capabilities.
+- Motion animation library.
+- Local media conversion and editing.
+- Batch processing and ZIP exports.
+- GIF Studio.
+- Format validation and processing safeguards.
+- Shared presets and local privacy controls.
+
+Inspect the **actual latest repository state** before making assumptions.
+
+The README may not fully reflect existing capabilities.
+
+Preserve useful working code, processing engines, file-format support, security properties, and data.
+
+Do not blindly rewrite reliable infrastructure merely to make the architecture look newer.
+
+## 2. THE NEW STATOR IDENTITY
+
+**Product name:** Stator
+
+**Major version:** 3.0
+
+**Product positioning:** A professional media workspace that runs locally in the browser.
+
+**Design philosophy:**
+
+- Modern.
+- Minimalistic.
+- Premium.
+- Fluid.
+- Highly functional.
+- Media-first.
+- Context-aware.
+- Customizable.
+- Accessible.
+- Privacy-focused.
+- Extremely polished.
+
+Avoid recognizable AI-generated website patterns.
+
+No generic SaaS dashboards, unnecessary gradients, glowing backgrounds, huge repetitive cards, decorative statistics, meaningless badges, oversized whitespace, or filler sections.
+
+Every element must have a clear purpose.
+
+Minimalism must not compromise functionality.
+
+The final result should feel like a carefully designed desktop-class creative application.
+
+## 3. TWO COMPLETE THEMES
+
+Stator must support exactly two appearance themes.
+
+### Light — Soft Titanium
+
+Suggested design tokens:
+
+- Application background: `#F5F6F7`
+- Primary surfaces: `#FFFFFF`
+- Secondary surfaces: `#ECEEF1`
+- Main text: `#17191D`
+- Secondary text: `#626975`
+- Hairlines: `#E2E5E9`
+- Accent: `#4770E8`
+
+### Dark — Obsidian
+
+Suggested design tokens:
+
+- Application background: `#0D0E11`
+- Primary surfaces: `#17191D`
+- Secondary surfaces: `#24272D`
+- Main text: `#F2F3F5`
+- Secondary text: `#A4AAB5`
+- Hairlines: `#292C33`
+- Accent: `#7295FF`
+
+These are starting colors, not unchangeable requirements. Adjust as necessary for excellent contrast and visual quality.
+
+### Theme requirements
+
+- Same structural layout and feature set in both themes.
+- User-controlled Light/Dark switching.
+- System preference detection on first launch.
+- Persist user preference locally.
+- Avoid theme flashes.
+- Proper theme-aware modals, menus, tooltips, controls, canvas chrome, and notifications.
+- Independently validate accessibility contrast.
+
+Use one primary contemporary sans-serif font family, with restrained typography and precise hierarchy.
+
+Do not overuse serif accents or excessively small labels.
+
+## 4. APPLICATION SHELL & NAVIGATION
+
+Build a unified application shell that remains consistent between the dashboard, projects, tools, history, and settings.
+
+### Left navigation sidebar
+
+Organize navigation into meaningful sections.
+
+**Workspace**
+- Home
+- Projects
+- History
+
+**Media Tools**
+- Converter
+- Compressor
+- Video
+- Images
+- Audio
+- GIF Studio
+- Batch Processing
+- Quality Lab
+
+**Advanced**
+- Smart Pipelines
+- Saved Presets
+- Additional tools as implemented
+
+**Bottom**
+- Settings
+- Help
+- Local processing / privacy status
+
+Requirements:
+
+- Collapsible and optionally resizable sidebar.
+- Compact icons and readable labels.
+- Clear active selection.
+- Optional pinned/favorite tools.
+- Keyboard navigation.
+- Smooth transitions.
+- Searchable tools.
+- Responsive mobile navigation.
+
+Do not overwhelm users with dozens of permanently visible navigation items.
+
+Tool categories may expand or collapse.
+
+## 5. HOME DASHBOARD — COMPLETE REINVENTION
+
+The homepage should be a beautiful personal workspace, not a traditional file converter landing page.
+
+### Overall desktop layout
+
+**Left:** Persistent navigation sidebar.
+
+**Center:** Main dashboard and projects.
+
+**Right:** New Project / creation rail.
+
+The central dashboard contains:
+
+### A. Welcome section
+
+For returning users:
+
+**Welcome back.**
+
+Supporting text such as:
+
+"Pick up where you left off, or create something new."
+
+For first-time users, use a genuine first-launch empty state.
+
+Do not show fake projects or personalized statistics.
+
+### B. Jump Back In
+
+Show recently opened projects.
+
+Include:
+
+- Real project thumbnail.
+- Project title.
+- Project type.
+- Last modified date.
+- Continue Editing action.
+- Clear indication of missing media when applicable.
+
+Prioritize one recent project, with others available nearby.
+
+### C. Your Projects
+
+Display locally saved projects using polished grid/list layouts.
+
+Support:
+
+- Search.
+- Sorting.
+- Grid/list view.
+- Rename.
+- Duplicate.
+- Favorite/pin.
+- Delete with confirmation.
+- Project previews.
+- Last modified metadata.
+- Project type filters.
+
+Use actual project information.
+
+No simulated content in production.
+
+### D. Right Creation Rail
+
+Include a prominent **New Project** action.
+
+Offer:
+
+- Video project.
+- Image project.
+- Audio project.
+- GIF / Animation project.
+- Batch project.
+- Blank project.
+- Import existing media.
+
+The creation rail must not unnecessarily squeeze the central content.
+
+Collapse or reposition it at smaller breakpoints.
+
+### E. Direct File Drop
+
+Users must be able to drag files into the application directly.
+
+Stator should detect media type and open an appropriate project workspace automatically.
+
+Users can override project type later.
+
+Do not force users through an unnecessary creation form for ordinary conversions.
+
+### F. Remove Tutorial Video
+
+Completely remove the existing dashboard tutorial video and its unused assets/components.
+
+Keep helpful text-based documentation and contextual guidance.
+
+## 6. LOCAL PROJECT SYSTEM
+
+Projects become Stator's foundational data model.
+
+A project can contain:
+
+- Name and type.
+- Media assets.
+- Editing operations.
+- Timeline information where relevant.
+- Export settings.
+- Saved presets.
+- Processing recipes.
+- Project thumbnails.
+- Creation and modification timestamps.
+- Undo/redo history.
+- Optional project snapshots.
+
+### Persistence
+
+Implement durable local project metadata using suitable browser storage.
+
+Evaluate IndexedDB and OPFS carefully.
+
+Requirements:
+
+- Reliable autosave.
+- Versioned project schema.
+- Safe migration from existing Stator storage.
+- Storage quota management.
+- Missing source file detection.
+- Reconnect original media.
+- Project export/import.
+- Clear storage usage.
+- Meaningful recovery after refresh or browser restart.
+
+Do not silently imply that large source files have been permanently saved if only metadata or temporary object URLs remain.
+
+Prefer retaining reusable references and selectively caching media rather than duplicating enormous files unnecessarily.
+
+Use persistent-storage requests only when appropriate and explain browser limitations.
+
+A project must never be presented as recoverable when required source media is actually missing.
+
+## 7. CONTEXTUAL STATOR STUDIO
+
+This is the central feature of Stator 3.0.
+
+**One Studio application shell, adapted intelligently to each project and selected asset.**
+
+Do not create isolated editing applications with inconsistent interfaces.
+
+### Studio structure
+
+**Top Toolbar**
+- Back to Dashboard.
+- Project title.
+- Save status.
+- Undo / Redo.
+- Workspace actions.
+- Preview controls.
+- Export.
+
+**Left Area**
+- Project media library.
+- Contextually relevant tools.
+- Layers or clips where applicable.
+- Searchable actions.
+- Favorite tools.
+
+**Central Canvas**
+- High-quality media preview.
+- Direct interaction.
+- Zoom and fit.
+- Selection handles.
+- Before/after comparison where appropriate.
+
+**Bottom Workspace**
+- Video timeline.
+- Audio waveform.
+- GIF frame sequence.
+- Image thumbnail strip.
+- Batch processing queue.
+
+Only show the relevant bottom workspace.
+
+**Right Inspector**
+- Properties of the selected media, object, clip, operation, or tool.
+- Essential settings first.
+- Advanced settings through progressive disclosure.
+- Reusable presets.
+- Reset/undo controls.
+- Clear validation.
+
+Allow users to resize or collapse panels.
+
+Preserve useful canvas space.
+
+### Contextual Rules
+
+When selecting a video clip, prioritize video controls.
+
+When selecting an audio track, prioritize waveform and audio controls.
+
+When selecting an image, prioritize image tools.
+
+When selecting multiple compatible assets, show relevant bulk actions.
+
+When nothing is selected, show project-level settings and useful actions.
+
+Never permanently hide supported tools merely because the automatic recommendations did not prioritize them.
+
+Users can find every available action through the tool library or Command Palette.
+
+## 8. UNIVERSAL TOOL INTERACTION SYSTEM
+
+All tools should follow a consistent workflow:
+
+1. Select media or an asset.
+2. Choose the desired tool.
+3. Manipulate parameters visually.
+4. Preview changes where technically feasible.
+5. Save the operation non-destructively.
+6. Export using the real processing engine.
+
+### Essential vs Advanced
+
+The default interface should use understandable labels:
+
+- Reduce file size.
+- Improve quality.
+- Trim clip.
+- Resize image.
+- Extract audio.
+- Add subtitles.
+- Convert format.
+
+Advanced settings should expose technical controls such as codec, bitrate, CRF, sample rate, resolution, frame rate, color space, metadata, and encoder options.
+
+Avoid introducing separate Quick and Advanced applications.
+
+**Power and simplicity must coexist in the same interface.**
+
+## 9. VIDEO STUDIO
+
+Preserve all working Stator 2.0 video functionality and improve it.
+
+Target capabilities:
+
+- Video conversion.
+- Video compression.
+- Resolution scaling.
+- FPS adjustment.
+- Codec-aware export.
+- Trimming.
+- Splitting.
+- Merging multiple clips.
+- Cropping.
+- Rotation and flipping.
+- Speed adjustment.
+- Audio extraction.
+- Audio replacement where feasible.
+- Volume control.
+- Frame capture.
+- Watermarks.
+- Color adjustments.
+- Subtitle import, editing, and export.
+- Multi-resolution export.
+- Accurate metadata inspection.
+
+### Timeline
+
+Create a professional but approachable timeline.
+
+Support:
+
+- Draggable playhead.
+- Zoom.
+- Scrubbing.
+- Selection ranges.
+- Clip trimming.
+- Split points.
+- Clear timecodes.
+- Keyboard controls.
+- Frame previews where practical.
+- Waveform display for audio tracks.
+
+Avoid pretending to support full non-linear editing until the actual media processing architecture supports it.
+
+Use non-destructive edit decisions wherever possible.
+
+## 10. IMAGE STUDIO
+
+Improve existing image processing and add:
+
+- Interactive cropping.
+- Precise resizing.
+- Rotation and flip.
+- Exposure.
+- Contrast.
+- Saturation.
+- Temperature.
+- Highlights/shadows where feasible.
+- Sharpening.
+- Blur.
+- Format conversion.
+- Compression.
+- Transparency preservation.
+- Metadata inspection/removal.
+- Before/after comparison.
+- Bulk watermarking.
+- Favicon and icon packs.
+- Contact sheets.
+- Sprite sheet generation.
+- Image batch optimization.
+
+Investigate optional local background removal and upscaling.
+
+Do not make large AI models mandatory for application startup.
+
+Avoid outputting mislabeled or unsupported image formats.
+
+## 11. AUDIO STUDIO
+
+Build an audio-focused workspace with a real waveform.
+
+Target capabilities:
+
+- Audio conversion.
+- Extraction from video.
+- Waveform inspection.
+- Trimming.
+- Splitting.
+- Joining tracks.
+- Fade-in/out.
+- Crossfades where feasible.
+- Volume controls.
+- Loudness normalization.
+- Silence detection.
+- Silence removal.
+- Noise reduction.
+- Equalization.
+- Dynamic compression.
+- Sample rate selection.
+- Channel selection.
+- Metadata editing.
+- Lossless export where supported.
+
+Prioritize responsive waveform interaction and accurate playback.
+
+Do not claim advanced processing is complete merely because a control exists in the UI.
+
+## 12. GIF & ANIMATION STUDIO
+
+Expand the current GIF Sequence Studio.
+
+Add or improve:
+
+- Frame import.
+- Frame drag/reordering.
+- Frame duplication.
+- Per-frame duration.
+- FPS controls.
+- Looping and boomerang.
+- Reverse playback.
+- Palette optimization.
+- Dithering.
+- Live animated preview.
+- Video-to-GIF.
+- GIF-to-video.
+- Animated WebP export where supported.
+- Compression and file-size targeting.
+- Sprite sheet export.
+
+Integrate it into the shared project workspace.
+
+## 13. SMART COMPRESSION ENGINE
+
+Build an exceptional compression experience.
+
+Users should be able to choose:
+
+- Smaller file.
+- Balanced quality.
+- Highest practical quality.
+- Target maximum size.
+- Custom advanced settings.
+
+Include task-oriented presets such as preparing files for user-selected upload limits.
+
+Use appropriate format, resolution, bitrate, and encoding strategies.
+
+Support iterative encoding or multi-pass workflows where technically feasible.
+
+Warn when a requested target cannot realistically be achieved.
+
+Never claim exact file-size guarantees based solely on bitrate estimates.
+
+Display actual compression savings only after successful processing.
+
+## 14. STATOR QUALITY LAB
+
+Create a dedicated quality-comparison experience.
+
+Features:
+
+- Original vs processed preview.
+- Synchronized playback where practical.
+- Zoom-linked image comparisons.
+- Split-slider comparison.
+- Side-by-side mode.
+- Output file sizes.
+- Compression percentage.
+- Codec and format information.
+- Multiple export candidate comparison.
+- Optional objective metrics when supported.
+
+The Quality Lab should help users make informed tradeoffs between quality and size.
+
+Avoid fabricated quality scores.
+
+## 15. SMART PIPELINES
+
+Build reusable multi-operation workflows.
+
+Examples:
+
+**Video**
+Trim → Crop → Normalize Audio → Compress → Export.
+
+**Image**
+Resize → Adjust → Convert → Compress → Rename.
+
+**Audio**
+Trim → Normalize → Reduce Noise → Export.
+
+**Batch**
+Filter → Transform → Convert → Rename → Export.
+
+Requirements:
+
+- Reorderable operation list.
+- Enable/disable steps.
+- Per-step settings.
+- Recipe saving.
+- Recipe import/export.
+- Dependency validation.
+- Clear processing errors.
+- Reuse across compatible files.
+
+Combine compatible processing operations into fewer passes where possible.
+
+Avoid repeated lossy encoding when a single-pass solution exists.
+
+Do not build a large node-based automation editor unless its additional complexity is justified.
+
+## 16. BATCH WORKBENCH
+
+Make batch processing a first-class Studio experience.
+
+Features:
+
+- File table/grid views.
+- Multiple selection.
+- Select by format/type.
+- Bulk settings.
+- Per-file overrides.
+- Queue ordering.
+- Retry failed files.
+- Pause/cancel where supported.
+- Accurate progress.
+- Saved batch recipes.
+- Duplicate detection.
+- Filename templates.
+- Folder import.
+- Folder export when supported.
+- ZIP export fallback.
+- Output previews.
+- Memory-aware processing.
+
+The interface must remain responsive when managing large queues.
+
+Use virtualization for very large file collections when beneficial.
+
+Respect browser memory constraints.
+
+## 17. EXPORT CENTER
+
+Replace fragmented export experiences with one unified Export Center.
+
+Allow users to configure:
+
+- Target format.
+- Output filename.
+- Quality.
+- Resolution.
+- Frame rate.
+- Bitrate.
+- Metadata.
+- Processing preset.
+- Export destination.
+- Batch/export variants.
+
+Display actual processing state and errors.
+
+Provide:
+
+- Active jobs.
+- Pending jobs.
+- Completed jobs.
+- Failed jobs.
+- Retry actions.
+- Individual downloads.
+- ZIP downloads.
+- Actual file size statistics.
+
+Export results must be real, verified output files.
+
+Never simulate success.
+
+## 18. SETTINGS & CUSTOMIZATION
+
+Build a comprehensive dedicated Settings experience.
+
+### Appearance
+- Light/Dark theme.
+- System theme preference behavior.
+- UI density.
+- Font scaling.
+- Sidebar behavior.
+- Motion preference.
+
+### Studio
+- Default workspace layouts.
+- Preferred panel sizes.
+- Favorite tools.
+- Timeline preferences.
+- Preview quality.
+- Default project configuration.
+
+### Conversion
+- Default quality.
+- Preferred output formats.
+- Presets.
+- Naming rules.
+- Metadata settings.
+- Target-size preferences.
+
+### Performance
+- Worker concurrency.
+- Memory-aware scheduling.
+- Processing profiles.
+- Encoder diagnostics.
+- Device capabilities.
+
+### Storage & Privacy
+- Local project storage usage.
+- History limits.
+- Cache management.
+- Data retention.
+- Ephemeral Privacy Mode.
+- Project backups.
+- Clear local data.
+
+### Keyboard & Accessibility
+- Shortcut reference and supported customization.
+- Reduced motion.
+- Focus visibility.
+- Accessibility preferences.
+
+Persist settings locally and validate stored values.
+
+Only expose configurable functionality that is actually implemented and supported.
+
+## 19. MOTION & INTERACTION DESIGN
+
+Fluid animation is a central part of Stator 3.0.
+
+Use the existing Motion library where appropriate.
+
+### Animate meaningfully
+
+- Navigation transitions.
+- Opening and closing projects.
+- Project card interactions.
+- Creation panels.
+- Inspector resizing.
+- Timeline selection.
+- File import.
+- Tool changes.
+- Queue reordering.
+- Progress transitions.
+- Export completion.
+- Dialogs.
+- Dropdowns.
+- Notifications.
+- Light/Dark theme changes.
+
+### Engineering standards
+
+- Prefer GPU-friendly transforms and opacity.
+- Use coherent motion tokens.
+- Avoid excessive blur and visual effects.
+- Respect `prefers-reduced-motion`.
+- Keep interactions responsive during processing.
+- Avoid expensive animations on large batch lists.
+- Never animate fake media progress.
+- Do not delay actions for decorative transitions.
+
+Motion must improve clarity and perceived responsiveness.
+
+The application should remain visually excellent with animations disabled.
+
+## 20. PERFORMANCE & MEDIA ENGINE EVOLUTION
+
+Preserve the reliable existing FFmpeg WASM architecture.
+
+Investigate:
+
+- Improved worker scheduling.
+- Better memory cleanup.
+- Smarter FFmpeg initialization.
+- Resource-aware concurrency.
+- Lazy-loaded advanced tools.
+- Incremental processing where practical.
+- Image processing optimizations.
+- WebCodecs for compatible workflows.
+- Hardware-assisted encoding when available.
+- Browser capability detection.
+
+Do not claim WebCodecs can replace FFmpeg universally.
+
+WebCodecs requires appropriate demuxing/muxing and support differs by browser, codec, and device.
+
+Perform feasibility analysis before introducing new engine dependencies.
+
+Maintain reliable FFmpeg fallbacks.
+
+## 21. LOCAL-FIRST PRIVACY & SECURITY
+
+This is non-negotiable.
+
+- Local files must not be uploaded to external servers.
+- No mandatory accounts.
+- No mandatory cloud backend.
+- No API keys required for core functionality.
+- No telemetry without meaningful user consent.
+- Avoid external runtime dependencies where self-hosting is practical.
+- Maintain appropriate CSP and isolation headers.
+- Protect against untrusted files and metadata.
+- Prevent object URL and memory leaks.
+- Keep project data under user control.
+- Maintain offline capabilities.
+
+Remote URL downloading is outside the initial Stator 3.0 scope. Do not introduce a downloader backend without approval.
+
+Maintain a clear distinction between locally processed media and any optional network-requiring capability.
+
+## 22. RESPONSIVE STUDIO
+
+Design desktop, laptop, tablet, and mobile interfaces deliberately.
+
+Desktop:
+- Sidebar.
+- Media workspace.
+- Contextual inspector.
+- Timeline/queue.
+- Flexible panels.
+
+Tablet:
+- Reduced simultaneous panel count.
+- Collapsible tool areas.
+- Canvas priority.
+
+Mobile:
+- Compact navigation.
+- Media-first workspace.
+- Bottom sheets for tools/properties.
+- Touch-friendly controls.
+- Collapsible timeline/queue.
+- Accessible primary export actions.
+
+Avoid horizontal overflow.
+
+Do not simply shrink the desktop UI.
+
+## 23. IMPLEMENTATION STRATEGY
+
+This is a large, multi-phase undertaking.
+
+Do not attempt to implement dozens of advanced features through one uncontrolled rewrite.
+
+### Phase 0 — Audit & Protection
+
+- Inspect current repository.
+- Inventory existing functionality.
+- Identify technical debt and missing tests.
+- Confirm Git status.
+- Preserve uncommitted user changes.
+- Create a dedicated Stator 3.0 development branch.
+- Record the existing baseline.
+- Verify the existing build and tests.
+
+Do not overwrite or discard work without approval.
+
+### Phase 1 — Application Foundation
+
+Implement:
+- Shared application shell.
+- Navigation.
+- Dashboard.
+- Project creation.
+- Persistent project metadata.
+- Local storage and migrations.
+- Light/Dark themes.
+- Settings foundation.
+
+### Phase 2 — Contextual Studio
+
+Implement:
+- Shared project workspace.
+- Canvas and previews.
+- Media library.
+- Contextual inspector.
+- Tool discovery.
+- Editing-state architecture.
+- Undo/redo for supported operations.
+- Timeline/waveform/frame-strip foundations.
+- Unified Export Center.
+
+### Phase 3 — Existing Feature Migration
+
+Integrate existing Stator 2.0 capabilities into the new Studio.
+
+Preserve actual conversion functionality while replacing legacy UI where necessary.
+
+Remove redundant components and dead navigation only after verifying the replacement.
+
+### Phase 4 — High-Value Power Tools
+
+Prioritize:
+1. Smart compression improvements.
+2. Video split and merge.
+3. Better video trimming/timeline.
+4. Audio waveform editing.
+5. Image adjustments.
+6. GIF editing improvements.
+7. Batch recipes.
+8. Quality Lab.
+
+Implement each feature completely, including processing, UI, validation, errors, and testing.
+
+### Phase 5 — Advanced Capabilities
+
+Investigate and add feasible features such as:
+- Subtitle editing.
+- Watermarking.
+- Advanced image enhancements.
+- Audio cleanup.
+- Multi-export.
+- Smart Pipelines.
+- Optional local ML tools.
+- WebCodecs acceleration.
+
+Defer unsupported or excessively resource-intensive features rather than shipping nonfunctional controls.
+
+### Phase 6 — Design & Motion Refinement
+
+Review every screen and interaction.
+
+Remove generic design patterns.
+
+Correct proportions, navigation, spacing, iconography, hierarchy, theme inconsistencies and awkward transitions.
+
+Perform multiple refinement passes.
+
+### Phase 7 — Final QA
+
+Run automated and manual validation.
+
+Do not declare completion before actual verification.
+
+## 24. TESTING & VERIFICATION
+
+Required checks:
+
+- TypeScript compilation.
+- Production build.
+- Existing unit tests.
+- New tests for project storage/migrations.
+- Media pipeline and operation tests.
+- Format and codec compatibility checks.
+- Actual output validation.
+- Queue cancellation and failure recovery.
+- Undo/redo behavior.
+- History integrity.
+- Theme persistence.
+- Settings persistence.
+- Offline readiness.
+- Responsive behavior.
+- Keyboard accessibility.
+- Focus management.
+- Reduced-motion behavior.
+- Memory cleanup.
+
+When browser automation is available, validate real rendered states at desktop, tablet and mobile sizes in both themes.
+
+Test representative real files for image, video, audio, GIF and batch workflows.
+
+Do not present compilation success as proof that the application looks good or that media outputs are valid.
+
+Clearly distinguish tested functionality from unverified functionality.
+
+## 25. RELEASE QUALITY STANDARDS
+
+Stator 3.0 must not ship with:
+
+- Broken editing controls.
+- Fake buttons.
+- Simulated conversion results.
+- Invented user projects.
+- Placeholder processing.
+- Unsupported formats advertised as working.
+- Destructive schema migrations.
+- Lost user history.
+- Misleading privacy claims.
+- Nonfunctional settings.
+- Inconsistent old/new interface fragments.
+- Major mobile overflow.
+- Generic unfinished UI.
+- Unnecessary dependencies.
+- Significant unaddressed accessibility regressions.
+
+Prefer a smaller number of fully working, excellent capabilities over an oversized collection of half-implemented features.
+
+If a feature cannot be delivered safely or reliably, document it as deferred instead of faking it.
+
+## 26. FINAL DELIVERABLES
+
+Provide:
+
+1. Current Stator 2.0 feature inventory.
+2. Architecture decisions and migration plan.
+3. Stator 3.0 design system.
+4. Implemented dashboard and project experience.
+5. Implemented contextual Studio.
+6. Working upgraded media tools.
+7. New implemented capabilities.
+8. Settings and customization system.
+9. Performance improvements.
+10. Automated test and build results.
+11. Browser visual QA results, if tooling permits.
+12. Known limitations and deferred features.
+13. Files changed and commit history.
+14. Recommended next steps.
+
+Maintain clear progress documentation as implementation proceeds.
+
+Use clean commits with meaningful messages.
+
+Verify major milestones before continuing.
+
+If tool or time constraints interrupt execution, leave the repository in a coherent, tested state and provide an accurate summary of completed versus remaining work.
+
+## FINAL DIRECTIVE
+
+We are not building another file-conversion website.
+
+We are building **Stator 3.0 — a professional, unified, intelligent, local-first media workspace**.
+
+The application should feel personal, fluid, refined, fast, modern and powerful.
+
+Users should be able to:
+
+- Open Stator.
+- See their locally saved projects.
+- Create a project.
+- Import media.
+- Immediately see relevant tools.
+- Edit visually.
+- Combine operations.
+- Preview results.
+- Process files locally.
+- Export professional-quality outputs.
+- Return later and continue their projects.
+
+All within one cohesive minimalist application.
+
+**Challenge every weak design decision. Preserve working functionality. Prioritize real usability, visual quality, reliability and privacy.**
+
+Begin with repository inspection and baseline protection, then execute the implementation in the defined phases.
+
+Do not stop after planning. Produce working, tested code and tangible deliverables.
+
+**Make Stator feel like premium software—without the subscription.**

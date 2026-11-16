@@ -26,12 +26,12 @@ export const StatusFooter: React.FC<StatusFooterProps> = ({
   };
 
   return (
-    <footer className="w-full border-t border-[var(--stator-border)] bg-[var(--stator-surface)] mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--stator-fg-subtle)]">
+    <footer className="w-full border-t border-[var(--stator-border)] bg-[var(--stator-surface)] mt-auto shrink-0">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--stator-fg-subtle)]">
         <div className="flex items-center gap-2 text-[var(--stator-fg-muted)] font-medium">
           <span>Stator</span>
           <span aria-hidden="true">·</span>
-          <span>100% Client-Side Media Engine</span>
+          <span>100% Local Media Workspace</span>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
@@ -57,7 +57,7 @@ export const StatusFooter: React.FC<StatusFooterProps> = ({
             DMCA Notice
           </button>
           <span className="font-mono text-[var(--stator-fg-subtle)] tabular-nums">
-            MIT Open Source · v2.0.0
+            MIT Open Source · v1.0.0
           </span>
         </div>
       </div>

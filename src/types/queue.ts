@@ -3,6 +3,39 @@ export type QueueItemStatus = 'ready' | 'converting' | 'completed' | 'error';
 
 export type RotationDegrees = 0 | 90 | 180 | 270;
 
+export interface NormalizedCropRect {
+  x: number; // 0..1
+  y: number; // 0..1
+  w: number; // 0..1
+  h: number; // 0..1
+}
+
+export interface MediaAdjustments {
+  exposure: number; // -100 .. 100
+  contrast: number; // -100 .. 100
+  saturation: number; // -100 .. 100
+  temperature: number; // -100 .. 100
+  sharpen: number; // 0 .. 100
+  blur: number; // 0 .. 20
+}
+
+export interface WatermarkConfig {
+  enabled: boolean;
+  text: string;
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
+  opacity: number; // 0.1 .. 1.0
+  color?: string;
+}
+
+export interface SubtitleCue {
+  id: string;
+  startSec: number;
+  endSec: number;
+  text: string;
+}
+
+export type CompressionGoal = 'smaller' | 'balanced' | 'highest' | 'target-size' | 'custom';
+
 export interface StreamMetadataSummary {
   videoCodec?: string;
   audioCodec?: string;
@@ -31,12 +64,40 @@ export interface PresetSettings {
   gifLoopMode?: 'loop' | 'boomerang';
   audioBitrate: '320k' | '256k' | '192k' | '128k' | '64k';
   audioChannels?: 'stereo' | 'mono';
-  // Release 1.2 & 2.0 additions
   targetMaxSizeMb?: number;
   rotation?: RotationDegrees;
   flipH?: boolean;
   normalizeAudio?: boolean;
+
+  // Stator 3.0 Non-Destructive Studio Controls
+  compressionGoal?: CompressionGoal;
+  cropRect?: NormalizedCropRect;
+  adjustments?: MediaAdjustments;
+  watermark?: WatermarkConfig;
+  playbackSpeed?: number; // 0.25 .. 2.0
+  volumePercent?: number; // 0 .. 200
+  audioFadeInSec?: number; // 0 .. 15
+  audioFadeOutSec?: number; // 0 .. 15
+  removeSilence?: boolean;
+  noiseReduce?: boolean;
+  dynamicCompress?: boolean;
+  audioSampleRate?: 'original' | '48000' | '44100' | '22050';
+  eqPreset?: 'flat' | 'voice' | 'bass' | 'treble';
+  audioMetaTitle?: string;
+  audioMetaArtist?: string;
+  audioMetaAlbum?: string;
+  subtitleCues?: SubtitleCue[];
+  burnSubtitles?: boolean;
 }
+
+export const DEFAULT_ADJUSTMENTS: MediaAdjustments = {
+  exposure: 0,
+  contrast: 0,
+  saturation: 0,
+  temperature: 0,
+  sharpen: 0,
+  blur: 0,
+};
 
 export const DEFAULT_PRESET_SETTINGS: PresetSettings = {
   imageQuality: 90,
@@ -61,6 +122,16 @@ export const DEFAULT_PRESET_SETTINGS: PresetSettings = {
   rotation: 0,
   flipH: false,
   normalizeAudio: false,
+  compressionGoal: 'balanced',
+  playbackSpeed: 1,
+  volumePercent: 100,
+  audioFadeInSec: 0,
+  audioFadeOutSec: 0,
+  removeSilence: false,
+  noiseReduce: false,
+  dynamicCompress: false,
+  audioSampleRate: 'original',
+  eqPreset: 'flat',
 };
 
 export function getPresetLabel(
@@ -87,28 +158,31 @@ export function getPresetLabel(
   if (typeCategory === 'video') {
     const cropSuffix =
       preset.aspectCrop && preset.aspectCrop !== 'original' ? ` · ${preset.aspectCrop}` : '';
+    const speedSuffix =
+      preset.playbackSpeed && preset.playbackSpeed !== 1 ? ` · ${preset.playbackSpeed}x` : '';
     const normSuffix = preset.normalizeAudio ? ' · -16 LUFS' : '';
     if (preset.videoResolution !== 'original') {
       const fps = preset.fpsLimiter !== 'original' ? ` @ ${preset.fpsLimiter}fps` : '';
-      if (preset.videoResolution === '4K') return `4K UHD${fps}${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
-      if (preset.videoResolution === '2K') return `2K QHD${fps}${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
-      return `${preset.videoResolution}${fps}${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+      if (preset.videoResolution === '4K') return `4K UHD${fps}${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+      if (preset.videoResolution === '2K') return `2K QHD${fps}${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+      return `${preset.videoResolution}${fps}${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
     }
     switch (preset.videoBitrate) {
       case 'lossless':
-        return `Lossless Copy${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+        return `Lossless Copy${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
       case 'high':
-        return `High (CRF 18)${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+        return `High (CRF 18)${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
       case 'balanced':
-        return `Balanced (CRF 23)${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+        return `Balanced (CRF 23)${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
       case 'compact':
-        return `Compact (CRF 28)${cropSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
+        return `Compact (CRF 28)${cropSuffix}${speedSuffix}${rotSuffix}${sizeSuffix}${normSuffix}`;
     }
   }
 
   if (typeCategory === 'audio') {
     const normSuffix = preset.normalizeAudio ? ' · -16 LUFS' : '';
-    return `${preset.audioBitrate}bps${normSuffix}`;
+    const silSuffix = preset.removeSilence ? ' · Trim Silence' : '';
+    return `${preset.audioBitrate}bps${normSuffix}${silSuffix}`;
   }
 
   return preset.videoBitrate === 'lossless'
@@ -154,6 +228,8 @@ export interface QueueItem {
   stripExif?: boolean;
   duration?: string;
   technicalTag?: string;
+  /** True when loaded from a saved project whose source file exceeded cache limits */
+  needsReconnect?: boolean;
 }
 
 export const TARGET_FORMAT_OPTIONS: Record<FileTypeCategory, string[]> = {
@@ -188,7 +264,6 @@ export function detectTypeCategory(file: File): {
   const mime = (file.type || '').toLowerCase();
   const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
 
-  // Camera RAW containers are not browser-decodable without dedicated RAW demosaicers
   if (['RAW', 'ARW', 'CR2', 'CR3', 'NEF', 'DNG', 'RAF', 'ORF', 'RW2'].includes(ext)) {
     return {
       typeCategory: 'other',

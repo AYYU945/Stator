@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, RotateCcw, Maximize2, List, Zap, Command } from 'lucide-react';
-import { Navbar } from './components/Navbar.tsx';
-import { WorkspaceViewMode } from './components/layout/Header.tsx';
-import { EditorialIntake } from './components/EditorialIntake.tsx';
-import { CanvasFocusStage } from './components/CanvasFocusStage.tsx';
-import { BatchLedgerView } from './components/BatchLedgerView.tsx';
-import { CommandPalette } from './components/CommandPalette.tsx';
+import { CheckCircle2, RotateCcw } from 'lucide-react';
+import { Sidebar } from './components/layout/Sidebar.tsx';
+import { TopBar } from './components/layout/TopBar.tsx';
+import { HomeDashboard } from './components/HomeDashboard.tsx';
+import { ProjectsView } from './components/ProjectsView.tsx';
+import { StatorStudio } from './components/studio/StatorStudio.tsx';
+import { ExportCenterModal } from './components/studio/ExportCenterModal.tsx';
 import { GifStudioPanel } from './components/GifStudioPanel.tsx';
+import { QualityLabView } from './components/QualityLabView.tsx';
+import { SmartPipelinesView } from './components/SmartPipelinesView.tsx';
 import { HistoryWorkspaceView } from './components/HistoryWorkspaceView.tsx';
+import { SettingsView } from './components/SettingsView.tsx';
 import { GuideWorkspaceView } from './components/GuideWorkspaceView.tsx';
+import { CommandPalette } from './components/CommandPalette.tsx';
 import { PresetModal } from './components/PresetModal.tsx';
 import { OfflineIndicator } from './components/OfflineIndicator.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
@@ -17,39 +21,78 @@ import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
 import { buildOutputFilename } from './utils/formatCapabilities.ts';
 import { useTheme } from './lib/theme.ts';
-import { STATOR_SPRING, STATOR_TRANSITION } from './lib/motion.ts';
+import { useStatorSettings } from './lib/settingsStore.ts';
+import { STATOR_TRANSITION } from './lib/motion.ts';
+import { NavToolId } from './types/settings.ts';
+import { ProjectType } from './types/project.ts';
 import { useConversionQueue } from './hooks/useConversionQueue.ts';
+import { useProjectWorkspace } from './hooks/useProjectWorkspace.ts';
+import { isPipelineCompatibleWithCategory } from './lib/pipelineRecipes.ts';
+
+const STUDIO_TOOL_IDS = new Set<NavToolId>([
+  'converter',
+  'compressor',
+  'video',
+  'images',
+  'audio',
+  'batch',
+]);
+
+const VIEW_TITLES: Record<NavToolId, string> = {
+  home: 'Home Workspace',
+  projects: 'Saved Projects',
+  history: 'History & Cache',
+  converter: 'Converter Studio',
+  compressor: 'Compressor',
+  video: 'Video Studio',
+  images: 'Image Studio',
+  audio: 'Audio Studio',
+  'gif-studio': 'GIF & Animation Studio',
+  batch: 'Batch Queue',
+  'quality-lab': 'Quality Lab',
+  pipelines: 'Smart Pipelines',
+  presets: 'Saved Presets',
+  settings: 'Settings',
+  help: 'Architecture & Help',
+};
 
 export default function App() {
   const { theme, isDark, setTheme, toggleTheme } = useTheme();
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceViewMode>('converter');
-  const [stageViewMode, setStageViewMode] = useState<'stage' | 'queue'>('stage');
+  const { settings, updateSettings, resetSettings } = useStatorSettings();
+
+  const [activeNav, setActiveNav] = useState<NavToolId>('home');
   const [activeStageItemId, setActiveStageItemId] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
-  const [activePresetItemId, setActivePresetItemId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'converter' | 'privacy' | 'terms'>('converter');
+  const [isExportCenterOpen, setIsExportCenterOpen] = useState(false);
+  const [legalRoute, setLegalRoute] = useState<'none' | 'privacy' | 'terms'>('none');
 
   const globalFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     queue,
     setQueue,
-    wasmStatus,
-    wasmLoadProgress,
     history,
     ephemeralMode,
     isPaused,
     globalPreset,
-    itemPresets,
     toastMessage,
     canUndoClear,
     showToast,
+    canUndoEdit,
+    canRedoEdit,
+    undoEditLabel,
+    redoEditLabel,
+    clearEditHistory,
+    handleUndoEdit,
+    handleRedoEdit,
     handleToggleEphemeralMode,
     handleDeleteHistoryEntry,
     handleClearAllHistory,
     handleWipeAllData,
     handleFilesSelected,
+    handleReconnectItemFile,
     handleLoadSampleFiles,
     handleRemoveItem,
     handleReorderItem,
@@ -59,70 +102,94 @@ export default function App() {
     handleBatchUpdateFormat,
     handleUpdatePresetSettings,
     handleApplyPreset,
+    handleSplitItemSegment,
+    handleMergeClips,
+    handleReplaceVideoAudio,
     handleStartConversion,
     handleCancelConversion,
     handleTogglePause,
     handleConvertAll,
-  } = useConversionQueue();
+    exportOutputsZip,
+    exportOutputsToFolder,
+    wasmLoadProgress,
+  } = useConversionQueue({
+    filenameTemplate: settings.filenameTemplate,
+    maxImageWorkers: settings.maxImageWorkers,
+    defaultCompressionGoal: settings.defaultCompressionGoal,
+    defaultNormalizeAudio: settings.defaultNormalizeAudio,
+    defaultStripMetadata: settings.defaultStripMetadata,
+  });
 
-  const prevQueueLenRef = useRef(0);
+  const projectWorkspace = useProjectWorkspace({
+    autosaveProjects: settings.autosaveProjects,
+    cacheSmallMediaThresholdMb: settings.cacheSmallMediaThresholdMb,
+    ephemeralMode,
+    filenameTemplate: settings.filenameTemplate,
+    queue,
+    setQueue,
+    onFilesSelected: handleFilesSelected,
+    onClearEditHistory: clearEditHistory,
+    onToast: showToast,
+  });
+
+  // Keep active stage item valid when queue changes
   useEffect(() => {
-    const prevLen = prevQueueLenRef.current;
-    prevQueueLenRef.current = queue.length;
-
     if (queue.length === 0) {
       setActiveStageItemId(null);
       return;
     }
-
     if (!activeStageItemId || !queue.some((q) => q.id === activeStageItemId)) {
-      setActiveStageItemId(queue[0].id);
-    }
-
-    // Smart initial view mode when transitioning from empty -> populated
-    if (prevLen === 0 && queue.length > 0) {
-      setStageViewMode(queue.length === 1 ? 'stage' : 'queue');
       setActiveStageItemId(queue[0].id);
     }
   }, [queue, activeStageItemId]);
 
-  // URL path navigation (/privacy, /terms, /)
+  // URL navigation (/privacy, /terms, /)
   useEffect(() => {
-    const handleLocationChange = () => {
+    const syncPath = () => {
       const path = window.location.pathname.toLowerCase();
-      if (path === '/privacy') setCurrentView('privacy');
-      else if (path === '/terms') setCurrentView('terms');
-      else setCurrentView('converter');
+      if (path === '/privacy') setLegalRoute('privacy');
+      else if (path === '/terms') setLegalRoute('terms');
+      else setLegalRoute('none');
     };
-    handleLocationChange();
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    syncPath();
+    window.addEventListener('popstate', syncPath);
+    return () => window.removeEventListener('popstate', syncPath);
   }, []);
 
-  const navigateTo = (view: 'converter' | 'privacy' | 'terms') => {
-    setCurrentView(view);
-    const targetPath = view === 'converter' ? '/' : `/${view}`;
+  const navigateLegal = (route: 'none' | 'privacy' | 'terms') => {
+    setLegalRoute(route);
+    const targetPath = route === 'none' ? '/' : `/${route}`;
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, '', targetPath);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Global Cmd+K / Ctrl+K shortcut for Command Palette
+  // Global Cmd/Ctrl+K + Ctrl/Cmd+Z / Shift+Z
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
+      } else if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === 'z' &&
+        STUDIO_TOOL_IDS.has(activeNav)
+      ) {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+        if (e.shiftKey) handleRedoEdit();
+        else handleUndoEdit();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeNav, handleUndoEdit, handleRedoEdit]);
 
-  // Global Ctrl+V / Cmd+V clipboard file intake
-  const handleFilesSelectedRef = useRef(handleFilesSelected);
-  handleFilesSelectedRef.current = handleFilesSelected;
+  // Global Cmd/Ctrl+V clipboard media paste
+  const openFilesSmartRef = useRef(projectWorkspace.openFilesInSmartProject);
+  openFilesSmartRef.current = projectWorkspace.openFilesInSmartProject;
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -131,38 +198,110 @@ export default function App() {
       const items = e.clipboardData?.files;
       if (items && items.length > 0) {
         e.preventDefault();
-        const pastedFiles = Array.from(items);
-        handleFilesSelectedRef.current(pastedFiles);
-        setWorkspaceMode('converter');
-        showToast(
-          `Staged ${pastedFiles.length} file${pastedFiles.length === 1 ? '' : 's'} from clipboard`
-        );
+        const files = Array.from(items);
+        void openFilesSmartRef.current(files).then((proj) => {
+          setLegalRoute('none');
+          setActiveNav(proj.type === 'image' ? 'images' : proj.type === 'audio' ? 'audio' : proj.type === 'video' ? 'video' : 'converter');
+          showToast(`Opened ${files.length} pasted file${files.length === 1 ? '' : 's'} in Studio`);
+        });
       }
     };
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [showToast]);
 
-  const handleOpenPresetModal = (itemId: string | null) => {
-    setActivePresetItemId(itemId);
-    setIsPresetModalOpen(true);
+  const handleSelectNav = (id: NavToolId) => {
+    setLegalRoute('none');
+    if (id === 'presets') {
+      setIsPresetModalOpen(true);
+      return;
+    }
+    setActiveNav(id);
+
+    // If user focuses a category tool (video, images, audio), jump active item to a matching file if available
+    if (id === 'video') {
+      const match = queue.find((q) => q.typeCategory === 'video');
+      if (match) setActiveStageItemId(match.id);
+    } else if (id === 'images') {
+      const match = queue.find((q) => q.typeCategory === 'image');
+      if (match) setActiveStageItemId(match.id);
+    } else if (id === 'audio') {
+      const match = queue.find((q) => q.typeCategory === 'audio');
+      if (match) setActiveStageItemId(match.id);
+    }
   };
 
-  const triggerGlobalFileBrowse = () => {
-    globalFileInputRef.current?.click();
+  const handleCreateNewProject = async (type: ProjectType) => {
+    setLegalRoute('none');
+    if (type === 'gif') {
+      setActiveNav('gif-studio');
+      await projectWorkspace.createProject('gif');
+      return;
+    }
+    await projectWorkspace.createProject(type);
+    const navTarget: NavToolId =
+      type === 'video'
+        ? 'video'
+        : type === 'image'
+        ? 'images'
+        : type === 'audio'
+        ? 'audio'
+        : type === 'batch'
+        ? 'batch'
+        : 'converter';
+    setActiveNav(navTarget);
   };
 
-  const activeTargetItem = activePresetItemId
-    ? queue.find((i) => i.id === activePresetItemId)
-    : null;
+  const handleOpenExistingProject = async (projectId: string) => {
+    setLegalRoute('none');
+    const opened = await projectWorkspace.openProject(projectId);
+    if (!opened) return;
+    if (opened.type === 'gif') setActiveNav('gif-studio');
+    else if (opened.type === 'video') setActiveNav('video');
+    else if (opened.type === 'image') setActiveNav('images');
+    else if (opened.type === 'audio') setActiveNav('audio');
+    else if (opened.type === 'batch') setActiveNav('batch');
+    else setActiveNav('converter');
+  };
 
-  const readyCount = queue.filter((i) => i.status === 'ready').length;
+  const handleIncomingMediaFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+    setLegalRoute('none');
+    const proj = await projectWorkspace.openFilesInSmartProject(files);
+    const navTarget: NavToolId =
+      files.length > 1
+        ? 'batch'
+        : proj.type === 'video'
+        ? 'video'
+        : proj.type === 'image'
+        ? 'images'
+        : proj.type === 'audio'
+        ? 'audio'
+        : 'converter';
+    setActiveNav(navTarget);
+  };
+
+  const handleTogglePinTool = (id: NavToolId) => {
+    const exists = settings.pinnedTools.includes(id);
+    const next = exists
+      ? settings.pinnedTools.filter((t) => t !== id)
+      : [...settings.pinnedTools, id].slice(0, 8);
+    updateSettings({ pinnedTools: next });
+  };
+
+  const readyCount = queue.filter((i) => i.status === 'ready' && !i.needsReconnect).length;
   const completedCount = queue.filter((i) => i.status === 'completed').length;
-  const hasQueuedFiles = queue.length > 0;
+  const isStudioView = legalRoute === 'none' && STUDIO_TOOL_IDS.has(activeNav);
+  const motionMode =
+    settings.motionPreference === 'reduced'
+      ? 'always'
+      : settings.motionPreference === 'full'
+      ? 'never'
+      : 'user';
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-[var(--stator-bg)] text-[var(--stator-fg)] flex flex-col font-sans selection:bg-[var(--stator-accent-soft)] selection:text-[var(--stator-fg)]">
+    <MotionConfig reducedMotion={motionMode}>
+      <div className="min-h-screen bg-[var(--stator-bg)] text-[var(--stator-fg)] flex font-sans selection:bg-[var(--stator-accent-soft)] selection:text-[var(--stator-fg)]">
         <input
           ref={globalFileInputRef}
           type="file"
@@ -170,372 +309,298 @@ export default function App() {
           className="hidden"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
-              handleFilesSelected(Array.from(e.target.files), true);
+              void handleIncomingMediaFiles(Array.from(e.target.files));
               e.target.value = '';
-              setWorkspaceMode('converter');
             }
           }}
         />
 
-        <Navbar
-          workspaceMode={workspaceMode}
-          onSelectWorkspaceMode={setWorkspaceMode}
-          onNavigateHome={() => navigateTo('converter')}
-          queuedCount={queue.length}
+        {/* Persistent Left Navigation Sidebar */}
+        <Sidebar
+          activeNav={activeNav}
+          onSelectNav={handleSelectNav}
+          collapsed={settings.sidebarCollapsed}
+          onToggleCollapse={() =>
+            updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed })
+          }
+          width={settings.sidebarWidth}
+          onChangeWidth={(sidebarWidth) => updateSettings({ sidebarWidth })}
+          pinnedTools={settings.pinnedTools}
+          onTogglePinTool={handleTogglePinTool}
+          projectCount={projectWorkspace.projects.length}
           historyCount={history.length}
-          isHistoryOpen={workspaceMode === 'history'}
-          onOpenHistory={() => {
-            navigateTo('converter');
-            setWorkspaceMode('history');
-          }}
-          isHelpOpen={workspaceMode === 'guide'}
-          onOpenHelp={() => {
-            navigateTo('converter');
-            setWorkspaceMode('guide');
-          }}
-          wasmStatus={wasmStatus}
-          onOpenPresets={() => handleOpenPresetModal(null)}
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-          theme={theme}
-          onThemeChange={setTheme}
-          onToggleTheme={toggleTheme}
+          queuedCount={queue.length}
+          ephemeralMode={ephemeralMode}
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
         />
 
-        {currentView === 'privacy' ? (
-          <main className="flex-1 w-full pb-20">
-            <PrivacyPolicy onBack={() => navigateTo('converter')} />
-          </main>
-        ) : currentView === 'terms' ? (
-          <main className="flex-1 w-full pb-20">
-            <TermsOfService onBack={() => navigateTo('converter')} />
-          </main>
-        ) : (
-          <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 flex flex-col">
-            <OfflineIndicator />
+        {/* Main Shell Column */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+          <TopBar
+            viewTitle={
+              legalRoute === 'privacy'
+                ? 'Privacy Policy'
+                : legalRoute === 'terms'
+                ? 'Terms of Service'
+                : VIEW_TITLES[activeNav]
+            }
+            isStudioView={isStudioView}
+            projectName={projectWorkspace.activeProject?.name || 'Active Studio'}
+            onRenameProject={(name) => {
+              if (projectWorkspace.activeProjectId) {
+                void projectWorkspace.renameProject(projectWorkspace.activeProjectId, name);
+              }
+            }}
+            onNavigateHome={() => {
+              setLegalRoute('none');
+              setActiveNav('home');
+            }}
+            saveStatus={projectWorkspace.saveStatus}
+            canUndo={canUndoEdit}
+            canRedo={canRedoEdit}
+            undoLabel={undoEditLabel}
+            redoLabel={redoEditLabel}
+            onUndo={handleUndoEdit}
+            onRedo={handleRedoEdit}
+            onSaveSnapshot={
+              projectWorkspace.activeProject
+                ? () => void projectWorkspace.createProjectSnapshot()
+                : undefined
+            }
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onOpenExportCenter={() => setIsExportCenterOpen(true)}
+            readyCount={readyCount}
+            completedCount={completedCount}
+            theme={theme}
+            onThemeChange={(m) => {
+              setTheme(m);
+              updateSettings({ theme: m });
+            }}
+            onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          />
 
-            {/* Mobile Primary View Switcher (< md; desktop uses Header nav) */}
-            <div className="md:hidden w-full mt-3 mb-2">
-              <div
-                role="tablist"
-                aria-label="Workspace views"
-                className="grid grid-cols-4 p-1 rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)]"
+          <OfflineIndicator />
+
+          <main className="flex-1 flex flex-col min-w-0">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={legalRoute !== 'none' ? legalRoute : isStudioView ? 'studio' : activeNav}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={STATOR_TRANSITION.view}
+                className="flex-1 flex flex-col min-w-0"
               >
-                {(
-                  [
-                    { id: 'converter', label: 'Convert' },
-                    { id: 'gif-studio', label: 'GIF Studio' },
-                    {
-                      id: 'history',
-                      label: `History${history.length > 0 ? ` (${history.length})` : ''}`,
-                    },
-                    { id: 'guide', label: 'Guide' },
-                  ] as const
-                ).map((tab) => {
-                  const isActive = workspaceMode === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => setWorkspaceMode(tab.id)}
-                      className={`relative py-2 rounded-lg text-[11px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                        isActive
-                          ? 'text-white'
-                          : 'text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.span
-                          layoutId="stator-mobile-workspace-tab"
-                          transition={STATOR_SPRING.tactile}
-                          className="absolute inset-0 rounded-lg bg-[var(--stator-accent)]"
-                        />
-                      )}
-                      <span className="relative z-10">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {workspaceMode === 'converter' ? (
-                <motion.div
-                  key="converter-workspace"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={STATOR_TRANSITION.view}
-                  className="w-full"
-                >
-                  {!hasQueuedFiles ? (
-                    <EditorialIntake
-                      onFilesSelected={(files) => handleFilesSelected(files, true)}
-                      onLoadSampleFiles={handleLoadSampleFiles}
-                      globalPreset={globalPreset}
-                      wasmStatus={wasmStatus}
-                      onOpenPresets={() => handleOpenPresetModal(null)}
-                      onOpenGifStudio={() => setWorkspaceMode('gif-studio')}
-                    />
-                  ) : (
-                    <div className="w-full pt-4 sm:pt-5 space-y-3.5">
-                      {/* De-duplicated Workspace Header Bar: Shared Spring Switcher + Bulk Action */}
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            role="tablist"
-                            aria-label="Converter layout mode"
-                            className="inline-flex items-center p-0.5 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border)]"
-                          >
-                            <button
-                              type="button"
-                              role="tab"
-                              aria-selected={stageViewMode === 'stage'}
-                              onClick={() => setStageViewMode('stage')}
-                              className={`relative h-8 px-3 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                                stageViewMode === 'stage'
-                                  ? 'text-white'
-                                  : 'text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
-                              }`}
-                            >
-                              {stageViewMode === 'stage' && (
-                                <motion.span
-                                  layoutId="stator-view-switch"
-                                  transition={STATOR_SPRING.tactile}
-                                  aria-hidden="true"
-                                  className="absolute inset-0 rounded-md bg-[var(--stator-accent)]"
-                                />
-                              )}
-                              <Maximize2 className="relative z-10 w-3.5 h-3.5" />
-                              <span className="relative z-10">Focus Canvas</span>
-                            </button>
-                            <button
-                              type="button"
-                              role="tab"
-                              aria-selected={stageViewMode === 'queue'}
-                              onClick={() => setStageViewMode('queue')}
-                              className={`relative h-8 px-3 rounded-md text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                                stageViewMode === 'queue'
-                                  ? 'text-white'
-                                  : 'text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
-                              }`}
-                            >
-                              {stageViewMode === 'queue' && (
-                                <motion.span
-                                  layoutId="stator-view-switch"
-                                  transition={STATOR_SPRING.tactile}
-                                  aria-hidden="true"
-                                  className="absolute inset-0 rounded-md bg-[var(--stator-accent)]"
-                                />
-                              )}
-                              <List className="relative z-10 w-3.5 h-3.5" />
-                              <span className="relative z-10">Batch Ledger</span>
-                              <span
-                                className={`relative z-10 font-mono tabular-nums text-[11px] ${
-                                  stageViewMode === 'queue'
-                                    ? 'text-white/85'
-                                    : 'text-[var(--stator-fg-subtle)]'
-                                }`}
-                              >
-                                ({queue.length})
-                              </span>
-                            </button>
-                          </div>
-
-                          <span className="hidden sm:inline text-xs font-mono tabular-nums text-[var(--stator-fg-subtle)]">
-                            {readyCount > 0
-                              ? `${readyCount} ready`
-                              : `${completedCount} completed`}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsCommandPaletteOpen(true)}
-                            className="lg:hidden h-8 px-2.5 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg-muted)] inline-flex items-center gap-1 cursor-pointer active:scale-[0.97]"
-                            aria-label="Open Command Palette"
-                          >
-                            <Command className="w-3.5 h-3.5" />
-                            <span>K</span>
-                          </button>
-
-                          {stageViewMode === 'stage' && readyCount > 1 && (
-                            <button
-                              type="button"
-                              onClick={handleConvertAll}
-                              className="h-8 px-3.5 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0 active:scale-[0.98]"
-                            >
-                              <Zap className="w-3.5 h-3.5 fill-white" />
-                              <span>Convert All ({readyCount})</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <AnimatePresence mode="wait">
-                        {stageViewMode === 'stage' ? (
-                          <motion.div
-                            key="focus-canvas-pane"
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={STATOR_TRANSITION.view}
-                          >
-                            <CanvasFocusStage
-                              queue={queue}
-                              activeItemId={activeStageItemId}
-                              onSelectActiveItem={setActiveStageItemId}
-                              onUpdateTargetFormat={handleUpdateTargetFormat}
-                              onUpdatePresetSettings={handleUpdatePresetSettings}
-                              onStartConversion={handleStartConversion}
-                              onCancelConversion={handleCancelConversion}
-                              onRemoveItem={handleRemoveItem}
-                              onAddFiles={triggerGlobalFileBrowse}
-                              onFilesDropped={(files) => handleFilesSelected(files, true)}
-                              onAddExtractedFile={(file) => {
-                                handleFilesSelected([file], false);
-                              }}
-                              onSwitchToLedger={() => setStageViewMode('queue')}
-                              onToast={(msg) => showToast(msg)}
-                              wasmLoadProgress={wasmLoadProgress}
-                            />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="batch-ledger-pane"
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={STATOR_TRANSITION.view}
-                          >
-                            <BatchLedgerView
-                              queue={queue}
-                              onFilesDropped={(files) => handleFilesSelected(files, true)}
-                              onAddFilesClick={triggerGlobalFileBrowse}
-                              onRemoveItem={handleRemoveItem}
-                              onReorderItem={handleReorderItem}
-                              onClearQueue={handleClearQueue}
-                              onUpdateTargetFormat={handleUpdateTargetFormat}
-                              onBatchUpdateFormat={handleBatchUpdateFormat}
-                              onUpdatePresetSettings={handleUpdatePresetSettings}
-                              onStartConversion={handleStartConversion}
-                              onCancelConversion={handleCancelConversion}
-                              onConvertAll={handleConvertAll}
-                              onTogglePause={handleTogglePause}
-                              isPaused={isPaused}
-                              onOpenFocusStage={(id: string) => {
-                                setActiveStageItemId(id);
-                                setStageViewMode('stage');
-                              }}
-                              onToast={(msg) => showToast(msg)}
-                              wasmLoadProgress={wasmLoadProgress}
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </motion.div>
-              ) : workspaceMode === 'gif-studio' ? (
-                <motion.div
-                  key="gif-studio-workspace"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={STATOR_TRANSITION.view}
-                  className="w-full"
-                >
-                  <GifStudioPanel
-                    onToast={(msg) => showToast(msg)}
-                    onApplyCreatorRecipe={(settings, label, targetFormat) => {
-                      handleApplyPreset(settings, null);
-                      if (targetFormat) {
-                        setQueue((prev) =>
-                          prev.map((item) => {
-                            if (item.status !== 'ready') return item;
-                            const isImageTarget = ['AVIF', 'WEBP', 'PNG', 'JPEG'].includes(
-                              targetFormat
-                            );
-                            const isVideoTarget = ['MP4', 'WEBM', 'MOV', 'GIF'].includes(
-                              targetFormat
-                            );
-                            if (
-                              (item.typeCategory === 'image' && isImageTarget) ||
-                              (item.typeCategory === 'video' && isVideoTarget)
-                            ) {
-                              return {
-                                ...item,
-                                targetFormat,
-                                outputName: buildOutputFilename(item.name, targetFormat),
-                              };
-                            }
-                            return item;
-                          })
-                        );
+            {legalRoute === 'privacy' ? (
+              <PrivacyPolicy onBack={() => navigateLegal('none')} />
+            ) : legalRoute === 'terms' ? (
+              <TermsOfService onBack={() => navigateLegal('none')} />
+            ) : activeNav === 'home' ? (
+              <HomeDashboard
+                projects={projectWorkspace.projects}
+                ephemeralMode={ephemeralMode}
+                onCreateProject={(type) => void handleCreateNewProject(type)}
+                onOpenProject={(id) => void handleOpenExistingProject(id)}
+                onRenameProject={(id, name) => void projectWorkspace.renameProject(id, name)}
+                onDuplicateProject={(id) => void projectWorkspace.duplicateProject(id)}
+                onTogglePinProject={(id) => void projectWorkspace.togglePinProject(id)}
+                onDeleteProject={(id) => void projectWorkspace.removeProject(id)}
+                onExportProjectJson={projectWorkspace.exportProjectFile}
+                onImportProjectJson={(file) => void projectWorkspace.importProjectFile(file)}
+                onImportMediaFiles={(files) => void handleIncomingMediaFiles(files)}
+                onLoadSamples={async () => {
+                  await projectWorkspace.createProject('batch', 'Sample Media Session');
+                  const loaded = await handleLoadSampleFiles();
+                  if (loaded.length > 0) {
+                    setActiveNav('batch');
+                  }
+                }}
+                onOpenAllProjects={() => setActiveNav('projects')}
+              />
+            ) : activeNav === 'projects' ? (
+              <ProjectsView
+                projects={projectWorkspace.projects}
+                onCreateProject={(type) => void handleCreateNewProject(type)}
+                onOpenProject={(id) => void handleOpenExistingProject(id)}
+                onRenameProject={(id, name) => void projectWorkspace.renameProject(id, name)}
+                onDuplicateProject={(id) => void projectWorkspace.duplicateProject(id)}
+                onTogglePinProject={(id) => void projectWorkspace.togglePinProject(id)}
+                onDeleteProject={(id) => void projectWorkspace.removeProject(id)}
+                onExportProjectJson={projectWorkspace.exportProjectFile}
+                onImportProjectJson={(file) => void projectWorkspace.importProjectFile(file)}
+              />
+            ) : isStudioView ? (
+              <StatorStudio
+                activeTool={activeNav}
+                project={projectWorkspace.activeProject}
+                queue={queue}
+                activeItemId={activeStageItemId}
+                onSelectActiveItem={setActiveStageItemId}
+                onFilesDropped={(files) => void handleIncomingMediaFiles(files)}
+                onAddFilesClick={() => globalFileInputRef.current?.click()}
+                onLoadSamples={() => void handleLoadSampleFiles()}
+                onRemoveItem={handleRemoveItem}
+                onReorderItem={handleReorderItem}
+                onUpdateTargetFormat={handleUpdateTargetFormat}
+                onBatchUpdateFormat={handleBatchUpdateFormat}
+                onUpdatePresetSettings={handleUpdatePresetSettings}
+                onStartConversion={(id) => void handleStartConversion(id)}
+                onCancelConversion={handleCancelConversion}
+                onConvertAll={() => void handleConvertAll()}
+                onTogglePause={handleTogglePause}
+                isPaused={isPaused}
+                onReconnectFile={handleReconnectItemFile}
+                onSplitClip={handleSplitItemSegment}
+                onMergeClips={(ids, mode, fmt) => void handleMergeClips(ids, mode, fmt)}
+                onReplaceVideoAudio={(id, audio) => void handleReplaceVideoAudio(id, audio)}
+                onRestoreSnapshot={(snapId) => void projectWorkspace.restoreProjectSnapshot(snapId)}
+                leftWidth={settings.leftPanelWidth}
+                rightWidth={settings.rightPanelWidth}
+                onResizeLeft={(leftPanelWidth) => updateSettings({ leftPanelWidth })}
+                onResizeRight={(rightPanelWidth) => updateSettings({ rightPanelWidth })}
+                showCheckerboardDefault={settings.showCheckerboardDefault}
+                wasmLoadProgress={wasmLoadProgress}
+                onToast={showToast}
+              />
+            ) : activeNav === 'gif-studio' ? (
+              <GifStudioPanel
+                onToast={showToast}
+                onApplyCreatorRecipe={(recipeSettings, label, targetFormat) => {
+                  handleApplyPreset(recipeSettings, null);
+                  if (targetFormat) {
+                    setQueue((prev) =>
+                      prev.map((item) => {
+                        if (item.status !== 'ready') return item;
+                        const isImageTarget = ['AVIF', 'WEBP', 'PNG', 'JPEG'].includes(targetFormat);
+                        const isVideoTarget = ['MP4', 'WEBM', 'MOV', 'GIF'].includes(targetFormat);
+                        if (
+                          (item.typeCategory === 'image' && isImageTarget) ||
+                          (item.typeCategory === 'video' && isVideoTarget)
+                        ) {
+                          return {
+                            ...item,
+                            targetFormat,
+                            outputName: buildOutputFilename(item.name, targetFormat),
+                          };
+                        }
+                        return item;
+                      })
+                    );
+                  }
+                  setActiveNav('converter');
+                  showToast(`Applied ${label}`);
+                }}
+              />
+            ) : activeNav === 'quality-lab' ? (
+              <QualityLabView
+                queue={queue}
+                onApplyCandidatePreset={(format, preset) => {
+                  const target = queue.find((q) => q.id === activeStageItemId) || queue[0];
+                  if (target) {
+                    handleUpdateTargetFormat(target.id, format);
+                    handleUpdatePresetSettings(target.id, preset, 'Apply Quality Lab winner');
+                    setActiveNav('converter');
+                    showToast(`Applied ${format} winner preset to ${target.name}`);
+                  } else {
+                    handleApplyPreset(preset, null);
+                    showToast(`Applied ${format} preset as global default`);
+                  }
+                }}
+                onToast={showToast}
+              />
+            ) : activeNav === 'pipelines' ? (
+              <SmartPipelinesView
+                queue={queue}
+                onApplyPipelineToQueue={(recipe, compiledPreset) => {
+                  setQueue((prev) =>
+                    prev.map((item) => {
+                      if (!isPipelineCompatibleWithCategory(recipe, item.typeCategory)) {
+                        return item;
                       }
-                      setWorkspaceMode('converter');
-                      showToast(`Applied ${label}`);
-                    }}
-                  />
-                </motion.div>
-              ) : workspaceMode === 'history' ? (
-                <motion.div
-                  key="history-workspace"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={STATOR_TRANSITION.view}
-                  className="w-full"
-                >
-                  <HistoryWorkspaceView
-                    history={history}
-                    onClearHistory={handleClearAllHistory}
-                    onDeleteEntry={handleDeleteHistoryEntry}
-                    ephemeralMode={ephemeralMode}
-                    onToggleEphemeralMode={handleToggleEphemeralMode}
-                    onWipeAllData={handleWipeAllData}
-                    onBackToConverter={() => setWorkspaceMode('converter')}
-                  />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="guide-workspace"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={STATOR_TRANSITION.view}
-                  className="w-full"
-                >
-                  <GuideWorkspaceView
-                    onBackToConverter={() => setWorkspaceMode('converter')}
-                  />
-                </motion.div>
-              )}
+                      return {
+                        ...item,
+                        targetFormat: recipe.targetFormat,
+                        outputName: buildOutputFilename(item.name, recipe.targetFormat),
+                        presetSettings: compiledPreset,
+                      };
+                    })
+                  );
+                  setActiveNav('batch');
+                  showToast(`Applied pipeline "${recipe.name}" in single-pass mode`);
+                }}
+                onToast={showToast}
+              />
+            ) : activeNav === 'history' ? (
+              <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8">
+                <HistoryWorkspaceView
+                  history={history}
+                  onClearHistory={() => void handleClearAllHistory()}
+                  onDeleteEntry={(id) => void handleDeleteHistoryEntry(id)}
+                  ephemeralMode={ephemeralMode}
+                  onToggleEphemeralMode={(e) => void handleToggleEphemeralMode(e)}
+                  onWipeAllData={async () => {
+                    await handleWipeAllData();
+                    await projectWorkspace.clearAllProjects();
+                  }}
+                  onBackToConverter={() => setActiveNav('home')}
+                />
+              </div>
+            ) : activeNav === 'settings' ? (
+              <SettingsView
+                settings={settings}
+                onUpdateSettings={updateSettings}
+                onResetSettings={resetSettings}
+                theme={theme}
+                onThemeChange={setTheme}
+                ephemeralMode={ephemeralMode}
+                onToggleEphemeralMode={(e) => void handleToggleEphemeralMode(e)}
+                onWipeAllData={async () => {
+                  await handleWipeAllData();
+                  await projectWorkspace.clearAllProjects();
+                }}
+                onToast={showToast}
+              />
+            ) : (
+              <GuideWorkspaceView onBackToConverter={() => setActiveNav('home')} />
+            )}
+              </motion.div>
             </AnimatePresence>
           </main>
-        )}
+
+          <StatusFooter
+            onNavigatePrivacy={() => navigateLegal('privacy')}
+            onNavigateTerms={() => navigateLegal('terms')}
+          />
+        </div>
+
+        <ExportCenterModal
+          isOpen={isExportCenterOpen}
+          onClose={() => setIsExportCenterOpen(false)}
+          queue={queue}
+          filenameTemplate={settings.filenameTemplate}
+          onUpdateFilenameTemplate={(filenameTemplate) => updateSettings({ filenameTemplate })}
+          onConvertAll={() => void handleConvertAll()}
+          onRetryItem={(id) => void handleStartConversion(id)}
+          onExportZip={() => void exportOutputsZip()}
+          onExportFolder={() => void exportOutputsToFolder()}
+          onToast={showToast}
+        />
 
         <CommandPalette
           isOpen={isCommandPaletteOpen}
           onClose={() => setIsCommandPaletteOpen(false)}
-          hasQueuedFiles={hasQueuedFiles}
+          hasQueuedFiles={queue.length > 0}
           readyCount={readyCount}
-          stageViewMode={stageViewMode}
-          onSetStageViewMode={setStageViewMode}
-          workspaceMode={workspaceMode}
-          onSetWorkspaceMode={setWorkspaceMode}
-          onChooseFiles={triggerGlobalFileBrowse}
-          onLoadSamples={() => {
-            setWorkspaceMode('converter');
-            handleLoadSampleFiles();
-          }}
-          onConvertAll={handleConvertAll}
+          activeNav={activeNav}
+          onSelectNav={handleSelectNav}
+          onCreateBlankProject={() => void handleCreateNewProject('blank')}
+          onChooseFiles={() => globalFileInputRef.current?.click()}
+          onLoadSamples={() => void handleLoadSampleFiles()}
+          onConvertAll={() => void handleConvertAll()}
           onClearQueue={handleClearQueue}
-          onOpenPresets={() => handleOpenPresetModal(null)}
-          onOpenHistory={() => setWorkspaceMode('history')}
-          onOpenHelp={() => setWorkspaceMode('guide')}
+          onOpenExportCenter={() => setIsExportCenterOpen(true)}
+          onOpenPresets={() => setIsPresetModalOpen(true)}
           onToggleTheme={toggleTheme}
           isDark={isDark}
         />
@@ -544,21 +609,8 @@ export default function App() {
           isOpen={isPresetModalOpen}
           onClose={() => setIsPresetModalOpen(false)}
           onApply={handleApplyPreset}
-          initialSettings={
-            activePresetItemId
-              ? itemPresets[activePresetItemId] ||
-                activeTargetItem?.presetSettings ||
-                globalPreset
-              : globalPreset
-          }
-          activeItemId={activePresetItemId}
-          activeItemName={activeTargetItem?.name}
-          activeCategory={activeTargetItem?.typeCategory}
-        />
-
-        <StatusFooter
-          onNavigatePrivacy={() => navigateTo('privacy')}
-          onNavigateTerms={() => navigateTo('terms')}
+          initialSettings={globalPreset}
+          activeItemId={null}
         />
 
         <AnimatePresence>
@@ -570,7 +622,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.97 }}
               transition={STATOR_TRANSITION.overlay}
-              className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border-strong)] text-[var(--stator-fg)] shadow-xl text-xs font-medium"
+              className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-2rem)] flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border-strong)] text-[var(--stator-fg)] shadow-xl text-xs font-medium"
             >
               <CheckCircle2 className="w-4 h-4 text-[var(--stator-success)] shrink-0" />
               <span>{toastMessage}</span>
@@ -578,7 +630,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={handleUndoClearQueue}
-                  className="ml-1 px-2 py-0.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] text-[var(--stator-fg)] border border-[var(--stator-border)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  className="ml-1 px-2 py-0.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] text-[var(--stator-fg)] border border-[var(--stator-border)] inline-flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Undo</span>

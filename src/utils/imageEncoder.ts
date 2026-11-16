@@ -1,4 +1,10 @@
-import { RotationDegrees } from '../types/queue.ts';
+import {
+  MediaAdjustments,
+  NormalizedCropRect,
+  PresetSettings,
+  RotationDegrees,
+  WatermarkConfig,
+} from '../types/queue.ts';
 
 export const RESOLUTION_BOUNDS: Record<string, { w: number; h: number }> = {
   '4K': { w: 3840, h: 2160 },
@@ -7,6 +13,58 @@ export const RESOLUTION_BOUNDS: Record<string, { w: number; h: number }> = {
   '720p': { w: 1280, h: 720 },
   '480p': { w: 854, h: 480 },
 };
+
+export interface PixelRect {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+}
+
+/**
+ * Resolves the source pixel crop rectangle from explicit normalized cropRect and/or aspectCrop ratio.
+ */
+export function resolveSourceCropRect(
+  srcW: number,
+  srcH: number,
+  cropRect?: NormalizedCropRect,
+  aspectCrop?: PresetSettings['aspectCrop']
+): PixelRect {
+  let sx = 0;
+  let sy = 0;
+  let sw = Math.max(1, srcW);
+  let sh = Math.max(1, srcH);
+
+  if (cropRect && cropRect.w > 0.01 && cropRect.h > 0.01) {
+    const cx = Math.max(0, Math.min(0.98, cropRect.x));
+    const cy = Math.max(0, Math.min(0.98, cropRect.y));
+    const cw = Math.max(0.02, Math.min(1 - cx, cropRect.w));
+    const ch = Math.max(0.02, Math.min(1 - cy, cropRect.h));
+    sx = Math.round(cx * srcW);
+    sy = Math.round(cy * srcH);
+    sw = Math.max(2, Math.round(cw * srcW));
+    sh = Math.max(2, Math.round(ch * srcH));
+  } else if (aspectCrop && aspectCrop !== 'original') {
+    let targetRatio = sw / sh;
+    if (aspectCrop === '9:16') targetRatio = 9 / 16;
+    else if (aspectCrop === '1:1') targetRatio = 1;
+    else if (aspectCrop === '4:5') targetRatio = 4 / 5;
+    else if (aspectCrop === '16:9') targetRatio = 16 / 9;
+
+    const currentRatio = sw / sh;
+    if (currentRatio > targetRatio) {
+      const nextW = Math.max(2, Math.round(sh * targetRatio));
+      sx = Math.round((sw - nextW) / 2);
+      sw = nextW;
+    } else if (currentRatio < targetRatio) {
+      const nextH = Math.max(2, Math.round(sw / targetRatio));
+      sy = Math.round((sh - nextH) / 2);
+      sh = nextH;
+    }
+  }
+
+  return { sx, sy, sw, sh };
+}
 
 export function calculateTargetDimensions(
   origW: number,
@@ -79,7 +137,7 @@ export function rgbaToBmpBlob(
   const buffer = new ArrayBuffer(fileSize);
   const view = new DataView(buffer);
 
-  view.setUint16(0, 0x424d, false); // 'BM'
+  view.setUint16(0, 0x424d, false);
   view.setUint32(2, fileSize, true);
   view.setUint16(6, 0, true);
   view.setUint16(8, 0, true);
@@ -133,7 +191,7 @@ export function rgbaToTiffBlob(
   const buffer = new ArrayBuffer(totalFileSize);
   const view = new DataView(buffer);
 
-  view.setUint16(0, 0x4949, false); // 'II'
+  view.setUint16(0, 0x4949, false);
   view.setUint16(2, 42, true);
   view.setUint32(4, ifdOffset, true);
 
@@ -219,9 +277,135 @@ export function pngBuffersToIcoBlob(
   return new Blob([outBuffer], { type: 'image/x-icon' });
 }
 
+export function buildCanvasFilterString(adj?: MediaAdjustments): string {
+  if (!adj) return 'none';
+  const parts: string[] = [];
+  if (adj.exposure !== 0) {
+    parts.push(`brightness(${(1 + adj.exposure / 100).toFixed(2)})`);
+  }
+  if (adj.contrast !== 0) {
+    parts.push(`contrast(${(1 + adj.contrast / 100).toFixed(2)})`);
+  }
+  if (adj.saturation !== 0) {
+    parts.push(`saturate(${Math.max(0, 1 + adj.saturation / 100).toFixed(2)})`);
+  }
+  if (adj.blur > 0) {
+    parts.push(`blur(${adj.blur.toFixed(1)}px)`);
+  }
+  return parts.length > 0 ? parts.join(' ') : 'none';
+}
+
 /**
- * Draws an image/bitmap onto a 2D canvas context with optional background flattening,
- * rotation (0/90/180/270), and horizontal flip.
+ * Applies pixel-accurate warm/cool temperature shift and unsharp-mask style convolution sharpening.
+ */
+export function applyPixelAdjustments(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  width: number,
+  height: number,
+  adj?: MediaAdjustments
+): void {
+  if (!adj) return;
+  const hasTemp = Math.abs(adj.temperature) >= 1;
+  const hasSharpen = adj.sharpen >= 1;
+  if (!hasTemp && !hasSharpen) return;
+
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+
+  if (hasTemp) {
+    const shift = Math.round((adj.temperature / 100) * 32);
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = Math.max(0, Math.min(255, data[i] + shift));
+      data[i + 2] = Math.max(0, Math.min(255, data[i + 2] - shift));
+    }
+  }
+
+  if (hasSharpen && width > 2 && height > 2) {
+    const strength = Math.min(1, adj.sharpen / 100) * 0.75;
+    const src = new Uint8ClampedArray(data);
+    const rowStride = width * 4;
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = y * rowStride + x * 4;
+        for (let c = 0; c < 3; c++) {
+          const center = src[idx + c];
+          const avgNeighbor =
+            (src[idx - rowStride + c] +
+              src[idx + rowStride + c] +
+              src[idx - 4 + c] +
+              src[idx + 4 + c]) *
+            0.25;
+          const sharpened = center + (center - avgNeighbor) * strength * 2.2;
+          data[idx + c] = Math.max(0, Math.min(255, Math.round(sharpened)));
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
+export function drawWatermarkOnContext(
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  width: number,
+  height: number,
+  watermark?: WatermarkConfig
+): void {
+  if (!watermark || !watermark.enabled || !watermark.text.trim()) return;
+  const text = watermark.text.trim().slice(0, 64);
+  const opacity = Math.min(1, Math.max(0.1, watermark.opacity ?? 0.65));
+  const fontSize = Math.max(14, Math.min(72, Math.round(Math.min(width, height) * 0.04)));
+  const margin = Math.max(16, Math.round(fontSize * 0.85));
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.font = `600 ${fontSize}px sans-serif`;
+  ctx.textBaseline = 'middle';
+
+  let x = width - margin;
+  let y = height - margin;
+  let align: CanvasTextAlign = 'right';
+
+  switch (watermark.position) {
+    case 'top-left':
+      x = margin;
+      y = margin + fontSize / 2;
+      align = 'left';
+      break;
+    case 'top-right':
+      x = width - margin;
+      y = margin + fontSize / 2;
+      align = 'right';
+      break;
+    case 'bottom-left':
+      x = margin;
+      y = height - margin - fontSize / 2;
+      align = 'left';
+      break;
+    case 'center':
+      x = width / 2;
+      y = height / 2;
+      align = 'center';
+      break;
+    default:
+      x = width - margin;
+      y = height - margin - fontSize / 2;
+      align = 'right';
+      break;
+  }
+
+  ctx.textAlign = align;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+  ctx.shadowBlur = Math.max(4, Math.round(fontSize * 0.25));
+  ctx.fillStyle =
+    watermark.color && /^#[0-9a-fA-F]{3,8}$/.test(watermark.color) ? watermark.color : '#FFFFFF';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+/**
+ * Draws an image/bitmap onto a 2D canvas context with optional crop, background flattening,
+ * CSS tonal filter, rotation (0/90/180/270), horizontal flip, pixel adjustments, and watermark.
  */
 export function drawTransformedSource(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
@@ -230,7 +414,10 @@ export function drawTransformedSource(
   dstH: number,
   rotation: RotationDegrees = 0,
   flipH: boolean = false,
-  preserveTransparency: boolean = true
+  preserveTransparency: boolean = true,
+  crop?: PixelRect,
+  adjustments?: MediaAdjustments,
+  watermark?: WatermarkConfig
 ): void {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -241,6 +428,9 @@ export function drawTransformedSource(
   }
 
   ctx.save();
+  if ('filter' in ctx && adjustments) {
+    ctx.filter = buildCanvasFilterString(adjustments);
+  }
   ctx.translate(dstW / 2, dstH / 2);
   if (rotation !== 0) {
     ctx.rotate((rotation * Math.PI) / 180);
@@ -251,6 +441,18 @@ export function drawTransformedSource(
   const isQuarterTurn = rotation === 90 || rotation === 270;
   const drawW = isQuarterTurn ? dstH : dstW;
   const drawH = isQuarterTurn ? dstW : dstH;
-  ctx.drawImage(source, -drawW / 2, -drawH / 2, drawW, drawH);
+
+  if (crop) {
+    ctx.drawImage(source, crop.sx, crop.sy, crop.sw, crop.sh, -drawW / 2, -drawH / 2, drawW, drawH);
+  } else {
+    ctx.drawImage(source, -drawW / 2, -drawH / 2, drawW, drawH);
+  }
   ctx.restore();
+
+  if (adjustments) {
+    applyPixelAdjustments(ctx, dstW, dstH, adjustments);
+  }
+  if (watermark) {
+    drawWatermarkOnContext(ctx, dstW, dstH, watermark);
+  }
 }

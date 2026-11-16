@@ -18,17 +18,14 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack }) => {
           <span>Back to Studio</span>
         </button>
         <span className="text-xs font-mono text-[var(--stator-fg-subtle)]">
-          MIT Open Source · v2.0.0
+          MIT Open Source · v1.0.0
         </span>
       </div>
 
       <div className="space-y-10">
         <div className="max-w-2xl">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--stator-fg)] mb-2">
-            Terms of{' '}
-            <span className="font-serif italic font-normal text-[var(--stator-accent-fg)]">
-              Service
-            </span>
+            Terms of Service
           </h1>
           <p className="text-sm text-[var(--stator-fg-muted)] leading-relaxed">
             Stator is an independent, MIT-licensed open-source media utility maintained by its

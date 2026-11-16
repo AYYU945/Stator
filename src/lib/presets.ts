@@ -107,6 +107,25 @@ export function sanitizePresetSettings(raw: unknown): Partial<PresetSettings> {
   if (typeof input.normalizeAudio === 'boolean') {
     out.normalizeAudio = input.normalizeAudio;
   }
+  if (input.watermark && typeof input.watermark === 'object') {
+    const wm = input.watermark as Record<string, unknown>;
+    const validPositions = new Set(['bottom-right', 'bottom-left', 'top-right', 'top-left', 'center']);
+    const color =
+      typeof wm.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(wm.color) ? wm.color : undefined;
+    out.watermark = {
+      enabled: Boolean(wm.enabled),
+      text: typeof wm.text === 'string' ? wm.text.slice(0, 64) : '',
+      position:
+        typeof wm.position === 'string' && validPositions.has(wm.position)
+          ? (wm.position as NonNullable<PresetSettings['watermark']>['position'])
+          : 'bottom-right',
+      opacity:
+        typeof wm.opacity === 'number' && Number.isFinite(wm.opacity)
+          ? Math.min(1, Math.max(0.1, Number(wm.opacity.toFixed(2))))
+          : 0.7,
+      color,
+    };
+  }
 
   return out;
 }

@@ -1,6 +1,7 @@
 import { PresetSettings } from '../types/queue.ts';
 import {
   resolveOrientedTargetDimensions,
+  resolveSourceCropRect,
   rgbaToBmpBlob,
   rgbaToTiffBlob,
   pngBuffersToIcoBlob,
@@ -40,11 +41,7 @@ async function encodeWithBudget(
     );
   }
 
-  if (
-    !targetMaxSizeMb ||
-    targetMaxSizeMb <= 0 ||
-    !LOSSY_MIME_FORMATS.has(mimeType)
-  ) {
+  if (!targetMaxSizeMb || targetMaxSizeMb <= 0 || !LOSSY_MIME_FORMATS.has(mimeType)) {
     return initialBlob;
   }
 
@@ -53,7 +50,6 @@ async function encodeWithBudget(
     return initialBlob;
   }
 
-  // 4-step binary search over quality [0.10 .. baseQuality]
   let low = 0.1;
   let high = Math.max(0.12, baseQuality);
   let bestBlob = initialBlob;
@@ -82,9 +78,16 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     const rotation = preset?.rotation || 0;
     const flipH = Boolean(preset?.flipH);
 
-    const { w: targetWidth, h: targetHeight } = resolveOrientedTargetDimensions(
+    const crop = resolveSourceCropRect(
       bitmap.width,
       bitmap.height,
+      preset?.cropRect,
+      preset?.aspectCrop
+    );
+
+    const { w: targetWidth, h: targetHeight } = resolveOrientedTargetDimensions(
+      crop.sw,
+      crop.sh,
       preset?.imageResize || 'original',
       rotation,
       preset?.customWidth,
@@ -100,7 +103,10 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
     const targetUpper = (targetFormat || '').toUpperCase();
     const forceWhiteBg =
-      preset?.preserveTransparency === false || targetUpper.includes('JPEG') || targetUpper.includes('JPG') || targetUpper.includes('BMP');
+      preset?.preserveTransparency === false ||
+      targetUpper.includes('JPEG') ||
+      targetUpper.includes('JPG') ||
+      targetUpper.includes('BMP');
 
     drawTransformedSource(
       ctx,
@@ -109,7 +115,10 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       targetHeight,
       rotation,
       flipH,
-      !forceWhiteBg
+      !forceWhiteBg,
+      crop,
+      preset?.adjustments,
+      preset?.watermark
     );
     bitmap.close();
 
@@ -138,12 +147,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     } else {
       const mimeType = resolveMimeType(targetFormat);
       const qualityFraction = Math.min(1, Math.max(0.1, (preset?.imageQuality ?? 90) / 100));
-      blob = await encodeWithBudget(
-        offscreen,
-        mimeType,
-        qualityFraction,
-        preset?.targetMaxSizeMb
-      );
+      blob = await encodeWithBudget(offscreen, mimeType, qualityFraction, preset?.targetMaxSizeMb);
     }
 
     self.postMessage({

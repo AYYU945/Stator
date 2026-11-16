@@ -105,7 +105,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
       aria-label="Local Conversion History & Privacy Ledger"
       className="w-full py-8 space-y-6"
     >
-      {/* Editorial Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[var(--stator-border)]">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-[var(--stator-fg-subtle)] mb-2">
@@ -115,16 +115,13 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
               className="inline-flex items-center gap-1 text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Converter</span>
+              <span>Workspace</span>
             </button>
             <span aria-hidden="true">/</span>
             <span>IndexedDB Local Cache</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--stator-fg)]">
-            History &amp;{' '}
-            <span className="font-serif italic font-normal text-[var(--stator-accent-fg)]">
-              Privacy Controls
-            </span>
+            History &amp; Privacy Controls
           </h1>
           <p className="text-xs sm:text-sm text-[var(--stator-fg-muted)] mt-1">
             Converted files are cached strictly inside your browser’s local IndexedDB up to a 250

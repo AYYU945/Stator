@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import { formatFileSize, PresetSettings } from '../types/queue.ts';
 import { imageWorkerPool } from './imageWorkerPool.ts';
 import { verifyOutputBlob } from './formatCapabilities.ts';
@@ -5,6 +6,7 @@ import {
   RESOLUTION_BOUNDS,
   calculateTargetDimensions,
   resolveOrientedTargetDimensions,
+  resolveSourceCropRect,
   rgbaToBmpBlob,
   rgbaToTiffBlob,
   pngBuffersToIcoBlob,
@@ -85,9 +87,16 @@ async function mainThreadCanvasConvert(
         const rotation = preset?.rotation || 0;
         const flipH = Boolean(preset?.flipH);
 
-        const { w: targetWidth, h: targetHeight } = resolveOrientedTargetDimensions(
+        const crop = resolveSourceCropRect(
           origWidth,
           origHeight,
+          preset?.cropRect,
+          preset?.aspectCrop
+        );
+
+        const { w: targetWidth, h: targetHeight } = resolveOrientedTargetDimensions(
+          crop.sw,
+          crop.sh,
           preset?.imageResize || 'original',
           rotation,
           preset?.customWidth,
@@ -102,7 +111,10 @@ async function mainThreadCanvasConvert(
 
         const target = targetFormat.toUpperCase();
         const forceOpaque =
-          preset?.preserveTransparency === false || target.includes('JPEG') || target.includes('JPG') || target.includes('BMP');
+          preset?.preserveTransparency === false ||
+          target.includes('JPEG') ||
+          target.includes('JPG') ||
+          target.includes('BMP');
 
         drawTransformedSource(
           ctx,
@@ -111,7 +123,10 @@ async function mainThreadCanvasConvert(
           canvas.height,
           rotation,
           flipH,
-          !forceOpaque
+          !forceOpaque,
+          crop,
+          preset?.adjustments,
+          preset?.watermark
         );
 
         URL.revokeObjectURL(objectUrl);
@@ -195,11 +210,6 @@ async function mainThreadCanvasConvert(
   });
 }
 
-/**
- * Converts an image file client-side through the unified OffscreenCanvas Web Worker pool.
- * Falls back to main-thread Canvas only when OffscreenCanvas/Workers are unavailable.
- * Never returns raw source bytes (`file.slice()`) on failure.
- */
 export async function convertClientImage(
   file: File,
   targetFormat: string,
@@ -218,13 +228,7 @@ export async function convertClientImage(
   }
 
   try {
-    const workerRes = await imageWorkerPool.convertImage(
-      file,
-      targetFormat,
-      preset,
-      signal,
-      jobId
-    );
+    const workerRes = await imageWorkerPool.convertImage(file, targetFormat, preset, signal, jobId);
     const check = await verifyOutputBlob(workerRes.blob, targetFormat);
     if (!check.ok) {
       URL.revokeObjectURL(workerRes.url);
@@ -235,7 +239,6 @@ export async function convertClientImage(
     if (err?.name === 'AbortError' || signal?.aborted) {
       throw err;
     }
-    // Only fall back to main-thread Canvas if OffscreenCanvas worker is genuinely unavailable
     if (typeof err?.message === 'string' && err.message.includes('OffscreenCanvas worker not supported')) {
       return await mainThreadCanvasConvert(file, targetFormat, preset, signal);
     }
@@ -244,8 +247,182 @@ export async function convertClientImage(
 }
 
 /**
- * Calculates real compression difference badge string without synthetic fallbacks.
+ * Generates a full production Favicon & PWA Icon Pack ZIP from a single source image.
  */
+export async function generateIconPackZip(file: File): Promise<{
+  blob: Blob;
+  url: string;
+  filename: string;
+}> {
+  const bmp = await createImageBitmap(file);
+  const zip = new JSZip();
+  const sizes = [
+    { size: 16, name: 'favicon-16x16.png' },
+    { size: 32, name: 'favicon-32x32.png' },
+    { size: 48, name: 'favicon-48x48.png' },
+    { size: 180, name: 'apple-touch-icon.png' },
+    { size: 192, name: 'icon-192x192.png' },
+    { size: 512, name: 'icon-512x512.png' },
+  ];
+
+  const icoEntries: Array<{ size: number; data: Uint8Array }> = [];
+
+  try {
+    for (const item of sizes) {
+      const c = document.createElement('canvas');
+      c.width = item.size;
+      c.height = item.size;
+      const ctx = c.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D unavailable');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      const scale = Math.min(item.size / bmp.width, item.size / bmp.height);
+      const dw = Math.round(bmp.width * scale);
+      const dh = Math.round(bmp.height * scale);
+      ctx.drawImage(bmp, (item.size - dw) / 2, (item.size - dh) / 2, dw, dh);
+
+      const pngBlob = await new Promise<Blob | null>((res) => c.toBlob(res, 'image/png'));
+      if (!pngBlob) throw new Error(`Failed generating ${item.name}`);
+      const bytes = new Uint8Array(await pngBlob.arrayBuffer());
+      zip.file(item.name, bytes);
+      if (item.size <= 48) {
+        icoEntries.push({ size: item.size, data: bytes });
+      }
+    }
+
+    const icoBlob = pngBuffersToIcoBlob(icoEntries);
+    zip.file('favicon.ico', await icoBlob.arrayBuffer());
+    zip.file(
+      'site.webmanifest',
+      JSON.stringify(
+        {
+          name: 'App Icons',
+          icons: [
+            { src: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+          ],
+        },
+        null,
+        2
+      )
+    );
+
+    const outZip = await zip.generateAsync({ type: 'blob' });
+    const stem = file.name.replace(/\.[^/.]+$/, '') || 'icon';
+    return {
+      blob: outZip,
+      url: URL.createObjectURL(outZip),
+      filename: `${stem}_icon_pack.zip`,
+    };
+  } finally {
+    bmp.close();
+  }
+}
+
+/**
+ * Generates a real composite Contact Sheet / Sprite Sheet PNG from multiple image files.
+ */
+export async function generateSpriteSheet(
+  files: File[],
+  columns: number = 4,
+  cellSize: number = 256,
+  gap: number = 8
+): Promise<{
+  blob: Blob;
+  url: string;
+  width: number;
+  height: number;
+  filename: string;
+  metadataJson: string;
+}> {
+  if (!files.length) throw new Error('Select at least 1 image to generate a sheet.');
+  const safeCols = Math.max(1, Math.min(12, columns));
+  const rows = Math.ceil(files.length / safeCols);
+  const totalW = safeCols * cellSize + Math.max(0, safeCols - 1) * gap;
+  const totalH = rows * cellSize + Math.max(0, rows - 1) * gap;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = totalW;
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D unavailable');
+
+  const framesMeta: Array<{ name: string; x: number; y: number; w: number; h: number }> = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const bmp = await createImageBitmap(files[i]);
+    const col = i % safeCols;
+    const row = Math.floor(i / safeCols);
+    const x = col * (cellSize + gap);
+    const y = row * (cellSize + gap);
+    const scale = Math.min(cellSize / bmp.width, cellSize / bmp.height);
+    const dw = Math.round(bmp.width * scale);
+    const dh = Math.round(bmp.height * scale);
+    ctx.drawImage(bmp, x + Math.round((cellSize - dw) / 2), y + Math.round((cellSize - dh) / 2), dw, dh);
+    bmp.close();
+    framesMeta.push({ name: files[i].name, x, y, w: cellSize, h: cellSize });
+  }
+
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
+  if (!blob) throw new Error('Failed encoding sprite sheet PNG');
+
+  return {
+    blob,
+    url: URL.createObjectURL(blob),
+    width: totalW,
+    height: totalH,
+    filename: `stator_sheet_${safeCols}col_${files.length}items.png`,
+    metadataJson: JSON.stringify({ width: totalW, height: totalH, cellSize, gap, frames: framesMeta }, null, 2),
+  };
+}
+
+/**
+ * Computes genuine mathematical PSNR (Peak Signal-to-Noise Ratio in dB) between an original image
+ * and a processed image blob. Returns null if dimensions cannot be compared fairly.
+ */
+export async function computeImagePSNR(originalFile: File, processedBlob: Blob): Promise<number | null> {
+  try {
+    const [bmpA, bmpB] = await Promise.all([
+      createImageBitmap(originalFile),
+      createImageBitmap(processedBlob),
+    ]);
+    try {
+      const w = Math.min(512, bmpA.width);
+      const h = Math.min(512, bmpA.height);
+      if (bmpA.width !== bmpB.width || bmpA.height !== bmpB.height) {
+        return null;
+      }
+      const cA = document.createElement('canvas');
+      const cB = document.createElement('canvas');
+      cA.width = cB.width = w;
+      cA.height = cB.height = h;
+      const ctxA = cA.getContext('2d');
+      const ctxB = cB.getContext('2d');
+      if (!ctxA || !ctxB) return null;
+      ctxA.drawImage(bmpA, 0, 0, w, h);
+      ctxB.drawImage(bmpB, 0, 0, w, h);
+      const dataA = ctxA.getImageData(0, 0, w, h).data;
+      const dataB = ctxB.getImageData(0, 0, w, h).data;
+      let sumSq = 0;
+      const count = w * h * 3;
+      for (let i = 0; i < dataA.length; i += 4) {
+        const dr = dataA[i] - dataB[i];
+        const dg = dataA[i + 1] - dataB[i + 1];
+        const db = dataA[i + 2] - dataB[i + 2];
+        sumSq += dr * dr + dg * dg + db * db;
+      }
+      const mse = sumSq / count;
+      if (mse <= 0.0001) return 99.9;
+      return Number((10 * Math.log10((255 * 255) / mse)).toFixed(2));
+    } finally {
+      bmpA.close();
+      bmpB.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
 export function calculateReductionBadge(
   inputBytes: number,
   outputBytes: number

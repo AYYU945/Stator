@@ -56,4 +56,36 @@ describe('presets', () => {
     // Malformed base64 rejected
     expect(decodePresetRecipeFromHash('#preset=%%%invalid%%%')).toBeNull();
   });
+
+  it('sanitizes watermark color hex codes, opacity bounds, and invalid positions', () => {
+    const cleaned = sanitizePresetSettings({
+      watermark: {
+        enabled: true,
+        text: '© Stator Release',
+        position: 'top-left',
+        opacity: 2.5,
+        color: '#3C63DB',
+      },
+    });
+    expect(cleaned.watermark).toEqual({
+      enabled: true,
+      text: '© Stator Release',
+      position: 'top-left',
+      opacity: 1,
+      color: '#3C63DB',
+    });
+
+    const rejectedColor = sanitizePresetSettings({
+      watermark: {
+        enabled: true,
+        text: 'Test',
+        position: 'invalid-pos' as any,
+        opacity: 0.01,
+        color: 'javascript:alert(1)',
+      },
+    });
+    expect(rejectedColor.watermark?.position).toBe('bottom-right');
+    expect(rejectedColor.watermark?.opacity).toBe(0.1);
+    expect(rejectedColor.watermark?.color).toBeUndefined();
+  });
 });

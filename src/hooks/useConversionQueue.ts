@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import JSZip from 'jszip';
 import {
   QueueItem,
   FileTypeCategory,
@@ -39,8 +40,30 @@ import {
   buildOutputFilename,
 } from '../utils/formatCapabilities.ts';
 import { generateSampleMediaFiles } from '../utils/sampleGenerator.ts';
+import { applyFilenameTemplate } from '../lib/settingsStore.ts';
+import { applyCompressionGoalToPreset } from '../utils/compressionEngine.ts';
+import { useHistoryStack } from './useHistoryStack.ts';
 
-export function useConversionQueue() {
+export interface ConversionQueueOptions {
+  filenameTemplate?: string;
+  maxImageWorkers?: number;
+  defaultCompressionGoal?: 'smaller' | 'balanced' | 'highest';
+  defaultNormalizeAudio?: boolean;
+  defaultStripMetadata?: boolean;
+}
+
+interface PresetEditAction {
+  itemId: string;
+  preset: PresetSettings;
+}
+
+export function useConversionQueue(options?: ConversionQueueOptions) {
+  const filenameTemplate = options?.filenameTemplate || '{name}';
+  const maxImageWorkers = options?.maxImageWorkers || 4;
+  const defaultCompressionGoal = options?.defaultCompressionGoal || 'balanced';
+  const defaultNormalizeAudio = options?.defaultNormalizeAudio ?? false;
+  const defaultStripMetadata = options?.defaultStripMetadata;
+
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [wasmStatus, setWasmStatus] = useState<WasmStatus>('idle');
   const [wasmLoadProgress, setWasmLoadProgress] = useState<string | null>(null);
@@ -63,6 +86,22 @@ export function useConversionQueue() {
   const isPausedRef = useRef<boolean>(false);
   const queueRef = useRef<QueueItem[]>([]);
   queueRef.current = queue;
+
+  const editStack = useHistoryStack<PresetEditAction>(40);
+
+  useEffect(() => {
+    imageWorkerPool.setMaxWorkers(maxImageWorkers);
+  }, [maxImageWorkers]);
+
+  const computeFormattedOutputName = useCallback(
+    (sourceName: string, targetFormat: string, resolution?: string) => {
+      if (filenameTemplate && filenameTemplate !== '{name}') {
+        return applyFilenameTemplate(sourceName, targetFormat, filenameTemplate, resolution);
+      }
+      return buildOutputFilename(sourceName, targetFormat);
+    },
+    [filenameTemplate]
+  );
 
   const revokeQueueUrls = (items: QueueItem[]) => {
     items.forEach((item) => {
@@ -140,14 +179,12 @@ export function useConversionQueue() {
     };
   }, []);
 
-  // Load history records on mount (empty state when clean)
   useEffect(() => {
     loadHistoryRecords().then((records) => {
       setHistory(records);
     });
   }, []);
 
-  // Subscribe to FFmpeg status & load progress without blocking initial idle render
   useEffect(() => {
     const unsubStatus = ffmpegManager.subscribe((status) => setWasmStatus(status));
     const unsubProg = ffmpegManager.subscribeLoadProgress((msg) => setWasmLoadProgress(msg));
@@ -157,7 +194,6 @@ export function useConversionQueue() {
     };
   }, []);
 
-  // Decode #preset= shared link on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const recipe = decodePresetRecipeFromHash(window.location.hash);
@@ -189,7 +225,7 @@ export function useConversionQueue() {
         convertedName:
           updates.outputName ||
           item.outputName ||
-          buildOutputFilename(item.name, item.targetFormat),
+          computeFormattedOutputName(item.name, item.targetFormat, item.resolution),
         originalSizeFormatted: item.sizeFormatted,
         outputSizeFormatted: updates.outputSizeFormatted || formatFileSize(outputBytes),
         savingsPercent,
@@ -202,7 +238,7 @@ export function useConversionQueue() {
       void saveHistoryRecord(newRecord);
       setHistory((prev) => [newRecord, ...prev.filter((r) => r.id !== newRecord.id)]);
     },
-    [ephemeralMode]
+    [ephemeralMode, computeFormattedOutputName]
   );
 
   const handleToggleEphemeralMode = useCallback(
@@ -240,8 +276,8 @@ export function useConversionQueue() {
   }, [showToast]);
 
   const handleFilesSelected = useCallback(
-    (incomingFiles: File[], openSingleInspector = true) => {
-      if (!incomingFiles || incomingFiles.length === 0) return;
+    (incomingFiles: File[], openSingleInspector = true): QueueItem[] => {
+      if (!incomingFiles || incomingFiles.length === 0) return [];
 
       const currentGlobalPreset = getStoredGlobalPreset();
       const globalSettings = globalPresetToSettings(currentGlobalPreset);
@@ -262,13 +298,23 @@ export function useConversionQueue() {
             : `file-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const sizeFormatted = formatFileSize(file.size);
         const resizeKey = resolutionToResizeKey(currentGlobalPreset.targetResolution);
-        const smartPresetSettings: PresetSettings = {
+        const stripMeta =
+          typeof defaultStripMetadata === 'boolean'
+            ? defaultStripMetadata
+            : currentGlobalPreset.stripExif;
+        const baseSettings: PresetSettings = {
           ...globalSettings,
           imageQuality: currentGlobalPreset.imageQuality,
           imageResize: resizeKey,
           videoResolution: resizeKey === 'custom' ? 'original' : (resizeKey as any),
-          stripMetadata: currentGlobalPreset.stripExif,
+          stripMetadata: stripMeta,
+          normalizeAudio: defaultNormalizeAudio,
         };
+        const smartPresetSettings = applyCompressionGoalToPreset(
+          baseSettings,
+          defaultCompressionGoal,
+          typeCategory
+        );
 
         acceptedItems.push({
           id,
@@ -281,27 +327,27 @@ export function useConversionQueue() {
           metadata: file.type || `${typeCategory.toUpperCase()} asset`,
           technicalTag: sizeFormatted,
           targetFormat: defaultTarget,
-          quality: currentGlobalPreset.imageQuality,
+          quality: smartPresetSettings.imageQuality,
           resolution: currentGlobalPreset.targetResolution,
-          stripExif: currentGlobalPreset.stripExif,
+          stripExif: stripMeta,
           preset: getPresetLabel(smartPresetSettings, typeCategory),
           presetSettings: smartPresetSettings,
           status: 'ready',
           progress: 0,
-          outputName: buildOutputFilename(file.name, defaultTarget),
+          outputName: computeFormattedOutputName(file.name, defaultTarget),
           warningMessage: validation.warning,
           previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+          needsReconnect: false,
         });
       }
 
       if (rejectedReasons.length > 0) {
         showToast(rejectedReasons[0]);
       }
-      if (acceptedItems.length === 0) return;
+      if (acceptedItems.length === 0) return [];
 
       setQueue((prev) => [...prev, ...acceptedItems]);
 
-      // Warm up local FFmpeg WASM only if video or audio assets were staged
       const hasMediaStream = acceptedItems.some(
         (item) => item.typeCategory === 'video' || item.typeCategory === 'audio'
       );
@@ -333,6 +379,59 @@ export function useConversionQueue() {
       if (openSingleInspector && acceptedItems.length === 1) {
         setInspectorFileId(acceptedItems[0].id);
       }
+      return acceptedItems;
+    },
+    [
+      showToast,
+      computeFormattedOutputName,
+      defaultCompressionGoal,
+      defaultNormalizeAudio,
+      defaultStripMetadata,
+    ]
+  );
+
+  const handleReconnectItemFile = useCallback(
+    (itemId: string, file: File) => {
+      const validation = validateIncomingFile(file);
+      if (!validation.valid) {
+        showToast(validation.reason || `Cannot reconnect unsupported file ${file.name}`);
+        return;
+      }
+      setQueue((prev) =>
+        prev.map((item) => {
+          if (item.id !== itemId) return item;
+          const previewUrl = file.type.startsWith('image/')
+            ? URL.createObjectURL(file)
+            : item.previewUrl;
+          return {
+            ...item,
+            file,
+            name: file.name,
+            sizeBytes: file.size,
+            sizeFormatted: formatFileSize(file.size),
+            previewUrl,
+            needsReconnect: false,
+            errorMessage: undefined,
+            status: 'ready',
+          };
+        })
+      );
+      extractFileMetadata(file).then((meta) => {
+        setQueue((prev) =>
+          prev.map((i) =>
+            i.id === itemId
+              ? {
+                  ...i,
+                  dimensions: meta.dimensions || i.dimensions,
+                  duration: meta.duration || i.duration,
+                  durationSeconds: meta.durationSeconds || i.durationSeconds,
+                  technicalTag: meta.technicalTag,
+                }
+              : i
+          )
+        );
+      });
+      showToast(`Reconnected ${file.name}`);
     },
     [showToast]
   );
@@ -340,10 +439,12 @@ export function useConversionQueue() {
   const handleLoadSampleFiles = useCallback(async () => {
     try {
       const sampleFiles = await generateSampleMediaFiles();
-      handleFilesSelected(sampleFiles, false);
+      const items = handleFilesSelected(sampleFiles, false);
       showToast('Loaded 3 local sample files (PNG & WAV)');
+      return items;
     } catch (err: any) {
       showToast(err?.message || 'Unable to synthesize sample files');
+      return [];
     }
   }, [handleFilesSelected, showToast]);
 
@@ -377,18 +478,18 @@ export function useConversionQueue() {
 
   const handleClearQueue = useCallback(() => {
     if (queueRef.current.length === 0) return;
-    // Abort any running jobs first
     abortControllersRef.current.forEach((c) => c.abort());
     abortControllersRef.current.clear();
 
     const snapshot = queueRef.current;
     undoQueueRef.current = snapshot;
     setQueue([]);
+    editStack.clearHistory();
     showToast(
       `Cleared ${snapshot.length} item${snapshot.length === 1 ? '' : 's'} from queue`,
       true
     );
-  }, [showToast]);
+  }, [showToast, editStack]);
 
   const handleUndoClearQueue = useCallback(() => {
     if (!undoQueueRef.current) return;
@@ -398,18 +499,21 @@ export function useConversionQueue() {
     setCanUndoClear(false);
   }, []);
 
-  const handleUpdateTargetFormat = useCallback((id: string, targetFormat: string) => {
-    setQueue((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        return {
-          ...item,
-          targetFormat,
-          outputName: buildOutputFilename(item.name, targetFormat),
-        };
-      })
-    );
-  }, []);
+  const handleUpdateTargetFormat = useCallback(
+    (id: string, targetFormat: string) => {
+      setQueue((prev) =>
+        prev.map((item) => {
+          if (item.id !== id) return item;
+          return {
+            ...item,
+            targetFormat,
+            outputName: computeFormattedOutputName(item.name, targetFormat, item.resolution),
+          };
+        })
+      );
+    },
+    [computeFormattedOutputName]
+  );
 
   const handleBatchUpdateFormat = useCallback(
     (category: FileTypeCategory, targetFormat: string) => {
@@ -421,7 +525,7 @@ export function useConversionQueue() {
           return {
             ...item,
             targetFormat,
-            outputName: buildOutputFilename(item.name, targetFormat),
+            outputName: computeFormattedOutputName(item.name, targetFormat, item.resolution),
           };
         })
       );
@@ -429,28 +533,62 @@ export function useConversionQueue() {
         showToast(`Updated ${count} ${category} file${count === 1 ? '' : 's'} to ${targetFormat}`);
       }
     },
-    [showToast]
+    [showToast, computeFormattedOutputName]
   );
 
-  const handleUpdatePresetSettings = useCallback((id: string, settings: PresetSettings) => {
-    setItemPresets((prev) => ({ ...prev, [id]: settings }));
-    setQueue((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              presetSettings: settings,
-              preset: getPresetLabel(settings, item.typeCategory),
-              quality: settings.imageQuality,
-              resolution: resizeKeyToResolution(
-                item.typeCategory === 'video' ? settings.videoResolution : settings.imageResize
-              ),
-              stripExif: settings.stripMetadata,
-            }
-          : item
-      )
-    );
-  }, []);
+  const applyPresetMutation = useCallback(
+    (id: string, settings: PresetSettings, pushToUndo: boolean, label: string = 'Edit preset') => {
+      const existingItem = queueRef.current.find((i) => i.id === id);
+      if (pushToUndo && existingItem) {
+        const beforePreset = itemPresets[id] || existingItem.presetSettings || globalPreset;
+        editStack.pushSnapshot(
+          label,
+          { itemId: id, preset: beforePreset },
+          { itemId: id, preset: settings }
+        );
+      }
+
+      setItemPresets((prev) => ({ ...prev, [id]: settings }));
+      setQueue((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                presetSettings: settings,
+                preset: getPresetLabel(settings, item.typeCategory),
+                quality: settings.imageQuality,
+                resolution: resizeKeyToResolution(
+                  item.typeCategory === 'video' ? settings.videoResolution : settings.imageResize
+                ),
+                stripExif: settings.stripMetadata,
+              }
+            : item
+        )
+      );
+    },
+    [editStack, globalPreset, itemPresets]
+  );
+
+  const handleUpdatePresetSettings = useCallback(
+    (id: string, settings: PresetSettings, label: string = 'Studio adjustment') => {
+      applyPresetMutation(id, settings, true, label);
+    },
+    [applyPresetMutation]
+  );
+
+  const handleUndoEdit = useCallback(() => {
+    const entry = editStack.undo();
+    if (!entry) return;
+    applyPresetMutation(entry.before.itemId, entry.before.preset, false);
+    showToast(`Undid: ${entry.label}`);
+  }, [editStack, applyPresetMutation, showToast]);
+
+  const handleRedoEdit = useCallback(() => {
+    const entry = editStack.redo();
+    if (!entry) return;
+    applyPresetMutation(entry.after.itemId, entry.after.preset, false);
+    showToast(`Redid: ${entry.label}`);
+  }, [editStack, applyPresetMutation, showToast]);
 
   const handleApplyPreset = useCallback(
     (settings: PresetSettings, itemId: string | null) => {
@@ -485,11 +623,113 @@ export function useConversionQueue() {
 
         showToast('Global preset applied');
       } else {
-        handleUpdatePresetSettings(itemId, settings);
+        handleUpdatePresetSettings(itemId, settings, 'Apply preset');
         showToast('Preset applied');
       }
     },
     [handleUpdatePresetSettings, showToast]
+  );
+
+  const handleSplitItemSegment = useCallback(
+    (itemId: string, splitSec: number) => {
+      const target = queueRef.current.find((i) => i.id === itemId);
+      if (!target || !target.durationSeconds || splitSec <= 0.2 || splitSec >= target.durationSeconds - 0.2) {
+        showToast('Move the playhead cleanly inside the clip before splitting.');
+        return;
+      }
+      const roundedSplit = Number(splitSec.toFixed(2));
+      const basePreset = target.presetSettings || globalPreset;
+      const origStart = basePreset.trimStart ?? 0;
+      const origEnd = basePreset.trimEnd ?? target.durationSeconds;
+      if (roundedSplit <= origStart + 0.1 || roundedSplit >= origEnd - 0.1) {
+        showToast('Split point must lie between current In and Out trim markers.');
+        return;
+      }
+
+      const part1Preset: PresetSettings = { ...basePreset, trimStart: origStart, trimEnd: roundedSplit };
+      const part2Preset: PresetSettings = { ...basePreset, trimStart: roundedSplit, trimEnd: origEnd };
+      const stem = target.name.replace(/\.[^/.]+$/, '');
+      const ext = target.name.split('.').pop() || 'mp4';
+
+      const secondClip: QueueItem = {
+        ...target,
+        id: `clip-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        name: `${stem}_part2.${ext}`,
+        outputName: computeFormattedOutputName(`${stem}_part2.${ext}`, target.targetFormat, target.resolution),
+        presetSettings: part2Preset,
+        preset: getPresetLabel(part2Preset, target.typeCategory),
+        status: 'ready',
+        progress: 0,
+        outputBlob: undefined,
+        outputUrl: undefined,
+      };
+
+      setQueue((prev) => {
+        const idx = prev.findIndex((i) => i.id === itemId);
+        if (idx === -1) return prev;
+        const updated = [...prev];
+        updated[idx] = {
+          ...updated[idx],
+          name: `${stem}_part1.${ext}`,
+          outputName: computeFormattedOutputName(`${stem}_part1.${ext}`, target.targetFormat, target.resolution),
+          presetSettings: part1Preset,
+          preset: getPresetLabel(part1Preset, target.typeCategory),
+        };
+        updated.splice(idx + 1, 0, secondClip);
+        return updated;
+      });
+      showToast(`Split clip at ${roundedSplit.toFixed(1)}s into 2 non-destructive parts`);
+    },
+    [globalPreset, computeFormattedOutputName, showToast]
+  );
+
+  const handleMergeClips = useCallback(
+    async (itemIds: string[], mode: 'video' | 'audio', targetFormat: string) => {
+      const files = itemIds
+        .map((id) => queueRef.current.find((i) => i.id === id)?.file)
+        .filter((f): f is File => Boolean(f));
+      if (files.length < 2) {
+        showToast('Select at least 2 active files in memory to merge.');
+        return null;
+      }
+      const res = await ffmpegManager.mergeMediaClips(files, mode, targetFormat);
+      const mergedFile = new File([res.blob], res.outputName, { type: res.blob.type });
+      handleFilesSelected([mergedFile], true);
+      showToast(`Merged ${files.length} clips into ${res.outputName}`);
+      return res;
+    },
+    [handleFilesSelected, showToast]
+  );
+
+  const handleReplaceVideoAudio = useCallback(
+    async (itemId: string, audioFile: File) => {
+      const target = queueRef.current.find((i) => i.id === itemId);
+      if (!target || !target.file || target.typeCategory !== 'video') {
+        showToast('Select a video with source media loaded to replace audio.');
+        return;
+      }
+      const out = await ffmpegManager.replaceVideoAudio(target.file, audioFile, 'MP4');
+      const { badge } = calculateReductionBadge(target.file.size, out.sizeBytes);
+      setQueue((prev) =>
+        prev.map((i) =>
+          i.id === itemId
+            ? {
+                ...i,
+                status: 'completed',
+                progress: 100,
+                outputBlob: out.blob,
+                outputUrl: out.url,
+                outputName: out.outputName,
+                outputSizeBytes: out.sizeBytes,
+                outputSizeFormatted: formatFileSize(out.sizeBytes),
+                reductionBadge: badge,
+              }
+            : i
+        )
+      );
+      showToast(`Replaced audio track on ${target.name}`);
+    },
+    [showToast]
   );
 
   const processItemConversion = useCallback(
@@ -498,11 +738,13 @@ export function useConversionQueue() {
         return {
           status: 'error',
           progress: 0,
-          errorMessage: 'Source file is missing from memory. Re-drop the file to convert.',
+          needsReconnect: true,
+          errorMessage: 'Source media is not cached locally. Use Reconnect Source File to attach it.',
         };
       }
 
       const effectivePreset = item.presetSettings || itemPresets[item.id] || globalPreset;
+      const outName = computeFormattedOutputName(item.name, item.targetFormat, item.resolution);
 
       if (item.typeCategory === 'image') {
         try {
@@ -522,7 +764,7 @@ export function useConversionQueue() {
             progress: 100,
             outputBlob: result.blob,
             outputUrl: result.url,
-            outputName: buildOutputFilename(item.name, item.targetFormat),
+            outputName: outName,
             outputSizeBytes: result.sizeBytes,
             outputSizeFormatted: formatFileSize(result.sizeBytes),
             reductionBadge: badge,
@@ -574,7 +816,7 @@ export function useConversionQueue() {
             progress: 100,
             outputBlob: transcodeResult.blob,
             outputUrl: transcodeResult.url,
-            outputName: transcodeResult.outputName,
+            outputName: outName || transcodeResult.outputName,
             outputSizeBytes: transcodeResult.sizeBytes,
             outputSizeFormatted: formatFileSize(transcodeResult.sizeBytes),
             reductionBadge: transcodeResult.reductionBadge,
@@ -603,7 +845,7 @@ export function useConversionQueue() {
         errorMessage: `Unsupported media category "${item.typeCategory}".`,
       };
     },
-    [globalPreset, itemPresets]
+    [globalPreset, itemPresets, computeFormattedOutputName]
   );
 
   const runSingleItem = useCallback(
@@ -626,7 +868,7 @@ export function useConversionQueue() {
         targetFormat,
         presetSettings,
         preset: getPresetLabel(presetSettings, existing.typeCategory),
-        outputName: buildOutputFilename(existing.name, targetFormat),
+        outputName: computeFormattedOutputName(existing.name, targetFormat, existing.resolution),
         status: 'converting',
         errorMessage: undefined,
         progress: existing.typeCategory === 'image' ? 25 : 5,
@@ -652,7 +894,7 @@ export function useConversionQueue() {
         recordHistory(updatedItem, updates);
       }
     },
-    [globalPreset, processItemConversion, recordHistory]
+    [globalPreset, processItemConversion, recordHistory, computeFormattedOutputName]
   );
 
   const handleCancelConversion = useCallback((id: string) => {
@@ -681,14 +923,13 @@ export function useConversionQueue() {
     setIsPaused(false);
 
     const pending = queueRef.current.filter(
-      (item) => item.status === 'ready' || item.status === 'error'
+      (item) => (item.status === 'ready' || item.status === 'error') && !item.needsReconnect
     );
     if (pending.length === 0) return;
 
     const imageItems = pending.filter((i) => i.typeCategory === 'image');
     const avItems = pending.filter((i) => i.typeCategory !== 'image');
 
-    // Run parallel worker pool batch for images cleanly capped by hardware concurrency
     const concurrency = imageWorkerPool.getPoolSize();
     let imageIdx = 0;
     const runNextImage = async (): Promise<void> => {
@@ -705,12 +946,75 @@ export function useConversionQueue() {
       );
     }
 
-    // Run audio/video strictly sequentially via FFmpeg mutex to respect WASM MEMFS bounds
     for (const item of avItems) {
       if (isPausedRef.current) break;
       await runSingleItem(item.id);
     }
   }, [runSingleItem]);
+
+  const exportOutputsZip = useCallback(
+    async (itemIds?: string[]) => {
+      const candidates = queueRef.current.filter(
+        (i) => i.status === 'completed' && i.outputBlob && (!itemIds || itemIds.includes(i.id))
+      );
+      if (candidates.length === 0) {
+        showToast('No completed exports ready to bundle.');
+        return;
+      }
+      const zip = new JSZip();
+      for (const item of candidates) {
+        const name = item.outputName || computeFormattedOutputName(item.name, item.targetFormat);
+        zip.file(name, await item.outputBlob!.arrayBuffer());
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stator_exports_${candidates.length}_files.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${candidates.length} file${candidates.length === 1 ? '' : 's'} as ZIP`);
+    },
+    [computeFormattedOutputName, showToast]
+  );
+
+  const exportOutputsToFolder = useCallback(
+    async (itemIds?: string[]) => {
+      const candidates = queueRef.current.filter(
+        (i) => i.status === 'completed' && i.outputBlob && (!itemIds || itemIds.includes(i.id))
+      );
+      if (candidates.length === 0) {
+        showToast('No completed exports ready to save.');
+        return;
+      }
+
+      const picker = (window as any).showDirectoryPicker;
+      if (typeof picker !== 'function') {
+        showToast('Directory Picker unavailable in this browser — packaging ZIP instead.');
+        await exportOutputsZip(itemIds);
+        return;
+      }
+
+      try {
+        const dirHandle = await picker({ mode: 'readwrite' });
+        for (const item of candidates) {
+          const fileName = item.outputName || computeFormattedOutputName(item.name, item.targetFormat);
+          const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(item.outputBlob!);
+          await writable.close();
+        }
+        showToast(`Saved ${candidates.length} converted file${candidates.length === 1 ? '' : 's'} to folder`);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        showToast('Folder write declined — falling back to ZIP download.');
+        await exportOutputsZip(itemIds);
+      }
+    },
+    [computeFormattedOutputName, exportOutputsZip, showToast]
+  );
 
   return {
     queue,
@@ -727,11 +1031,19 @@ export function useConversionQueue() {
     toastMessage,
     canUndoClear,
     showToast,
+    canUndoEdit: editStack.canUndo,
+    canRedoEdit: editStack.canRedo,
+    undoEditLabel: editStack.undoLabel,
+    redoEditLabel: editStack.redoLabel,
+    clearEditHistory: editStack.clearHistory,
+    handleUndoEdit,
+    handleRedoEdit,
     handleToggleEphemeralMode,
     handleDeleteHistoryEntry,
     handleClearAllHistory,
     handleWipeAllData,
     handleFilesSelected,
+    handleReconnectItemFile,
     handleLoadSampleFiles,
     handleRemoveItem,
     handleReorderItem,
@@ -741,9 +1053,14 @@ export function useConversionQueue() {
     handleBatchUpdateFormat,
     handleUpdatePresetSettings,
     handleApplyPreset,
+    handleSplitItemSegment,
+    handleMergeClips,
+    handleReplaceVideoAudio,
     handleStartConversion: runSingleItem,
     handleCancelConversion,
     handleTogglePause,
     handleConvertAll,
+    exportOutputsZip,
+    exportOutputsToFolder,
   };
 }

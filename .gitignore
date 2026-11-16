@@ -1,7 +1,12 @@
 node_modules/
 build/
 dist/
+dev-dist/
 coverage/
+.aistudio/
+playwright-report/
+test-results/
+tmp-playwright/
 .DS_Store
 *.log
 .env*

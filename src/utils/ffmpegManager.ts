@@ -1,5 +1,6 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile } from '@ffmpeg/util';
+import JSZip from 'jszip';
 import { calculateReductionBadge } from './converter.ts';
 import { PresetSettings, StreamMetadataSummary } from '../types/queue.ts';
 import {
@@ -8,6 +9,7 @@ import {
   parseFFmpegStreamMetadata,
 } from './ffmpegArgs.ts';
 import { buildOutputFilename, verifyOutputBlob } from './formatCapabilities.ts';
+import { serializeCuesToSrt } from './subtitles.ts';
 
 export type WasmStatus = 'loading' | 'active' | 'ready' | 'idle' | 'error';
 
@@ -87,9 +89,6 @@ class FFmpegManager {
     }
   }
 
-  /**
-   * Serializes access to the singleton FFmpeg WASM MEMFS instance.
-   */
   private runExclusive<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.mutexChain.then(fn, fn);
     this.mutexChain = next.then(
@@ -153,8 +152,6 @@ class FFmpegManager {
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const basePath = `${origin}/wasm/${variant === 'mt' ? 'core-mt' : 'core-st'}`;
-    // IMPORTANT: Pass same-origin HTTP URLs for JS modules to comply with strict CSP
-    // (worker.js / pthread worker dynamically import coreURL and workerURL; blob: JS fails CSP).
     const coreURL = `${basePath}/ffmpeg-core.js`;
     const wasmURL = await this.fetchWasmAsBlobURLWithProgress(`${basePath}/ffmpeg-core.wasm`, variant);
 
@@ -174,10 +171,6 @@ class FFmpegManager {
     return ffmpeg;
   }
 
-  /**
-   * Loads self-hosted @ffmpeg/core-mt when Cross-Origin Isolated, falling back cleanly to @ffmpeg/core (ST).
-   * Zero external CDN fetches.
-   */
   public async load(): Promise<FFmpeg> {
     if (this.ffmpeg && this.status === 'active') {
       return this.ffmpeg;
@@ -228,9 +221,6 @@ class FFmpegManager {
     return this.loadPromise;
   }
 
-  /**
-   * Hard-terminates an active FFmpeg worker on user cancellation and clears instance state so next job reloads cleanly.
-   */
   public cancelActiveJob(): void {
     const rejectFn = this.activeAbortReject;
     this.activeAbortReject = null;
@@ -253,6 +243,8 @@ class FFmpegManager {
     switch (ext.toLowerCase()) {
       case 'gif':
         return 'image/gif';
+      case 'webp':
+        return 'image/webp';
       case 'mp3':
         return 'audio/mpeg';
       case 'mp4':
@@ -278,9 +270,6 @@ class FFmpegManager {
     }
   }
 
-  /**
-   * Captures an exact single frame from a video file as a lossless PNG Blob via FFmpeg WASM.
-   */
   public async extractVideoFramePng(
     file: File,
     timestampSeconds: number = 0
@@ -331,10 +320,6 @@ class FFmpegManager {
     });
   }
 
-  /**
-   * Transcodes an audio or video file with mutex exclusivity, strict parameter preservation,
-   * real progress telemetry, and AbortSignal cancellation.
-   */
   public async transcodeMedia(
     file: File,
     targetFormat: string,
@@ -374,7 +359,9 @@ class FFmpegManager {
       const nonce = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       const inputName = `input_${nonce}.${inputExt}`;
       const outputName = `output_${nonce}.${ext}`;
+      const subName = `sub_${nonce}.srt`;
       const threads = this.getAllocatedThreads();
+      let wroteSubFile = false;
 
       this.logRingBuffer = [];
 
@@ -414,7 +401,7 @@ class FFmpegManager {
         }
         await ffmpeg.writeFile(inputName, fileData);
 
-        const { remuxArgs, transcodeArgs } = buildFFmpegTranscodeArgs({
+        const { remuxArgs, transcodeArgs, isAudioOnly } = buildFFmpegTranscodeArgs({
           inputName,
           outputName,
           inputExt,
@@ -424,9 +411,45 @@ class FFmpegManager {
           durationSeconds,
         });
 
+        const hasSubtitles =
+          !isAudioOnly &&
+          cleanTarget !== 'GIF' &&
+          (cleanTarget === 'MP4' || cleanTarget === 'MKV' || cleanTarget === 'MOV') &&
+          Boolean(preset?.subtitleCues && preset.subtitleCues.length > 0);
+
+        let finalTranscodeArgs = transcodeArgs;
+        if (hasSubtitles && preset?.subtitleCues) {
+          const srtText = serializeCuesToSrt(preset.subtitleCues);
+          await ffmpeg.writeFile(subName, new TextEncoder().encode(srtText));
+          wroteSubFile = true;
+          const subCodec = cleanTarget === 'MKV' ? 'srt' : 'mov_text';
+          const outIdx = finalTranscodeArgs.lastIndexOf(outputName);
+          const beforeOut = finalTranscodeArgs.slice(0, outIdx);
+          const firstInputIdx = beforeOut.indexOf(inputName);
+          if (firstInputIdx !== -1) {
+            const head = beforeOut.slice(0, firstInputIdx + 1);
+            const tail = beforeOut.slice(firstInputIdx + 1);
+            finalTranscodeArgs = [
+              ...head,
+              '-i',
+              subName,
+              '-map',
+              '0:v:0',
+              '-map',
+              '0:a?',
+              '-map',
+              '1:0',
+              ...tail,
+              '-c:s',
+              subCodec,
+              outputName,
+            ];
+          }
+        }
+
         let data: Uint8Array | null = null;
 
-        if (remuxArgs) {
+        if (remuxArgs && !wroteSubFile) {
           onProgress(35, { speed: 'Stream copy...', eta: 'Calculating...', workers: threads });
           const remuxCode = await execOrAbort(remuxArgs);
           if (remuxCode === 0) {
@@ -440,7 +463,7 @@ class FFmpegManager {
         }
 
         if (!data || data.length === 0) {
-          const exitCode = await execOrAbort(transcodeArgs);
+          const exitCode = await execOrAbort(finalTranscodeArgs);
           if (exitCode !== 0) {
             const tail = this.logRingBuffer.slice(-6).join(' | ');
             throw new Error(
@@ -494,7 +517,6 @@ class FFmpegManager {
         try {
           ffmpeg.off('progress', progressHandler);
         } catch {}
-        // Best-effort MEMFS cleanup (skip if instance was terminated during abort)
         if (this.ffmpeg === ffmpeg) {
           try {
             await ffmpeg.deleteFile(inputName);
@@ -502,21 +524,231 @@ class FFmpegManager {
           try {
             await ffmpeg.deleteFile(outputName);
           } catch {}
+          if (wroteSubFile) {
+            try {
+              await ffmpeg.deleteFile(subName);
+            } catch {}
+          }
         }
       }
     });
   }
 
   /**
-   * Builds an animated GIF from ordered image files using HTML5 Canvas normalization + FFmpeg palettegen.
+   * Merges multiple compatible video or audio files sequentially using FFmpeg concat demuxer/filter.
+   */
+  public async mergeMediaClips(
+    files: File[],
+    mode: 'video' | 'audio',
+    targetFormat: string,
+    onProgress?: (pct: number) => void
+  ): Promise<{ blob: Blob; url: string; outputName: string; sizeBytes: number }> {
+    if (files.length < 2) {
+      throw new Error('Select at least 2 clips to merge.');
+    }
+
+    return this.runExclusive(async () => {
+      onProgress?.(10);
+      const ffmpeg = await this.load();
+      const nonce = `${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
+      const cleanTarget = targetFormat.toUpperCase().split(' ')[0];
+      const ext = cleanTarget.toLowerCase();
+      const outputName = `merged_${nonce}.${ext}`;
+      const listName = `concat_${nonce}.txt`;
+      const written: string[] = [];
+
+      try {
+        const listLines: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          const inExt = f.name.split('.').pop()?.toLowerCase() || (mode === 'audio' ? 'wav' : 'mp4');
+          const safeName = `clip_${nonce}_${i}.${inExt}`;
+          await ffmpeg.writeFile(safeName, await fetchFile(f));
+          written.push(safeName);
+          listLines.push(`file '${safeName}'`);
+          onProgress?.(15 + Math.round(((i + 1) / files.length) * 35));
+        }
+
+        await ffmpeg.writeFile(listName, new TextEncoder().encode(listLines.join('\n')));
+        written.push(listName);
+
+        const args =
+          mode === 'audio'
+            ? [
+                '-f',
+                'concat',
+                '-safe',
+                '0',
+                '-i',
+                listName,
+                '-c:a',
+                ext === 'wav' ? 'pcm_s16le' : ext === 'flac' ? 'flac' : 'libmp3lame',
+                outputName,
+              ]
+            : [
+                '-f',
+                'concat',
+                '-safe',
+                '0',
+                '-i',
+                listName,
+                '-c:v',
+                'libx264',
+                '-preset',
+                'fast',
+                '-pix_fmt',
+                'yuv420p',
+                '-c:a',
+                'aac',
+                outputName,
+              ];
+
+        const exitCode = await ffmpeg.exec(args);
+        if (exitCode !== 0) {
+          throw new Error(
+            'Merge failed: clips must share compatible codecs/resolutions for concat, or transcode each clip to MP4/WAV first.'
+          );
+        }
+
+        onProgress?.(92);
+        const raw = await ffmpeg.readFile(outputName);
+        const bytes = raw instanceof Uint8Array ? new Uint8Array(raw) : new TextEncoder().encode(String(raw));
+        const blob = new Blob([bytes.buffer as ArrayBuffer], { type: this.getMimeType(ext) });
+        onProgress?.(100);
+        return {
+          blob,
+          url: URL.createObjectURL(blob),
+          outputName: `stator_merged_${files.length}clips.${ext}`,
+          sizeBytes: blob.size,
+        };
+      } finally {
+        for (const f of written) {
+          try {
+            await ffmpeg.deleteFile(f);
+          } catch {}
+        }
+        try {
+          await ffmpeg.deleteFile(outputName);
+        } catch {}
+      }
+    });
+  }
+
+  /**
+   * Replaces a video's audio track with a new local audio file.
+   */
+  public async replaceVideoAudio(
+    videoFile: File,
+    audioFile: File,
+    targetFormat: string = 'MP4',
+    onProgress?: (pct: number) => void
+  ): Promise<{ blob: Blob; url: string; outputName: string; sizeBytes: number }> {
+    return this.runExclusive(async () => {
+      onProgress?.(15);
+      const ffmpeg = await this.load();
+      const nonce = `${Date.now()}`;
+      const vExt = videoFile.name.split('.').pop()?.toLowerCase() || 'mp4';
+      const aExt = audioFile.name.split('.').pop()?.toLowerCase() || 'mp3';
+      const outExt = targetFormat.toLowerCase();
+      const vName = `v_${nonce}.${vExt}`;
+      const aName = `a_${nonce}.${aExt}`;
+      const outName = `replaced_${nonce}.${outExt}`;
+
+      try {
+        await ffmpeg.writeFile(vName, await fetchFile(videoFile));
+        await ffmpeg.writeFile(aName, await fetchFile(audioFile));
+        onProgress?.(45);
+        const exitCode = await ffmpeg.exec([
+          '-i',
+          vName,
+          '-i',
+          aName,
+          '-map',
+          '0:v:0',
+          '-map',
+          '1:a:0',
+          '-c:v',
+          'copy',
+          '-c:a',
+          'aac',
+          '-shortest',
+          outName,
+        ]);
+        if (exitCode !== 0) {
+          throw new Error(`Audio replacement exited with code ${exitCode}`);
+        }
+        const raw = await ffmpeg.readFile(outName);
+        const bytes = raw instanceof Uint8Array ? new Uint8Array(raw) : new TextEncoder().encode(String(raw));
+        const blob = new Blob([bytes.buffer as ArrayBuffer], { type: this.getMimeType(outExt) });
+        onProgress?.(100);
+        return {
+          blob,
+          url: URL.createObjectURL(blob),
+          outputName: buildOutputFilename(videoFile.name, targetFormat),
+          sizeBytes: blob.size,
+        };
+      } finally {
+        try {
+          await ffmpeg.deleteFile(vName);
+        } catch {}
+        try {
+          await ffmpeg.deleteFile(aName);
+        } catch {}
+        try {
+          await ffmpeg.deleteFile(outName);
+        } catch {}
+      }
+    });
+  }
+
+  /**
+   * Exports a video into multiple target resolutions (e.g. 1080p, 720p, 480p) packaged in a single ZIP.
+   */
+  public async exportMultiResolutionZip(
+    file: File,
+    resolutions: Array<'1080p' | '720p' | '480p'>,
+    basePreset: PresetSettings,
+    onProgress?: (label: string, pct: number) => void
+  ): Promise<{ blob: Blob; url: string; filename: string; sizeBytes: number }> {
+    const zip = new JSZip();
+    const stem = file.name.replace(/\.[^/.]+$/, '') || 'video';
+    for (let i = 0; i < resolutions.length; i++) {
+      const res = resolutions[i];
+      onProgress?.(`Encoding ${res} (${i + 1}/${resolutions.length})`, Math.round((i / resolutions.length) * 90));
+      const result = await this.transcodeMedia(
+        file,
+        'MP4',
+        (pct) => {
+          const overall = Math.round(((i + pct / 100) / resolutions.length) * 90);
+          onProgress?.(`Encoding ${res} (${pct}%)`, overall);
+        },
+        { ...basePreset, videoResolution: res }
+      );
+      URL.revokeObjectURL(result.url);
+      zip.file(`${stem}_${res}.mp4`, await result.blob.arrayBuffer());
+    }
+    onProgress?.('Packaging multi-resolution ZIP', 95);
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    onProgress?.('Done', 100);
+    return {
+      blob: zipBlob,
+      url: URL.createObjectURL(zipBlob),
+      filename: `${stem}_multi_res.zip`,
+      sizeBytes: zipBlob.size,
+    };
+  }
+
+  /**
+   * Builds an animated GIF (or animated WebP) from ordered image files with optional per-frame duration, reverse, and boomerang.
    */
   public async createGifFromImages(
-    files: File[],
+    files: Array<{ file: File; durationMs?: number } | File>,
     options: {
       fps: number;
       maxWidth: number;
       dither: 'sierra2_4a' | 'bayer' | 'none';
-      loopMode: 'loop' | 'boomerang';
+      loopMode: 'loop' | 'boomerang' | 'reverse';
+      outputFormat?: 'GIF' | 'WEBP';
     },
     onProgress?: (progress: number) => void
   ): Promise<{
@@ -527,15 +759,19 @@ class FFmpegManager {
     dimensions: string;
   }> {
     if (!files || files.length < 2) {
-      throw new Error('Select at least 2 images to compile an animated GIF.');
+      throw new Error('Select at least 2 images to compile an animation.');
     }
+
+    const normalized = files.map((entry) =>
+      entry instanceof File ? { file: entry, durationMs: undefined } : entry
+    );
 
     return this.runExclusive(async () => {
       onProgress?.(10);
       const ffmpeg = await this.load();
       onProgress?.(25);
 
-      const bitmaps = await Promise.all(files.map((file) => createImageBitmap(file)));
+      const bitmaps = await Promise.all(normalized.map((item) => createImageBitmap(item.file)));
       const first = bitmaps[0];
       const targetW = Math.max(64, Math.min(options.maxWidth, first.width));
       const evenW = Math.floor(targetW / 2) * 2;
@@ -553,13 +789,27 @@ class FFmpegManager {
 
       const writtenNames: string[] = [];
       const prefix = `seq_${Date.now()}`;
-      const outputName = `${prefix}_out.gif`;
+      const isWebp = options.outputFormat === 'WEBP';
+      const outputName = `${prefix}_out.${isWebp ? 'webp' : 'gif'}`;
 
       try {
-        const sequenceOrder =
-          options.loopMode === 'boomerang' && bitmaps.length > 2
-            ? [...bitmaps, ...bitmaps.slice(1, -1).reverse()]
-            : bitmaps;
+        // Expand custom per-frame holds into frame repetitions aligned with target fps
+        const frameUnitMs = 1000 / Math.max(1, options.fps);
+        const expandedBitmaps: ImageBitmap[] = [];
+        normalized.forEach((entry, i) => {
+          const bmp = bitmaps[i];
+          const repeat = entry.durationMs
+            ? Math.max(1, Math.min(20, Math.round(entry.durationMs / frameUnitMs)))
+            : 1;
+          for (let r = 0; r < repeat; r++) expandedBitmaps.push(bmp);
+        });
+
+        let sequenceOrder = expandedBitmaps;
+        if (options.loopMode === 'reverse') {
+          sequenceOrder = [...expandedBitmaps].reverse();
+        } else if (options.loopMode === 'boomerang' && expandedBitmaps.length > 2) {
+          sequenceOrder = [...expandedBitmaps, ...expandedBitmaps.slice(1, -1).reverse()];
+        }
 
         for (let idx = 0; idx < sequenceOrder.length; idx++) {
           const bmp = sequenceOrder[idx];
@@ -589,27 +839,51 @@ class FFmpegManager {
             ? 'dither=bayer:bayer_scale=3'
             : 'dither=sierra2_4a';
 
-        const exitCode = await ffmpeg.exec([
-          '-framerate',
-          String(options.fps),
-          '-i',
-          `${prefix}_%04d.png`,
-          '-vf',
-          `split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse=${ditherOpt}`,
-          '-loop',
-          '0',
-          outputName,
-        ]);
+        const args = isWebp
+          ? [
+              '-framerate',
+              String(options.fps),
+              '-i',
+              `${prefix}_%04d.png`,
+              '-c:v',
+              'libwebp',
+              '-lossless',
+              '0',
+              '-q:v',
+              '80',
+              '-loop',
+              '0',
+              outputName,
+            ]
+          : [
+              '-framerate',
+              String(options.fps),
+              '-i',
+              `${prefix}_%04d.png`,
+              '-vf',
+              `split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse=${ditherOpt}`,
+              '-loop',
+              '0',
+              outputName,
+            ];
+
+        const exitCode = await ffmpeg.exec(args);
 
         if (exitCode !== 0) {
-          throw new Error(`FFmpeg sequence GIF build failed with code ${exitCode}`);
+          throw new Error(
+            isWebp
+              ? `Animated WebP encoder unavailable in this WASM build (code ${exitCode}). Export as GIF instead.`
+              : `FFmpeg sequence GIF build failed with code ${exitCode}`
+          );
         }
 
         onProgress?.(90);
         const data = await ffmpeg.readFile(outputName);
         const rawBytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
         const safeCopy = new Uint8Array(rawBytes);
-        const blob = new Blob([safeCopy.buffer as ArrayBuffer], { type: 'image/gif' });
+        const blob = new Blob([safeCopy.buffer as ArrayBuffer], {
+          type: isWebp ? 'image/webp' : 'image/gif',
+        });
         const url = URL.createObjectURL(blob);
         onProgress?.(100);
 
@@ -617,7 +891,7 @@ class FFmpegManager {
           blob,
           url,
           sizeBytes: blob.size,
-          outputName: `stator_sequence_${options.fps}fps.gif`,
+          outputName: `stator_sequence_${options.fps}fps.${isWebp ? 'webp' : 'gif'}`,
           dimensions: `${evenW} × ${evenH}`,
         };
       } finally {

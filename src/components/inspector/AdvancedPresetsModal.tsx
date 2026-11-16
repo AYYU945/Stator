@@ -129,7 +129,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                   <Sliders className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-serif text-lg font-semibold text-[var(--stator-fg)] tracking-tight truncate">
+                  <h3 className="font-sans text-lg font-semibold text-[var(--stator-fg)] tracking-tight truncate">
                     Encoding Presets
                   </h3>
                   <p className="text-xs text-[var(--stator-fg-muted)] truncate">

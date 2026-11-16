@@ -185,6 +185,28 @@ class ImageWorkerPool {
     return this.maxWorkers;
   }
 
+  public setMaxWorkers(count: number): void {
+    const clamped = Math.max(1, Math.min(4, Math.round(count)));
+    this.maxWorkers = clamped;
+    if (!this.initialized) return;
+
+    while (this.workers.length < clamped) {
+      const w = this.spawnWorker();
+      if (!w) break;
+      this.workers.push(w);
+    }
+
+    while (this.workers.length > clamped) {
+      const idleIdx = this.workers.findIndex((w) => !this.busyWorkers.has(w));
+      if (idleIdx === -1) break;
+      const [removed] = this.workers.splice(idleIdx, 1);
+      try {
+        removed.terminate();
+      } catch {}
+    }
+    this.processQueue();
+  }
+
   public convertImage(
     file: File | Blob,
     targetFormat: string,
