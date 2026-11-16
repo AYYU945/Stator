@@ -3,12 +3,10 @@ import { formatFileSize } from '../types/queue.ts';
 export interface ExtractedMetadata {
   dimensions?: string;
   duration?: string;
+  durationSeconds?: number;
   technicalTag: string;
 }
 
-/**
- * Format duration in seconds to standard MM:SS display
- */
 export function formatDurationMMSS(durationSeconds: number): string {
   if (!durationSeconds || isNaN(durationSeconds) || !isFinite(durationSeconds)) {
     return '';
@@ -19,24 +17,18 @@ export function formatDurationMMSS(durationSeconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-/**
- * Extract basic container metadata before conversion begins
- * Images: natural width and height via Image or createImageBitmap
- * Videos: dimensions and duration via hidden video element with temporary object URL
- */
 export async function extractFileMetadata(file: File): Promise<ExtractedMetadata> {
   const sizeFormatted = formatFileSize(file.size);
   const isImage =
     file.type.startsWith('image/') ||
-    /\.(png|jpe?g|webp|avif|gif|bmp|svg|tiff?)$/i.test(file.name);
+    /\.(png|jpe?g|webp|avif|gif|bmp|svg|ico)$/i.test(file.name);
   const isVideo =
     file.type.startsWith('video/') ||
-    /\.(mp4|webm|mkv|mov|avi|wmv|m4v)$/i.test(file.name);
+    /\.(mp4|webm|mkv|mov|avi|wmv|m4v|ts|ogv)$/i.test(file.name);
   const isAudio =
     file.type.startsWith('audio/') ||
-    /\.(mp3|wav|ogg|aac|flac|m4a)$/i.test(file.name);
+    /\.(mp3|wav|ogg|aac|flac|m4a|opus|wma)$/i.test(file.name);
 
-  // 1. Image Metadata
   if (isImage) {
     try {
       if (typeof createImageBitmap !== 'undefined') {
@@ -73,7 +65,6 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
     }
   }
 
-  // 2. Video Metadata
   if (isVideo && typeof document !== 'undefined') {
     return new Promise((resolve) => {
       const video = document.createElement('video');
@@ -88,8 +79,8 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
       video.onloadedmetadata = () => {
         const w = video.videoWidth;
         const h = video.videoHeight;
-        const dur = video.duration;
-        const durFormatted = formatDurationMMSS(dur);
+        const dur = Number.isFinite(video.duration) ? video.duration : undefined;
+        const durFormatted = dur ? formatDurationMMSS(dur) : '';
         cleanup();
 
         const parts: string[] = [];
@@ -100,6 +91,7 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
         resolve({
           dimensions: w && h ? `${w}x${h}` : undefined,
           duration: durFormatted || undefined,
+          durationSeconds: dur,
           technicalTag: parts.join(' • '),
         });
       };
@@ -113,7 +105,6 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
     });
   }
 
-  // 3. Audio Metadata
   if (isAudio && typeof document !== 'undefined') {
     return new Promise((resolve) => {
       const audio = document.createElement('audio');
@@ -126,8 +117,8 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
       };
 
       audio.onloadedmetadata = () => {
-        const dur = audio.duration;
-        const durFormatted = formatDurationMMSS(dur);
+        const dur = Number.isFinite(audio.duration) ? audio.duration : undefined;
+        const durFormatted = dur ? formatDurationMMSS(dur) : '';
         cleanup();
 
         const parts: string[] = [];
@@ -136,6 +127,7 @@ export async function extractFileMetadata(file: File): Promise<ExtractedMetadata
 
         resolve({
           duration: durFormatted || undefined,
+          durationSeconds: dur,
           technicalTag: parts.join(' • '),
         });
       };

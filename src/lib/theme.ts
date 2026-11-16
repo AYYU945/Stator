@@ -6,7 +6,7 @@ export const THEME_STORAGE_KEY = 'stator_theme';
 export const FALLBACK_THEME_STORAGE_KEY = 'omniconvert_theme';
 
 export function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   try {
     const saved =
       localStorage.getItem(THEME_STORAGE_KEY) ||
@@ -17,7 +17,7 @@ export function getStoredTheme(): ThemeMode {
   } catch (err) {
     console.warn('Unable to read theme from localStorage:', err);
   }
-  return 'system';
+  return 'light';
 }
 
 export function applyTheme(theme: ThemeMode) {

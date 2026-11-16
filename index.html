@@ -4,19 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Stator | Local Media Engine</title>
-    <meta name="description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
-    <meta property="og:title" content="Stator | Local Media Engine" />
-    <meta property="og:description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#F6F5F1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Stator" />
+    <title>Stator | Local Media Studio</title>
+    <meta name="description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
+    <meta property="og:title" content="Stator | Local Media Studio" />
+    <meta property="og:description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
     <meta property="og:site_name" content="Stator" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Stator | Local Media Engine" />
-    <meta name="twitter:description" content="High performance client-side media conversion utility. Convert video, audio, and images locally in browser memory via WebAssembly. Zero file egress." />
+    <meta name="twitter:title" content="Stator | Local Media Studio" />
+    <meta name="twitter:description" content="Privacy-first local media conversion studio. Convert, crop, and optimize video, audio, and images directly in browser memory via WebAssembly. Zero uploads." />
     <script>
       (function() {
         try {
           var saved = localStorage.getItem('stator_theme') || localStorage.getItem('omniconvert_theme');
-          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (isDark) {
             document.documentElement.classList.add('dark');
           } else {
@@ -26,7 +31,7 @@
       })();
     </script>
   </head>
-  <body class="bg-zinc-100 dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 antialiased">
+  <body class="bg-[#F6F5F1] dark:bg-[#0A0B0E] text-[#111215] dark:text-[#F3F4F6] antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

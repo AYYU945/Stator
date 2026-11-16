@@ -2,45 +2,68 @@ import { HistoryEntry } from '../types/history.ts';
 
 const STORAGE_KEY = 'stator_conversion_history';
 const FALLBACK_STORAGE_KEY = 'omniconvert_history_v1';
+const EPHEMERAL_MODE_KEY = 'stator_ephemeral_privacy';
 const DB_NAME = 'stator_db';
 const STORE_NAME = 'history_entries';
 const DB_VERSION = 1;
 
-// Seed initial history entries matching the demo state
-const SEED_HISTORY: HistoryEntry[] = [
-  {
-    id: 'seed-hist-1',
-    originalName: 'portrait-shoot.raw',
-    convertedName: 'portrait-shoot.png',
-    originalSizeFormatted: '42.8 MB',
-    outputSizeFormatted: '24.8 MB',
-    savingsPercent: 42,
-    typeCategory: 'image',
-    timestamp: Date.now() - 5 * 60 * 1000, // 5 mins ago
-  },
-  {
-    id: 'seed-hist-2',
-    originalName: 'brand-hero-intro.mov',
-    convertedName: 'brand-hero-intro.mp4',
-    originalSizeFormatted: '152.0 MB',
-    outputSizeFormatted: '84.5 MB',
-    savingsPercent: 44,
-    typeCategory: 'video',
-    timestamp: Date.now() - 25 * 60 * 1000, // 25 mins ago
-  },
-  {
-    id: 'seed-hist-3',
-    originalName: 'podcast-master.wav',
-    convertedName: 'podcast-master.mp3',
-    originalSizeFormatted: '78.2 MB',
-    outputSizeFormatted: '18.4 MB',
-    savingsPercent: 76,
-    typeCategory: 'audio',
-    timestamp: Date.now() - 2 * 60 * 60 * 1000, // 2h ago
-  },
-];
+export const HISTORY_BLOB_QUOTA_BYTES = 250 * 1024 * 1024; // 250 MB LRU cap
+export const HISTORY_MAX_ENTRIES = 50;
 
-// Open IndexedDB helper
+export function isEphemeralPrivacyMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(EPHEMERAL_MODE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setEphemeralPrivacyMode(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(EPHEMERAL_MODE_KEY, enabled ? 'true' : 'false');
+  } catch {}
+}
+
+/**
+ * Pure chronological LRU quota enforcement for cached history blobs.
+ * Retains newest entries whose cached blobs fit inside maxBytes, evicting blob payloads from older entries.
+ */
+export function enforceHistoryBlobQuota(
+  entries: HistoryEntry[],
+  maxBytes: number = HISTORY_BLOB_QUOTA_BYTES
+): { retained: HistoryEntry[]; evictedIds: string[]; totalBlobBytes: number } {
+  const sorted = [...entries].sort((a, b) => b.timestamp - a.timestamp).slice(0, HISTORY_MAX_ENTRIES);
+  let runningBytes = 0;
+  let quotaReached = false;
+  const evictedIds: string[] = [];
+
+  const retained = sorted.map((entry) => {
+    const blobSize = entry.blob ? entry.blob.size : 0;
+    if (blobSize > 0 && (quotaReached || runningBytes + blobSize > maxBytes)) {
+      quotaReached = true;
+      evictedIds.push(entry.id);
+      if (entry.outputBlobUrl && entry.outputBlobUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(entry.outputBlobUrl);
+        } catch {}
+      }
+      return {
+        ...entry,
+        blob: undefined,
+        outputBlobUrl: undefined,
+      };
+    }
+    if (blobSize > 0) {
+      runningBytes += blobSize;
+    }
+    return entry;
+  });
+
+  return { retained, evictedIds, totalBlobBytes: runningBytes };
+}
+
 function openDB(): Promise<IDBDatabase | null> {
   if (typeof window === 'undefined' || !window.indexedDB) {
     return Promise.resolve(null);
@@ -58,10 +81,7 @@ function openDB(): Promise<IDBDatabase | null> {
       };
 
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => {
-        console.warn('IndexedDB open error, falling back to localStorage');
-        resolve(null);
-      };
+      request.onerror = () => resolve(null);
     } catch {
       resolve(null);
     }
@@ -69,9 +89,14 @@ function openDB(): Promise<IDBDatabase | null> {
 }
 
 /**
- * Loads history records from IndexedDB or localStorage
+ * Loads history records from IndexedDB or localStorage.
+ * Clean empty state on first visit (never injects fake seed records).
  */
 export async function loadHistoryRecords(): Promise<HistoryEntry[]> {
+  if (isEphemeralPrivacyMode()) {
+    return [];
+  }
+
   const db = await openDB();
 
   if (db) {
@@ -107,14 +132,14 @@ export async function loadHistoryRecords(): Promise<HistoryEntry[]> {
       });
 
       if (records.length > 0) {
-        return records.sort((a, b) => b.timestamp - a.timestamp);
+        const { retained } = enforceHistoryBlobQuota(records);
+        return retained;
       }
     } catch (e) {
       console.warn('Failed to read from IndexedDB:', e);
     }
   }
 
-  // Fallback to localStorage
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(FALLBACK_STORAGE_KEY);
     if (raw) {
@@ -125,56 +150,78 @@ export async function loadHistoryRecords(): Promise<HistoryEntry[]> {
     }
   } catch {}
 
-  // If completely empty, seed initial records
-  await saveAllHistoryRecords(SEED_HISTORY);
-  return SEED_HISTORY;
+  return [];
 }
 
 /**
- * Saves a single new entry
+ * Computes current IndexedDB cached blob footprint from loaded entries.
+ */
+export function getHistoryStorageUsage(entries: HistoryEntry[]): {
+  usedBytes: number;
+  quotaBytes: number;
+  percentUsed: number;
+} {
+  const usedBytes = entries.reduce((sum, entry) => sum + (entry.blob ? entry.blob.size : 0), 0);
+  const percentUsed = Math.min(100, Math.round((usedBytes / HISTORY_BLOB_QUOTA_BYTES) * 100));
+  return {
+    usedBytes,
+    quotaBytes: HISTORY_BLOB_QUOTA_BYTES,
+    percentUsed,
+  };
+}
+
+/**
+ * Saves a single history entry while respecting Ephemeral Privacy Mode and 250 MB LRU cache cap.
  */
 export async function saveHistoryRecord(entry: HistoryEntry): Promise<void> {
-  const db = await openDB();
+  if (isEphemeralPrivacyMode()) {
+    return;
+  }
 
+  const existing = await loadHistoryRecords();
+  const combined = [entry, ...existing.filter((r) => r.id !== entry.id)];
+  const { retained } = enforceHistoryBlobQuota(combined);
+
+  const db = await openDB();
   if (db) {
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
-        const req = store.put({
-          ...entry,
-          // Store actual blob if present
-          blob: entry.blob || undefined,
-        });
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
+        store.clear();
+        for (const r of retained) {
+          store.put({
+            id: r.id,
+            originalName: r.originalName,
+            convertedName: r.convertedName,
+            originalSizeFormatted: r.originalSizeFormatted,
+            outputSizeFormatted: r.outputSizeFormatted,
+            savingsPercent: r.savingsPercent,
+            typeCategory: r.typeCategory,
+            timestamp: r.timestamp,
+            blob: r.blob || undefined,
+          });
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
       });
     } catch (e) {
       console.warn('Failed to save to IndexedDB:', e);
     }
   }
 
-  // Also maintain in localStorage metadata mirror
   try {
-    const current = await loadHistoryRecords();
-    const filtered = current.filter((r) => r.id !== entry.id);
-    const updated = [
-      {
-        ...entry,
-        blob: undefined, // Don't put raw blob in localStorage string
-      },
-      ...filtered,
-    ].slice(0, 50); // limit to latest 50
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    const metadataMirror = retained.map((r) => ({
+      ...r,
+      blob: undefined,
+      outputBlobUrl: undefined,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(metadataMirror));
   } catch (e) {
-    console.warn('Failed to save to localStorage:', e);
+    console.warn('Failed to save history mirror to localStorage:', e);
   }
 }
 
-/**
- * Deletes a single history record by ID
- */
 export async function deleteHistoryRecord(id: string): Promise<void> {
   const db = await openDB();
 
@@ -192,14 +239,13 @@ export async function deleteHistoryRecord(id: string): Promise<void> {
 
   try {
     const current = await loadHistoryRecords();
-    const updated = current.filter((item) => item.id !== id);
+    const updated = current
+      .filter((item) => item.id !== id)
+      .map((r) => ({ ...r, blob: undefined, outputBlobUrl: undefined }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch {}
 }
 
-/**
- * Clears all history records
- */
 export async function clearAllHistoryRecords(): Promise<void> {
   const db = await openDB();
 
@@ -217,25 +263,25 @@ export async function clearAllHistoryRecords(): Promise<void> {
 
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(FALLBACK_STORAGE_KEY);
   } catch {}
 }
 
 /**
- * Bulk save helper
+ * 1-click full reset wiping IndexedDB history store, presets, brand kit, and preferences.
  */
-async function saveAllHistoryRecords(records: HistoryEntry[]): Promise<void> {
-  const db = await openDB();
-  if (db) {
+export async function wipeAllLocalData(): Promise<void> {
+  await clearAllHistoryRecords();
+  if (typeof window !== 'undefined') {
     try {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
-      for (const r of records) {
-        store.put(r);
+      const keysToClear: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('stator_') || k.startsWith('omniconvert_'))) {
+          keysToClear.push(k);
+        }
       }
+      keysToClear.forEach((k) => localStorage.removeItem(k));
     } catch {}
   }
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  } catch {}
 }

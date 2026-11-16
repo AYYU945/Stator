@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Check, Lock } from 'lucide-react';
+import { STATOR_TRANSITION } from '../lib/motion.ts';
 
 export interface SelectOption {
   value: string;
@@ -27,14 +29,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   options,
   placeholder = 'Select option...',
   className = '',
+  id,
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  // Close on click outside
   useEffect(() => {
     if (!isOpen) return;
 
@@ -50,13 +53,24 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     };
   }, [isOpen]);
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
+        triggerRef.current?.focus();
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const selectable = options.filter((o) => !o.isLocked);
+        if (selectable.length === 0) return;
+        const currentIdx = selectable.findIndex((o) => o.value === value);
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        const nextIdx =
+          currentIdx === -1
+            ? 0
+            : (currentIdx + delta + selectable.length) % selectable.length;
+        onChange(selectable[nextIdx].value);
       }
     };
 
@@ -64,23 +78,25 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, options, value, onChange]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
     setIsOpen(false);
+    triggerRef.current?.focus();
   };
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      {/* Trigger Button */}
       <button
+        ref={triggerRef}
+        id={id}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`w-full flex items-center justify-between px-3.5 py-2 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-md text-sm text-zinc-900 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 cursor-pointer shadow-xs ${
+        className={`w-full h-9 flex items-center justify-between px-3 bg-[var(--stator-surface)] border border-[var(--stator-border)] hover:border-[var(--stator-border-strong)] rounded-lg text-xs sm:text-[13px] text-[var(--stator-fg)] transition-colors cursor-pointer active:scale-[0.99] ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
@@ -88,64 +104,68 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 shrink-0 ml-2 ${
+          className={`w-4 h-4 text-[var(--stator-fg-muted)] transition-transform duration-150 shrink-0 ml-2 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
       </button>
 
-      {/* Popover Menu */}
-      {isOpen && (
-        <div
-          role="listbox"
-          className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border-zinc-200 text-zinc-900 dark:bg-[#121214] dark:border-zinc-800 dark:text-zinc-100 border rounded-md shadow-xl p-1 backdrop-blur-md max-h-60 overflow-y-auto space-y-0.5 animate-in fade-in zoom-in-95 duration-100 ease-out"
-        >
-          {options.map((option) => {
-            const isSelected = option.value === value;
-            return (
-              <div
-                key={option.value}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  if (option.isLocked) {
-                    if (onLockedSelect) {
-                      onLockedSelect(option);
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            role="listbox"
+            initial={{ opacity: 0, y: -4, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.985 }}
+            transition={STATOR_TRANSITION.micro}
+            style={{ transformOrigin: 'top center' }}
+            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[var(--stator-surface)] border border-[var(--stator-border-strong)] text-[var(--stator-fg)] rounded-xl shadow-xl p-1 max-h-60 overflow-y-auto space-y-0.5"
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
+              return (
+                <div
+                  key={option.value}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    if (option.isLocked) {
+                      onLockedSelect?.(option);
+                      setIsOpen(false);
+                      return;
                     }
-                    setIsOpen(false);
-                    return;
-                  }
-                  handleSelect(option.value);
-                }}
-                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm cursor-pointer transition-colors duration-100 ease-out ${
-                  isSelected
-                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium'
-                    : option.isLocked
-                    ? 'text-zinc-400 dark:text-neutral-400 hover:bg-zinc-100 dark:hover:bg-zinc-850'
-                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-white'
-                }`}
-              >
-                <div className="flex flex-col min-w-0 pr-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate">{option.label}</span>
-                    {option.isLocked && (
-                      <Lock className="w-3 h-3 text-zinc-400 dark:text-neutral-500 shrink-0" />
+                    handleSelect(option.value);
+                  }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-[13px] cursor-pointer transition-colors duration-100 ${
+                    isSelected
+                      ? 'bg-[var(--stator-accent-soft)] text-[var(--stator-fg)] font-medium'
+                      : option.isLocked
+                      ? 'text-[var(--stator-fg-subtle)] hover:bg-[var(--stator-surface-2)]'
+                      : 'text-[var(--stator-fg-muted)] hover:bg-[var(--stator-surface-2)] hover:text-[var(--stator-fg)]'
+                  }`}
+                >
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate">{option.label}</span>
+                      {option.isLocked && (
+                        <Lock className="w-3 h-3 text-[var(--stator-fg-subtle)] shrink-0" />
+                      )}
+                    </div>
+                    {option.description && (
+                      <span className="text-[11px] text-[var(--stator-fg-subtle)] truncate mt-0.5">
+                        {option.description}
+                      </span>
                     )}
                   </div>
-                  {option.description && (
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                      {option.description}
-                    </span>
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-[var(--stator-accent-fg)] shrink-0 ml-auto" />
                   )}
                 </div>
-                {isSelected && (
-                  <Check className="w-4 h-4 text-zinc-900 dark:text-zinc-200 shrink-0 ml-auto" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

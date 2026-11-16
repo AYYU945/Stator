@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0" />
+    <title>Stator Walkthrough Motion Studio</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #050507;
+        color: #f4f4f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+      }
+
+      .studio-bg {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        background:
+          radial-gradient(1200px 620px at 50% 0%, rgba(16, 185, 129, 0.065), transparent 65%),
+          radial-gradient(900px 520px at 85% 95%, rgba(255, 255, 255, 0.03), transparent 70%),
+          #050507;
+      }
+
+      .dot-grid {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: radial-gradient(ellipse 85% 85% at 50% 48%, #000 40%, transparent 100%);
+        pointer-events: none;
+      }
+
+      /* 16:9 Stage Viewport (1600x900) leaving dedicated bottom HUD track so UI controls are never covered */
+      .stage-shell {
+        position: absolute;
+        left: 160px;
+        top: 40px;
+        width: 1600px;
+        height: 900px;
+        border-radius: 16px;
+        background: #09090b;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        box-shadow:
+          0 42px 110px rgba(0, 0, 0, 0.78),
+          0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        overflow: hidden;
+        transform-origin: center center;
+        will-change: transform, opacity;
+      }
+
+      .camera-layer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1600px;
+        height: 900px;
+        transform-origin: 0 0;
+        will-change: transform;
+      }
+
+      .ui-frame {
+        position: absolute;
+        inset: 0;
+        width: 1600px;
+        height: 900px;
+        object-fit: cover;
+        opacity: 0;
+        pointer-events: none;
+        will-change: opacity;
+      }
+
+      /* Dynamic SVG Highlights inside camera space */
+      .focus-box {
+        position: absolute;
+        border-radius: 10px;
+        border: 2px solid rgba(16, 185, 129, 0.92);
+        background: rgba(16, 185, 129, 0.07);
+        box-shadow:
+          0 0 0 6px rgba(16, 185, 129, 0.12),
+          0 0 28px rgba(16, 185, 129, 0.24);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Animated sweep overlay for Converting queue progress bars */
+      .converting-sweep {
+        position: absolute;
+        left: 256px;
+        top: 660px;
+        width: 1088px;
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .converting-sweep-fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #e4e4e7 0%, #10b981 65%, #ffffff 100%);
+        transform-origin: left center;
+        transform: scaleX(0.68);
+      }
+
+      /* Screen-space Overlay (Cursor, Dragged File Chip, Click Ripple, Floating Callout) */
+      .stage-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .drag-chip {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        background: rgba(18, 18, 20, 0.96);
+        border: 1px solid rgba(16, 185, 129, 0.65);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.6);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translate3d(0, 0, 0);
+      }
+
+      .drag-chip-badge {
+        padding: 3px 7px;
+        border-radius: 5px;
+        background: rgba(16, 185, 129, 0.16);
+        border: 1px solid rgba(16, 185, 129, 0.45);
+        color: #34d399;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .callout-pill {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: rgba(9, 9, 11, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+        color: #f4f4f5;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        opacity: 0;
+      }
+
+      .callout-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+
+      .click-ripple {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        margin-left: -28px;
+        margin-top: -28px;
+        border-radius: 50%;
+        border: 2.5px solid #10b981;
+        background: rgba(16, 185, 129, 0.16);
+        opacity: 0;
+        transform: scale(0.2);
+      }
+
+      .cursor-wrap {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 36px;
+        height: 36px;
+        margin-left: -4px;
+        margin-top: -3px;
+        opacity: 0;
+        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.65));
+        will-change: transform, opacity;
+      }
+
+      /* Dedicated Silent Bottom HUD Bar (y: 958px -> 1054px) */
+      .hud-bar {
+        position: absolute;
+        left: 160px;
+        right: 160px;
+        bottom: 26px;
+        height: 88px;
+        padding: 0 28px;
+        border-radius: 14px;
+        background: rgba(18, 18, 22, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 28px;
+        overflow: hidden;
+      }
+
+      .hud-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .hud-step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #34d399;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .hud-caption {
+        font-size: 25px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: #fafafa;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hud-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+
+      .hud-privacy-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        background: rgba(16, 185, 129, 0.09);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 15px;
+        font-weight: 600;
+        color: #a7f3d0;
+        white-space: nowrap;
+      }
+
+      .hud-timer {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        font-weight: 600;
+        color: #a1a1aa;
+        font-variant-numeric: tabular-nums;
+        min-width: 96px;
+        text-align: right;
+      }
+
+      .hud-progress-track {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 3.5px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .hud-progress-fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #f4f4f5 100%);
+        transform-origin: left center;
+        transform: scaleX(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="studio-bg">
+      <div class="dot-grid"></div>
+
+      <!-- 1600x900 Real UI Viewport -->
+      <div class="stage-shell" id="stageShell">
+        <div class="camera-layer" id="cameraLayer">
+          <img id="imgHome" class="ui-frame" src="./captures/01_home_empty.png" alt="" />
+          <img id="imgReady" class="ui-frame" src="./captures/02_queue_ready.png" alt="" />
+          <img id="imgInspectorOpen" class="ui-frame" src="./captures/03_inspector_open.png" alt="" />
+          <img id="imgInspectorConfig" class="ui-frame" src="./captures/04_inspector_configured.png" alt="" />
+          <img id="imgConverting" class="ui-frame" src="./captures/05_queue_converting.png" alt="" />
+          <img id="imgCompleted" class="ui-frame" src="./captures/06_queue_completed.png" alt="" />
+          <img id="imgGifStudio" class="ui-frame" src="./captures/07_gif_studio.png" alt="" />
+
+          <div class="focus-box" id="focusBox"></div>
+        </div>
+
+        <!-- Crisp Screen-Space Cursor & Callouts -->
+        <div class="stage-overlay">
+          <div class="drag-chip" id="dragChip">
+            <span class="drag-chip-badge">2 FILES</span>
+            <span>product-reel.mp4 + keyframe-01.png</span>
+          </div>
+
+          <div class="callout-pill" id="calloutPill">
+            <span class="callout-dot"></span>
+            <span id="calloutText">9:16 Vertical Crop + 1s–3s Trim</span>
+          </div>
+
+          <div class="click-ripple" id="clickRipple"></div>
+
+          <div class="cursor-wrap" id="cursorWrap">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none">
+              <path
+                d="M6.5 3.5L25.5 16.2L16.4 18.1L20.8 27.2L17.4 28.8L13.0 19.6L6.5 25.2V3.5Z"
+                fill="#FFFFFF"
+                stroke="#09090B"
+                stroke-width="2.1"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Silent Editorial Caption & Step Progress HUD -->
+      <div class="hud-bar">
+        <div class="hud-left">
+          <div class="hud-step-badge" id="hudStepBadge">01 · OVERVIEW</div>
+          <div class="hud-caption" id="hudCaption">
+            Convert, crop, and trim media locally — zero bytes uploaded
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="hud-privacy-tag">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+            <span id="hudTagText">100% Client-Side WASM</span>
+          </div>
+          <div class="hud-timer" id="hudTimer">00:00 / 00:38</div>
+        </div>
+
+        <div class="hud-progress-track">
+          <div class="hud-progress-fill" id="hudProgressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const STAGE_W = 1600;
+      const STAGE_H = 900;
+      const TOTAL_DURATION = 38.0;
+
+      // Exact measured DOM coordinates from scripts/walkthrough/captures/coords.json
+      const COORDS = {
+        dropZone: { x: 0.5000, y: 0.5062, left: 0.1444, top: 0.3753, width: 0.7111, height: 0.2617 },
+        gifStudioTab: { x: 0.5424, y: 0.3272, left: 0.4949, top: 0.3099, width: 0.0950, height: 0.0346 },
+        converterTab: { x: 0.4525, y: 0.3272, left: 0.4101, top: 0.3099, width: 0.0848, height: 0.0346 },
+        configureBtn: { x: 0.7178, y: 0.6660, left: 0.6839, top: 0.6475, width: 0.0679, height: 0.0370 },
+        convertAllBtn: { x: 0.7925, y: 0.8784, left: 0.7412, top: 0.8562, width: 0.1026, height: 0.0444 },
+        crop916Btn: { x: 0.6028, y: 0.7959, left: 0.5780, top: 0.7770, width: 0.0496, height: 0.0377 },
+        trimStartInput: { x: 0.5891, y: 0.8727, left: 0.5257, top: 0.8530, width: 0.1267, height: 0.0395 },
+        trimEndInput: { x: 0.7214, y: 0.8727, left: 0.6580, top: 0.8530, width: 0.1267, height: 0.0395 },
+        convertNowBtn: { x: 0.7447, y: 0.9304, left: 0.6956, top: 0.9081, width: 0.0981, height: 0.0444 },
+        downloadZipBtn: { x: 0.7630, y: 0.9327, left: 0.6822, top: 0.9105, width: 0.1616, height: 0.0444 },
+        buildGifBtn: { x: 0.7792, y: 0.8710, left: 0.7203, top: 0.8488, width: 0.1179, height: 0.0444 },
+      };
+
+      const els = {
+        stageShell: document.getElementById('stageShell'),
+        cameraLayer: document.getElementById('cameraLayer'),
+        imgHome: document.getElementById('imgHome'),
+        imgReady: document.getElementById('imgReady'),
+        imgInspectorOpen: document.getElementById('imgInspectorOpen'),
+        imgInspectorConfig: document.getElementById('imgInspectorConfig'),
+        imgConverting: document.getElementById('imgConverting'),
+        imgCompleted: document.getElementById('imgCompleted'),
+        imgGifStudio: document.getElementById('imgGifStudio'),
+        focusBox: document.getElementById('focusBox'),
+        dragChip: document.getElementById('dragChip'),
+        calloutPill: document.getElementById('calloutPill'),
+        calloutText: document.getElementById('calloutText'),
+        clickRipple: document.getElementById('clickRipple'),
+        cursorWrap: document.getElementById('cursorWrap'),
+        hudStepBadge: document.getElementById('hudStepBadge'),
+        hudCaption: document.getElementById('hudCaption'),
+        hudTagText: document.getElementById('hudTagText'),
+        hudTimer: document.getElementById('hudTimer'),
+        hudProgressFill: document.getElementById('hudProgressFill'),
+      };
+
+      // Preload all PNGs so frame scrubbing is instant and deterministic
+      window.__studioReady = Promise.all(
+        [
+          els.imgHome,
+          els.imgReady,
+          els.imgInspectorOpen,
+          els.imgInspectorConfig,
+          els.imgConverting,
+          els.imgCompleted,
+          els.imgGifStudio,
+        ].map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise((res) => {
+                img.onload = res;
+                img.onerror = res;
+              })
+        )
+      );
+
+      // Interpolation helpers
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const easeInOutCubic = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+      const prog = (t, start, end) => clamp((t - start) / Math.max(0.0001, end - start), 0, 1);
+
+      function sampleKeyframes(t, keys) {
+        if (t <= keys[0].t) return keys[0];
+        if (t >= keys[keys.length - 1].t) return keys[keys.length - 1];
+        for (let i = 0; i < keys.length - 1; i++) {
+          const k0 = keys[i];
+          const k1 = keys[i + 1];
+          if (t >= k0.t && t <= k1.t) {
+            const u = easeInOutCubic(prog(t, k0.t, k1.t));
+            return {
+              x: lerp(k0.x, k1.x, u),
+              y: lerp(k0.y, k1.y, u),
+              s: lerp(k0.s ?? 1, k1.s ?? 1, u),
+            };
+          }
+        }
+        return keys[keys.length - 1];
+      }
+
+      // Camera path: { t, x: focusX, y: focusY, s: zoomScale }
+      const CAMERA_KEYS = [
+        { t: 0.0, x: 0.50, y: 0.44, s: 1.07 },
+        { t: 2.2, x: 0.50, y: 0.48, s: 1.00 },
+        { t: 8.0, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 10.6, x: 0.62, y: 0.65, s: 1.24 },
+        { t: 11.7, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 12.6, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 14.2, x: 0.66, y: 0.80, s: 1.42 },
+        { t: 19.6, x: 0.65, y: 0.82, s: 1.42 },
+        { t: 21.4, x: 0.52, y: 0.68, s: 1.24 },
+        { t: 22.8, x: 0.68, y: 0.88, s: 1.28 },
+        { t: 24.1, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 26.8, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 29.8, x: 0.60, y: 0.72, s: 1.22 },
+        { t: 31.6, x: 0.50, y: 0.50, s: 1.00 },
+        { t: 34.4, x: 0.55, y: 0.68, s: 1.12 },
+        { t: 36.2, x: 0.68, y: 0.86, s: 1.22 },
+        { t: 37.6, x: 0.50, y: 0.50, s: 1.00 },
+      ];
+
+      // Cursor path in normalized screenshot coordinates (0..1)
+      const CURSOR_KEYS = [
+        { t: 0.0, x: 0.20, y: 0.25 },
+        { t: 5.5, x: 0.18, y: 0.24 },
+        { t: 7.4, x: COORDS.dropZone.x, y: COORDS.dropZone.y },
+        { t: 8.5, x: COORDS.dropZone.x, y: COORDS.dropZone.y },
+        { t: 10.6, x: COORDS.configureBtn.x, y: COORDS.configureBtn.y },
+        { t: 12.6, x: COORDS.configureBtn.x, y: COORDS.configureBtn.y },
+        { t: 14.9, x: COORDS.crop916Btn.x, y: COORDS.crop916Btn.y },
+        { t: 16.4, x: COORDS.crop916Btn.x, y: COORDS.crop916Btn.y },
+        { t: 17.5, x: COORDS.trimStartInput.x, y: COORDS.trimStartInput.y },
+        { t: 18.8, x: COORDS.trimEndInput.x, y: COORDS.trimEndInput.y },
+        { t: 20.6, x: 0.34, y: 0.59 }, // sweep briefly toward updated Aspect Ratio row
+        { t: 22.1, x: COORDS.convertNowBtn.x, y: COORDS.convertNowBtn.y },
+        { t: 24.0, x: COORDS.convertNowBtn.x, y: COORDS.convertNowBtn.y },
+        { t: 25.5, x: COORDS.gifStudioTab.x, y: COORDS.gifStudioTab.y },
+        { t: 26.6, x: COORDS.gifStudioTab.x, y: COORDS.gifStudioTab.y },
+        { t: 28.4, x: 0.33, y: 0.71 }, // frame sequence thumbnail strip
+        { t: 30.4, x: COORDS.buildGifBtn.x, y: COORDS.buildGifBtn.y },
+        { t: 33.8, x: COORDS.buildGifBtn.x, y: COORDS.buildGifBtn.y },
+        { t: 35.6, x: COORDS.downloadZipBtn.x, y: COORDS.downloadZipBtn.y },
+        { t: 38.0, x: COORDS.downloadZipBtn.x, y: COORDS.downloadZipBtn.y },
+      ];
+
+      // Click ripple events: { t, x, y }
+      const CLICKS = [
+        { t: 7.80, x: COORDS.dropZone.x, y: COORDS.dropZone.y },
+        { t: 11.15, x: COORDS.configureBtn.x, y: COORDS.configureBtn.y },
+        { t: 15.65, x: COORDS.crop916Btn.x, y: COORDS.crop916Btn.y },
+        { t: 17.65, x: COORDS.trimStartInput.x, y: COORDS.trimStartInput.y },
+        { t: 19.00, x: COORDS.trimEndInput.x, y: COORDS.trimEndInput.y },
+        { t: 22.40, x: COORDS.convertNowBtn.x, y: COORDS.convertNowBtn.y },
+        { t: 25.90, x: COORDS.gifStudioTab.x, y: COORDS.gifStudioTab.y },
+        { t: 30.85, x: COORDS.buildGifBtn.x, y: COORDS.buildGifBtn.y },
+        { t: 35.90, x: COORDS.downloadZipBtn.x, y: COORDS.downloadZipBtn.y },
+      ];
+
+      const SCENES = [
+        {
+          start: 0.0,
+          end: 5.5,
+          badge: '01 · WORKSPACE',
+          caption: 'Convert, crop, and trim media locally — zero server uploads',
+          tag: '100% Client-Side WASM',
+        },
+        {
+          start: 5.5,
+          end: 12.0,
+          badge: '02 · DROP OR PASTE',
+          caption: 'Drop video or image assets into the queue, or paste via Ctrl/Cmd+V',
+          tag: 'Instant Queue Staging',
+        },
+        {
+          start: 12.0,
+          end: 24.0,
+          badge: '03 · CROP & TRIM',
+          caption: 'Apply 9:16 social crop, trim start/end timestamps, and set CRF quality',
+          tag: 'FFmpeg WASM Pipeline',
+        },
+        {
+          start: 24.0,
+          end: 31.5,
+          badge: '04 · GIF STUDIO',
+          caption: 'Assemble PNG/WEBP frames into palettegen GIFs with custom FPS & dithering',
+          tag: 'Sierra2 Palettegen',
+        },
+        {
+          start: 31.5,
+          end: 38.0,
+          badge: '05 · LOCAL EXPORT',
+          caption: 'Hardware-accelerated export completes offline — download single files or .ZIP',
+          tag: 'MIT Open Source',
+        },
+      ];
+
+      function formatSec(sec) {
+        const s = Math.min(38, Math.max(0, Math.floor(sec)));
+        return `00:${String(s).padStart(2, '0')}`;
+      }
+
+      window.__setTime = function (t) {
+        // Stage intro entrance
+        const introU = easeOutCubic(prog(t, 0.0, 0.65));
+        const stageScaleIntro = lerp(0.965, 1.0, introU);
+        els.stageShell.style.opacity = String(clamp(introU * 1.3, 0, 1));
+        els.stageShell.style.transform = `scale(${stageScaleIntro})`;
+
+        // Camera state
+        const cam = sampleKeyframes(t, CAMERA_KEYS);
+        const s = cam.s;
+        let tx = STAGE_W * 0.5 - cam.x * STAGE_W * s;
+        let ty = STAGE_H * 0.5 - cam.y * STAGE_H * s;
+        tx = clamp(tx, STAGE_W * (1 - s), 0);
+        ty = clamp(ty, STAGE_H * (1 - s), 0);
+        els.cameraLayer.style.transform = `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) scale(${s.toFixed(4)})`;
+
+        // Screenshot Layer Crossfades
+        const opHome = t < 7.8 ? 1 : 1 - prog(t, 7.8, 8.2);
+        const opReady =
+          (t >= 7.8 && t < 11.35 ? prog(t, 7.8, 8.2) : 0) +
+          (t >= 11.35 && t < 11.7 ? 1 - prog(t, 11.35, 11.7) : 0) +
+          (t >= 23.6 && t < 26.2 ? prog(t, 23.6, 24.0) * (1 - prog(t, 25.95, 26.25)) : 0);
+        const opInspOpen =
+          t >= 11.35 && t < 16.2
+            ? prog(t, 11.35, 11.7) * (1 - prog(t, 15.85, 16.2))
+            : 0;
+        const opInspCfg =
+          t >= 15.85 && t < 24.0
+            ? prog(t, 15.85, 16.2) * (1 - prog(t, 23.6, 24.0))
+            : 0;
+        const opGif =
+          t >= 25.95 && t < 31.6
+            ? prog(t, 25.95, 26.25) * (1 - prog(t, 31.2, 31.6))
+            : 0;
+        const opConv =
+          t >= 31.2 && t < 34.0
+            ? prog(t, 31.2, 31.6) * (1 - prog(t, 33.6, 34.0))
+            : 0;
+        const opDone = t >= 33.6 ? prog(t, 33.6, 34.0) : 0;
+
+        els.imgHome.style.opacity = clamp(opHome, 0, 1).toFixed(3);
+        els.imgReady.style.opacity = clamp(opReady, 0, 1).toFixed(3);
+        els.imgInspectorOpen.style.opacity = clamp(opInspOpen, 0, 1).toFixed(3);
+        els.imgInspectorConfig.style.opacity = clamp(opInspCfg, 0, 1).toFixed(3);
+        els.imgGifStudio.style.opacity = clamp(opGif, 0, 1).toFixed(3);
+        els.imgConverting.style.opacity = clamp(opConv, 0, 1).toFixed(3);
+        els.imgCompleted.style.opacity = clamp(opDone, 0, 1).toFixed(3);
+
+        // Dynamic Highlight Focus Box (in cameraLayer space)
+        let activeBox = null;
+        let boxOp = 0;
+        if (t >= 6.4 && t <= 8.0) {
+          activeBox = COORDS.dropZone;
+          boxOp = prog(t, 6.4, 7.0) * (1 - prog(t, 7.75, 8.0));
+        } else if (t >= 10.3 && t <= 11.45) {
+          activeBox = COORDS.configureBtn;
+          boxOp = prog(t, 10.3, 10.6) * (1 - prog(t, 11.2, 11.45));
+        } else if (t >= 15.0 && t <= 16.5) {
+          activeBox = COORDS.crop916Btn;
+          boxOp = prog(t, 15.0, 15.3) * (1 - prog(t, 16.2, 16.5));
+        } else if (t >= 17.2 && t <= 19.6) {
+          activeBox = t < 18.4 ? COORDS.trimStartInput : COORDS.trimEndInput;
+          boxOp = 0.9;
+        } else if (t >= 21.8 && t <= 22.8) {
+          activeBox = COORDS.convertNowBtn;
+          boxOp = prog(t, 21.8, 22.1) * (1 - prog(t, 22.5, 22.8));
+        } else if (t >= 25.1 && t <= 26.1) {
+          activeBox = COORDS.gifStudioTab;
+          boxOp = prog(t, 25.1, 25.4) * (1 - prog(t, 25.9, 26.1));
+        } else if (t >= 30.1 && t <= 31.2) {
+          activeBox = COORDS.buildGifBtn;
+          boxOp = prog(t, 30.1, 30.4) * (1 - prog(t, 30.95, 31.2));
+        } else if (t >= 35.1 && t <= 36.4) {
+          activeBox = COORDS.downloadZipBtn;
+          boxOp = prog(t, 35.1, 35.4) * (1 - prog(t, 36.1, 36.4));
+        }
+
+        if (activeBox && boxOp > 0.01) {
+          els.focusBox.style.opacity = boxOp.toFixed(3);
+          els.focusBox.style.left = `${(activeBox.left * STAGE_W - 4).toFixed(1)}px`;
+          els.focusBox.style.top = `${(activeBox.top * STAGE_H - 4).toFixed(1)}px`;
+          els.focusBox.style.width = `${(activeBox.width * STAGE_W + 8).toFixed(1)}px`;
+          els.focusBox.style.height = `${(activeBox.height * STAGE_H + 8).toFixed(1)}px`;
+        } else {
+          els.focusBox.style.opacity = '0';
+        }
+
+        // Cursor position mapped accurately from normalized camera space -> screen space
+        const cur = sampleKeyframes(t, CURSOR_KEYS);
+        const curScreenX = tx + cur.x * STAGE_W * s;
+        const curScreenY = ty + cur.y * STAGE_H * s;
+
+        let curOpacity = 0;
+        if (t >= 5.2 && t <= 36.8) {
+          curOpacity = prog(t, 5.2, 5.6) * (1 - prog(t, 36.3, 36.8));
+        }
+
+        // Subtle click press scale on cursor
+        let curScale = 1.0;
+        let rippleOp = 0;
+        let rippleScale = 0.2;
+        let rippleX = curScreenX;
+        let rippleY = curScreenY;
+
+        for (const c of CLICKS) {
+          const dt = t - c.t;
+          if (dt >= -0.08 && dt <= 0.42) {
+            if (dt >= -0.08 && dt <= 0.12) {
+              curScale = 0.84;
+            }
+            if (dt >= 0 && dt <= 0.42) {
+              const ru = easeOutCubic(dt / 0.42);
+              rippleOp = 1 - ru;
+              rippleScale = lerp(0.25, 1.35, ru);
+              rippleX = tx + c.x * STAGE_W * s;
+              rippleY = ty + c.y * STAGE_H * s;
+            }
+          }
+        }
+
+        els.cursorWrap.style.opacity = curOpacity.toFixed(3);
+        els.cursorWrap.style.transform = `translate3d(${curScreenX.toFixed(2)}px, ${curScreenY.toFixed(2)}px, 0) scale(${curScale})`;
+
+        els.clickRipple.style.opacity = rippleOp.toFixed(3);
+        els.clickRipple.style.left = `${rippleX.toFixed(2)}px`;
+        els.clickRipple.style.top = `${rippleY.toFixed(2)}px`;
+        els.clickRipple.style.transform = `scale(${rippleScale.toFixed(3)})`;
+
+        // Dragged File Bundle Chip during Scene 2 drop
+        if (t >= 5.6 && t <= 7.85) {
+          const chipOp = prog(t, 5.6, 5.95) * (1 - prog(t, 7.65, 7.85));
+          els.dragChip.style.opacity = chipOp.toFixed(3);
+          els.dragChip.style.transform = `translate3d(${(curScreenX + 22).toFixed(1)}px, ${(curScreenY + 18).toFixed(1)}px, 0)`;
+        } else {
+          els.dragChip.style.opacity = '0';
+        }
+
+        // Contextual Callout Pill during zoomed scenes
+        let callout = null;
+        if (t >= 19.3 && t <= 22.2) {
+          callout = {
+            text: '9:16 Vertical Crop + 1s–3s Trim Active',
+            op: prog(t, 19.3, 19.65) * (1 - prog(t, 21.85, 22.2)),
+            x: 42,
+            y: 42,
+          };
+        } else if (t >= 27.2 && t <= 30.8) {
+          callout = {
+            text: '12 FPS · 720p Social HD · Palettegen GIF',
+            op: prog(t, 27.2, 27.55) * (1 - prog(t, 30.45, 30.8)),
+            x: 42,
+            y: 42,
+          };
+        } else if (t >= 34.1 && t <= 36.5) {
+          callout = {
+            text: '100% Local Output · Zero Bytes Uploaded',
+            op: prog(t, 34.1, 34.45) * (1 - prog(t, 36.15, 36.5)),
+            x: 42,
+            y: 42,
+          };
+        }
+
+        if (callout && callout.op > 0.01) {
+          els.calloutPill.style.opacity = callout.op.toFixed(3);
+          els.calloutPill.style.left = `${callout.x}px`;
+          els.calloutPill.style.top = `${callout.y}px`;
+          els.calloutText.textContent = callout.text;
+        } else {
+          els.calloutPill.style.opacity = '0';
+        }
+
+        // Update Silent Bottom HUD
+        const activeScene = SCENES.find((sc) => t >= sc.start && t < sc.end) || SCENES[SCENES.length - 1];
+        els.hudStepBadge.textContent = activeScene.badge;
+        els.hudCaption.textContent = activeScene.caption;
+        els.hudTagText.textContent = activeScene.tag;
+        els.hudTimer.textContent = `${formatSec(t)} / 00:38`;
+        els.hudProgressFill.style.transform = `scaleX(${clamp(t / TOTAL_DURATION, 0, 1).toFixed(5)})`;
+      };
+
+      // Render initial frame when opened manually
+      window.__studioReady.then(() => window.__setTime(0));
+    </script>
+  </body>
+</html>

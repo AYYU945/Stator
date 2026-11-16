@@ -1,163 +1,78 @@
-/**
- * Worker Pool Manager for OffscreenCanvas & createImageBitmap Image Conversions
- * Scales dynamically to logical cores (navigator.hardwareConcurrency || 4)
- * Handles queue concurrency without blocking UI thread.
- */
-
 import { PresetSettings } from '../types/queue.ts';
+
+export interface ImageConversionResult {
+  blob: Blob;
+  url: string;
+  width: number;
+  height: number;
+  sizeBytes: number;
+}
 
 interface ImageJob {
   id: string;
   file: File | Blob;
   targetFormat: string;
   preset?: PresetSettings;
-  resolve: (value: {
-    blob: Blob;
-    url: string;
-    width: number;
-    height: number;
-    sizeBytes: number;
-  }) => void;
+  signal?: AbortSignal;
+  resolve: (value: ImageConversionResult) => void;
   reject: (reason?: any) => void;
 }
 
 class ImageWorkerPool {
   private workers: Worker[] = [];
   private busyWorkers: Set<Worker> = new Set();
+  private activeJobs: Map<Worker, string> = new Map();
   private queue: ImageJob[] = [];
   private jobMap: Map<string, ImageJob> = new Map();
   private maxWorkers: number = 4;
-  private workerBlobUrl: string | null = null;
   private initialized: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
       const cores = navigator.hardwareConcurrency || 4;
-      // Allocate between 2 and 4 concurrent workers to avoid memory overload
       this.maxWorkers = Math.max(2, Math.min(4, cores));
     }
   }
 
-  private initWorkerBlob(): string {
-    if (this.workerBlobUrl) return this.workerBlobUrl;
-
-    // Inline worker script so Vite bundles and hosts it seamlessly across all domains / iframes
-    const workerScript = `
-      const RESOLUTION_BOUNDS = {
-        '4K': { w: 3840, h: 2160 },
-        '2K': { w: 2560, h: 1440 },
-        '1080p': { w: 1920, h: 1080 },
-        '720p': { w: 1280, h: 720 },
-        '480p': { w: 854, h: 480 },
-      };
-
-      self.onmessage = async (e) => {
-        const { id, file, targetFormat, preset } = e.data;
-        try {
-          // Asynchronous decoding via createImageBitmap
-          const bitmap = await createImageBitmap(file);
-          const origWidth = bitmap.width;
-          const origHeight = bitmap.height;
-
-          let targetWidth = origWidth;
-          let targetHeight = origHeight;
-
-          const resolutionPreset = preset?.imageResize;
-          if (resolutionPreset && resolutionPreset in RESOLUTION_BOUNDS) {
-            const { w: maxW, h: maxH } = RESOLUTION_BOUNDS[resolutionPreset];
-            const scale = Math.min(maxW / origWidth, maxH / origHeight);
-            targetWidth = Math.round(origWidth * scale);
-            targetHeight = Math.round(origHeight * scale);
-          } else if (resolutionPreset === 'custom' && preset) {
-            if (preset.customWidth && preset.customWidth > 0) targetWidth = preset.customWidth;
-            if (preset.customHeight && preset.customHeight > 0) targetHeight = preset.customHeight;
-          }
-
-          targetWidth = Math.max(1, targetWidth);
-          targetHeight = Math.max(1, targetHeight);
-
-          const offscreen = new OffscreenCanvas(targetWidth, targetHeight);
-          const ctx = offscreen.getContext('2d');
-          if (!ctx) throw new Error('OffscreenCanvas 2D unavailable');
-
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-
-          if (preset?.preserveTransparency === false) {
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, targetWidth, targetHeight);
-          }
-
-          ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
-          bitmap.close();
-
-          let mimeType = 'image/png';
-          const target = (targetFormat || '').toUpperCase();
-          if (target.includes('JPEG') || target.includes('JPG')) {
-            mimeType = 'image/jpeg';
-          } else if (target.includes('WEBP')) {
-            mimeType = 'image/webp';
-          } else if (target.includes('AVIF')) {
-            mimeType = 'image/avif';
-          }
-
-          const qualityFraction = (preset?.imageQuality ?? 90) / 100;
-          let blob;
-          try {
-            blob = await offscreen.convertToBlob({ type: mimeType, quality: qualityFraction });
-          } catch {
-            blob = await offscreen.convertToBlob({ type: 'image/webp', quality: qualityFraction });
-          }
-
-          self.postMessage({
-            id,
-            success: true,
-            blob,
-            width: targetWidth,
-            height: targetHeight,
-            sizeBytes: blob.size,
-          });
-        } catch (err) {
-          self.postMessage({
-            id,
-            success: false,
-            error: err?.message || 'Worker image conversion failed',
-          });
-        }
-      };
-    `;
-
-    const blob = new Blob([workerScript], { type: 'application/javascript' });
-    this.workerBlobUrl = URL.createObjectURL(blob);
-    return this.workerBlobUrl;
+  private spawnWorker(): Worker | null {
+    if (typeof Worker === 'undefined') return null;
+    try {
+      const worker = new Worker(new URL('../workers/imageWorker.ts', import.meta.url), {
+        type: 'module',
+      });
+      worker.onmessage = (e) => this.handleWorkerMessage(worker, e);
+      worker.onerror = (err) => this.handleWorkerError(worker, err);
+      return worker;
+    } catch (err) {
+      console.warn('Module Web Worker spawn failed:', err);
+      return null;
+    }
   }
 
   private init() {
-    if (this.initialized || typeof window === 'undefined') return;
+    if (this.initialized || typeof Worker === 'undefined') return;
     this.initialized = true;
 
-    try {
-      const scriptUrl = this.initWorkerBlob();
-      for (let i = 0; i < this.maxWorkers; i++) {
-        const worker = new Worker(scriptUrl);
-        worker.onmessage = (e) => this.handleWorkerMessage(worker, e);
-        worker.onerror = (err) => this.handleWorkerError(worker, err);
+    for (let i = 0; i < this.maxWorkers; i++) {
+      const worker = this.spawnWorker();
+      if (worker) {
         this.workers.push(worker);
       }
-    } catch (err) {
-      console.warn('OffscreenCanvas Web Worker pool initialization fell back to main thread:', err);
     }
   }
 
   private handleWorkerMessage(worker: Worker, e: MessageEvent) {
-    const { id, success, blob, width, height, sizeBytes, error } = e.data;
+    const { id, success, blob, width, height, sizeBytes, error } = e.data || {};
     const job = this.jobMap.get(id);
 
     this.busyWorkers.delete(worker);
+    this.activeJobs.delete(worker);
     this.jobMap.delete(id);
 
     if (job) {
-      if (success && blob) {
+      if (job.signal?.aborted) {
+        job.reject(new DOMException('Conversion cancelled by user', 'AbortError'));
+      } else if (success && blob) {
         const url = URL.createObjectURL(blob);
         job.resolve({ blob, url, width, height, sizeBytes });
       } else {
@@ -169,59 +84,151 @@ class ImageWorkerPool {
   }
 
   private handleWorkerError(worker: Worker, err: ErrorEvent) {
-    console.error('Image Worker Error:', err);
+    const activeJobId = this.activeJobs.get(worker);
     this.busyWorkers.delete(worker);
+    this.activeJobs.delete(worker);
+
+    if (activeJobId) {
+      const job = this.jobMap.get(activeJobId);
+      this.jobMap.delete(activeJobId);
+      if (job) {
+        job.reject(new Error(err?.message || 'Image worker crashed unexpectedly'));
+      }
+    }
+
+    // Replace crashed worker so pool capacity never degrades permanently
+    const idx = this.workers.indexOf(worker);
+    try {
+      worker.terminate();
+    } catch {}
+    if (idx !== -1) {
+      const replacement = this.spawnWorker();
+      if (replacement) {
+        this.workers[idx] = replacement;
+      } else {
+        this.workers.splice(idx, 1);
+      }
+    }
+
     this.processQueue();
   }
 
   private processQueue() {
-    if (this.queue.length === 0) return;
+    while (this.queue.length > 0) {
+      const availableWorker = this.workers.find((w) => !this.busyWorkers.has(w));
+      if (!availableWorker) return;
 
-    const availableWorker = this.workers.find((w) => !this.busyWorkers.has(w));
-    if (!availableWorker) return;
+      const job = this.queue.shift();
+      if (!job) return;
 
-    const job = this.queue.shift();
-    if (!job) return;
+      if (job.signal?.aborted) {
+        this.jobMap.delete(job.id);
+        job.reject(new DOMException('Conversion cancelled by user', 'AbortError'));
+        continue;
+      }
 
-    this.busyWorkers.add(availableWorker);
-    this.jobMap.set(job.id, job);
+      this.busyWorkers.add(availableWorker);
+      this.activeJobs.set(availableWorker, job.id);
+      this.jobMap.set(job.id, job);
 
-    availableWorker.postMessage({
-      id: job.id,
-      file: job.file,
-      targetFormat: job.targetFormat,
-      preset: job.preset,
-    });
+      availableWorker.postMessage({
+        id: job.id,
+        file: job.file,
+        targetFormat: job.targetFormat,
+        preset: job.preset,
+      });
+    }
+  }
+
+  public cancelJob(jobId: string): boolean {
+    const queuedIdx = this.queue.findIndex((j) => j.id === jobId);
+    if (queuedIdx !== -1) {
+      const [removed] = this.queue.splice(queuedIdx, 1);
+      this.jobMap.delete(jobId);
+      removed.reject(new DOMException('Conversion cancelled by user', 'AbortError'));
+      return true;
+    }
+
+    for (const [worker, activeId] of this.activeJobs.entries()) {
+      if (activeId === jobId) {
+        const job = this.jobMap.get(jobId);
+        this.busyWorkers.delete(worker);
+        this.activeJobs.delete(worker);
+        this.jobMap.delete(jobId);
+
+        const idx = this.workers.indexOf(worker);
+        try {
+          worker.terminate();
+        } catch {}
+        if (idx !== -1) {
+          const replacement = this.spawnWorker();
+          if (replacement) {
+            this.workers[idx] = replacement;
+          } else {
+            this.workers.splice(idx, 1);
+          }
+        }
+        job?.reject(new DOMException('Conversion cancelled by user', 'AbortError'));
+        this.processQueue();
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public getActiveCount(): number {
+    return this.busyWorkers.size;
+  }
+
+  public getPoolSize(): number {
+    return this.maxWorkers;
   }
 
   public convertImage(
     file: File | Blob,
     targetFormat: string,
-    preset?: PresetSettings
-  ): Promise<{
-    blob: Blob;
-    url: string;
-    width: number;
-    height: number;
-    sizeBytes: number;
-  }> {
+    preset?: PresetSettings,
+    signal?: AbortSignal,
+    explicitJobId?: string
+  ): Promise<ImageConversionResult> {
+    if (signal?.aborted) {
+      return Promise.reject(new DOMException('Conversion cancelled by user', 'AbortError'));
+    }
+
     this.init();
 
-    // If workers are unavailable or OffscreenCanvas is unsupported, return null to trigger main thread fallback
     if (this.workers.length === 0 || typeof OffscreenCanvas === 'undefined') {
       return Promise.reject(new Error('OffscreenCanvas worker not supported'));
     }
 
     return new Promise((resolve, reject) => {
-      const id = `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      this.queue.push({
+      const id = explicitJobId || `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      const onAbort = () => {
+        this.cancelJob(id);
+      };
+      signal?.addEventListener('abort', onAbort, { once: true });
+
+      const wrappedResolve = (res: ImageConversionResult) => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve(res);
+      };
+      const wrappedReject = (err: any) => {
+        signal?.removeEventListener('abort', onAbort);
+        reject(err);
+      };
+
+      const job: ImageJob = {
         id,
         file,
         targetFormat,
         preset,
-        resolve,
-        reject,
-      });
+        signal,
+        resolve: wrappedResolve,
+        reject: wrappedReject,
+      };
+      this.queue.push(job);
       this.processQueue();
     });
   }

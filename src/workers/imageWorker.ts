@@ -1,104 +1,149 @@
-/**
- * Image processing Web Worker running OffscreenCanvas & createImageBitmap()
- * Runs completely off the main UI thread.
- */
+import { PresetSettings } from '../types/queue.ts';
+import {
+  resolveOrientedTargetDimensions,
+  rgbaToBmpBlob,
+  rgbaToTiffBlob,
+  pngBuffersToIcoBlob,
+  drawTransformedSource,
+} from '../utils/imageEncoder.ts';
 
-interface WorkerTask {
+interface WorkerRequest {
   id: string;
   file: File | Blob;
   targetFormat: string;
-  preset?: {
-    imageQuality?: number;
-    imageResize?: string;
-    customWidth?: number;
-    customHeight?: number;
-    stripMetadata?: boolean;
-    preserveTransparency?: boolean;
-  };
+  preset?: PresetSettings;
 }
 
-const RESOLUTION_BOUNDS: Record<string, { w: number; h: number }> = {
-  '4K': { w: 3840, h: 2160 },
-  '2K': { w: 2560, h: 1440 },
-  '1080p': { w: 1920, h: 1080 },
-  '720p': { w: 1280, h: 720 },
-  '480p': { w: 854, h: 480 },
-};
+const LOSSY_MIME_FORMATS = new Set(['image/jpeg', 'image/webp', 'image/avif']);
 
-self.onmessage = async (e: MessageEvent<WorkerTask>) => {
-  const { id, file, targetFormat, preset } = e.data;
+function resolveMimeType(targetFormat: string): string {
+  const target = (targetFormat || '').toUpperCase();
+  if (target.includes('JPEG') || target.includes('JPG')) return 'image/jpeg';
+  if (target.includes('WEBP')) return 'image/webp';
+  if (target.includes('AVIF')) return 'image/avif';
+  return 'image/png';
+}
 
-  try {
-    // 1. Asynchronous background decoding using createImageBitmap
-    const bitmap = await createImageBitmap(file);
-    const origWidth = bitmap.width;
-    const origHeight = bitmap.height;
+async function encodeWithBudget(
+  offscreen: OffscreenCanvas,
+  mimeType: string,
+  baseQuality: number,
+  targetMaxSizeMb?: number
+): Promise<Blob> {
+  const initialBlob = await offscreen.convertToBlob({ type: mimeType, quality: baseQuality });
+  if (!initialBlob || initialBlob.size === 0) {
+    throw new Error(`Encoder returned empty output for ${mimeType}.`);
+  }
+  if (initialBlob.type && initialBlob.type.toLowerCase() !== mimeType) {
+    throw new Error(
+      `This browser does not support native ${mimeType.replace('image/', '').toUpperCase()} encoding (returned ${initialBlob.type}).`
+    );
+  }
 
-    let targetWidth = origWidth;
-    let targetHeight = origHeight;
+  if (
+    !targetMaxSizeMb ||
+    targetMaxSizeMb <= 0 ||
+    !LOSSY_MIME_FORMATS.has(mimeType)
+  ) {
+    return initialBlob;
+  }
 
-    // 2. Proportional aspect-ratio resolution scaling
-    const resolutionPreset = preset?.imageResize;
-    if (resolutionPreset && resolutionPreset in RESOLUTION_BOUNDS) {
-      const { w: maxW, h: maxH } = RESOLUTION_BOUNDS[resolutionPreset];
-      const scale = Math.min(maxW / origWidth, maxH / origHeight);
-      targetWidth = Math.round(origWidth * scale);
-      targetHeight = Math.round(origHeight * scale);
-    } else if (resolutionPreset === 'custom' && preset) {
-      if (preset.customWidth && preset.customWidth > 0) targetWidth = preset.customWidth;
-      if (preset.customHeight && preset.customHeight > 0) targetHeight = preset.customHeight;
+  const maxBytes = targetMaxSizeMb * 1024 * 1024;
+  if (initialBlob.size <= maxBytes) {
+    return initialBlob;
+  }
+
+  // 4-step binary search over quality [0.10 .. baseQuality]
+  let low = 0.1;
+  let high = Math.max(0.12, baseQuality);
+  let bestBlob = initialBlob;
+
+  for (let step = 0; step < 4; step++) {
+    const mid = Number(((low + high) / 2).toFixed(3));
+    const candidate = await offscreen.convertToBlob({ type: mimeType, quality: mid });
+    if (candidate.size <= maxBytes) {
+      bestBlob = candidate;
+      low = mid;
+    } else {
+      high = mid;
+      if (candidate.size < bestBlob.size) {
+        bestBlob = candidate;
+      }
     }
+  }
 
-    // Ensure dimensions are positive integers
-    targetWidth = Math.max(1, targetWidth);
-    targetHeight = Math.max(1, targetHeight);
+  return bestBlob;
+}
 
-    // 3. Render onto OffscreenCanvas
+self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
+  const { id, file, targetFormat, preset } = e.data;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const rotation = preset?.rotation || 0;
+    const flipH = Boolean(preset?.flipH);
+
+    const { w: targetWidth, h: targetHeight } = resolveOrientedTargetDimensions(
+      bitmap.width,
+      bitmap.height,
+      preset?.imageResize || 'original',
+      rotation,
+      preset?.customWidth,
+      preset?.customHeight
+    );
+
     const offscreen = new OffscreenCanvas(targetWidth, targetHeight);
     const ctx = offscreen.getContext('2d');
-
     if (!ctx) {
-      throw new Error('OffscreenCanvas 2D context unavailable in worker');
+      bitmap.close();
+      throw new Error('OffscreenCanvas 2D context is unavailable.');
     }
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    const targetUpper = (targetFormat || '').toUpperCase();
+    const forceWhiteBg =
+      preset?.preserveTransparency === false || targetUpper.includes('JPEG') || targetUpper.includes('JPG') || targetUpper.includes('BMP');
 
-    // Flatten background if transparency is disabled
-    if (preset?.preserveTransparency === false) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, targetWidth, targetHeight);
-    }
-
-    // Draw bitmap into canvas (stripping EXIF metadata cleanly)
-    ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+    drawTransformedSource(
+      ctx,
+      bitmap,
+      targetWidth,
+      targetHeight,
+      rotation,
+      flipH,
+      !forceWhiteBg
+    );
     bitmap.close();
 
-    // 4. Resolve MIME type and quality
-    let mimeType = 'image/png';
-    const target = targetFormat.toUpperCase();
-    if (target.includes('JPEG') || target.includes('JPG')) {
-      mimeType = 'image/jpeg';
-    } else if (target.includes('WEBP')) {
-      mimeType = 'image/webp';
-    } else if (target.includes('AVIF')) {
-      mimeType = 'image/avif';
-    }
-
-    const qualityFraction = (preset?.imageQuality ?? 90) / 100;
-
     let blob: Blob;
-    try {
-      blob = await offscreen.convertToBlob({
-        type: mimeType,
-        quality: qualityFraction,
-      });
-    } catch {
-      // Fallback to webp/png if browser's OffscreenCanvas doesn't support specific mime
-      blob = await offscreen.convertToBlob({
-        type: 'image/webp',
-        quality: qualityFraction,
-      });
+
+    if (targetUpper.includes('BMP')) {
+      const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+      blob = rgbaToBmpBlob(imageData.data, targetWidth, targetHeight);
+    } else if (targetUpper.includes('TIFF') || targetUpper.includes('TIF')) {
+      const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+      blob = rgbaToTiffBlob(imageData.data, targetWidth, targetHeight);
+    } else if (targetUpper.includes('ICO')) {
+      const sizes = [16, 32, 48];
+      const pngEntries: Array<{ size: number; data: Uint8Array }> = [];
+      for (const size of sizes) {
+        const subCanvas = new OffscreenCanvas(size, size);
+        const subCtx = subCanvas.getContext('2d');
+        if (!subCtx) throw new Error('OffscreenCanvas 2D unavailable for ICO mipmap');
+        subCtx.imageSmoothingEnabled = true;
+        subCtx.imageSmoothingQuality = 'high';
+        subCtx.drawImage(offscreen, 0, 0, size, size);
+        const subBlob = await subCanvas.convertToBlob({ type: 'image/png' });
+        pngEntries.push({ size, data: new Uint8Array(await subBlob.arrayBuffer()) });
+      }
+      blob = pngBuffersToIcoBlob(pngEntries);
+    } else {
+      const mimeType = resolveMimeType(targetFormat);
+      const qualityFraction = Math.min(1, Math.max(0.1, (preset?.imageQuality ?? 90) / 100));
+      blob = await encodeWithBudget(
+        offscreen,
+        mimeType,
+        qualityFraction,
+        preset?.targetMaxSizeMb
+      );
     }
 
     self.postMessage({
