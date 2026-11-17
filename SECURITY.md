@@ -23,9 +23,8 @@ Stator executes all media inspection and transcoding strictly within local brows
 
 If you discover a security issue (such as Cross-Site Scripting, unsafe HTML/SVG handling, dependency vulnerabilities, or WebAssembly memory isolation bypasses), please **do not open a public GitHub issue**.
 
-Instead, report it privately via:
+Instead, report it privately to the maintainer (**[AYYU945](https://github.com/AYYU945)**) via:
 
-* **Email:** `hanan.ahmed.pak@gmail.com`
 * **GitHub Security Advisories:** [Report a vulnerability](https://github.com/AYYU945/Stator/security/advisories) on `AYYU945/Stator`.
 
 Please include:

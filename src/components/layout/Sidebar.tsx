@@ -576,18 +576,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ) : (
             <div className="pt-1 mt-1 border-t border-[var(--stator-border)] space-y-0.5">
               <a
-                href={STATOR_REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 px-2.5 rounded-lg flex items-center justify-between gap-2 text-[13px] font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)]/70 transition-colors"
-              >
-                <span className="flex items-center gap-2.5 min-w-0">
-                  <Code2 className="w-4 h-4 shrink-0" />
-                  <span className="truncate">GitHub Source</span>
-                </span>
-                <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
-              </a>
-              <a
                 href={STATOR_ISSUES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -599,9 +587,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
                 <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
               </a>
-              <p className="px-2.5 pt-1 text-[11px] text-[var(--stator-fg-muted)]">
-                Local · On-device processing
-              </p>
             </div>
           )}
         </div>

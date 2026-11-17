@@ -3,8 +3,10 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import {
   GITHUB_DMCA_POLICY_URL,
   LegalRoute,
-  STATOR_CONTACT_EMAIL,
+  STATOR_ISSUES_URL,
   STATOR_LICENSE_URL,
+  STATOR_MAINTAINER,
+  STATOR_MAINTAINER_URL,
   STATOR_RELEASES_URL,
   STATOR_REPO_URL,
   STATOR_THIRD_PARTY_NOTICES_URL,
@@ -140,17 +142,18 @@ export const CopyrightNotice: React.FC<CopyrightNoticeProps> = ({ onBack, onNavi
             <div className="md:col-span-8 space-y-3 text-sm leading-relaxed">
               <p>
                 For copyright, attribution, or license questions regarding the Stator repository,
-                contact the maintainer directly:
+                open an issue on GitHub or reach the maintainer via the repository:
               </p>
               <div className="bg-[var(--stator-surface)] border border-[var(--stator-border)] rounded-lg p-3.5 text-xs font-mono text-[var(--stator-fg)] space-y-1">
-                <div>Maintainer: Hanan Ahmed</div>
-                <div className="text-[var(--stator-fg-muted)]">
-                  Email:{' '}
+                <div>
+                  Maintainer:{' '}
                   <a
-                    href={`mailto:${STATOR_CONTACT_EMAIL}`}
-                    className="underline underline-offset-4 hover:text-[var(--stator-fg)]"
+                    href={STATOR_MAINTAINER_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4 hover:opacity-80"
                   >
-                    {STATOR_CONTACT_EMAIL}
+                    {STATOR_MAINTAINER}
                   </a>
                 </div>
                 <div className="text-[var(--stator-fg-muted)]">
@@ -162,6 +165,17 @@ export const CopyrightNotice: React.FC<CopyrightNoticeProps> = ({ onBack, onNavi
                     className="underline underline-offset-4 hover:text-[var(--stator-fg)]"
                   >
                     {STATOR_REPO_URL}
+                  </a>
+                </div>
+                <div className="text-[var(--stator-fg-muted)]">
+                  Issues:{' '}
+                  <a
+                    href={STATOR_ISSUES_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-4 hover:text-[var(--stator-fg)]"
+                  >
+                    {STATOR_ISSUES_URL}
                   </a>
                 </div>
               </div>
@@ -185,12 +199,14 @@ export const CopyrightNotice: React.FC<CopyrightNoticeProps> = ({ onBack, onNavi
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[var(--stator-fg-subtle)]">
           <span>
-            Maintainer contact:{' '}
+            Maintainer:{' '}
             <a
-              href={`mailto:${STATOR_CONTACT_EMAIL}`}
+              href={STATOR_MAINTAINER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
             >
-              {STATOR_CONTACT_EMAIL}
+              {STATOR_MAINTAINER}
             </a>
           </span>
           {onNavigateLegal && (

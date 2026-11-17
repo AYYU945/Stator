@@ -2,9 +2,10 @@ import React from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import {
   LegalRoute,
-  STATOR_CONTACT_EMAIL,
   STATOR_ISSUES_URL,
   STATOR_LICENSE_URL,
+  STATOR_MAINTAINER,
+  STATOR_MAINTAINER_URL,
   STATOR_RELEASES_URL,
   STATOR_REPO_URL,
   STATOR_THIRD_PARTY_NOTICES_URL,
@@ -201,7 +202,7 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, onNavigate
             <div className="md:col-span-4">
               <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">05</span>
               <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                Source Audit &amp; Maintainer Contact
+                Source Audit &amp; Repository
               </h2>
             </div>
             <div className="md:col-span-8 space-y-3 text-sm leading-relaxed">
@@ -248,15 +249,27 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, onNavigate
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[var(--stator-fg-subtle)]">
-          <span>
-            Privacy or technical inquiries:{' '}
+          <div className="flex flex-wrap items-center gap-4">
+            <span>
+              Maintainer:{' '}
+              <a
+                href={STATOR_MAINTAINER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+              >
+                {STATOR_MAINTAINER}
+              </a>
+            </span>
             <a
-              href={`mailto:${STATOR_CONTACT_EMAIL}`}
+              href={STATOR_ISSUES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
             >
-              {STATOR_CONTACT_EMAIL}
+              GitHub Issues
             </a>
-          </span>
+          </div>
           {onNavigateLegal && (
             <div className="flex items-center gap-4">
               <button

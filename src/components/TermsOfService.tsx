@@ -2,9 +2,10 @@ import React from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import {
   LegalRoute,
-  STATOR_CONTACT_EMAIL,
   STATOR_ISSUES_URL,
   STATOR_LICENSE_URL,
+  STATOR_MAINTAINER,
+  STATOR_MAINTAINER_URL,
   STATOR_RELEASES_URL,
   STATOR_REPO_URL,
   STATOR_THIRD_PARTY_NOTICES_URL,
@@ -191,12 +192,14 @@ export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack, onNaviga
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[var(--stator-fg-subtle)]">
           <div className="flex flex-wrap items-center gap-4">
             <span>
-              Contact:{' '}
+              Maintainer:{' '}
               <a
-                href={`mailto:${STATOR_CONTACT_EMAIL}`}
+                href={STATOR_MAINTAINER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
               >
-                {STATOR_CONTACT_EMAIL}
+                {STATOR_MAINTAINER}
               </a>
             </span>
             <a

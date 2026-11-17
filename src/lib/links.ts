@@ -8,7 +8,8 @@ export const STATOR_SECURITY_ADVISORIES_URL =
   'https://github.com/AYYU945/Stator/security/advisories';
 export const STATOR_ISSUES_URL = 'https://github.com/AYYU945/Stator/issues/new/choose';
 export const STATOR_RELEASES_URL = 'https://github.com/AYYU945/Stator/releases';
-export const STATOR_CONTACT_EMAIL = 'hanan.ahmed.pak@gmail.com';
+export const STATOR_MAINTAINER = 'AYYU945';
+export const STATOR_MAINTAINER_URL = 'https://github.com/AYYU945';
 export const GITHUB_DMCA_POLICY_URL =
   'https://docs.github.com/en/site-policy/copyright-and-dmca-takedown-policy/dmca-takedown-policy';
 

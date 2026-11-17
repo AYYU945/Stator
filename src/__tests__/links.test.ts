@@ -3,6 +3,8 @@ import {
   GITHUB_DMCA_POLICY_URL,
   STATOR_ISSUES_URL,
   STATOR_LICENSE_URL,
+  STATOR_MAINTAINER,
+  STATOR_MAINTAINER_URL,
   STATOR_RELEASES_URL,
   STATOR_REPO_URL,
   STATOR_SECURITY_URL,
@@ -30,7 +32,9 @@ describe('legal routing and repository links', () => {
     expect(legalRouteToPath('dmca')).toBe('/dmca');
   });
 
-  it('exposes valid AYYU945/Stator and GitHub DMCA policy URLs', () => {
+  it('exposes valid AYYU945/Stator, maintainer, and GitHub DMCA policy URLs', () => {
+    expect(STATOR_MAINTAINER).toBe('AYYU945');
+    expect(STATOR_MAINTAINER_URL).toBe('https://github.com/AYYU945');
     expect(STATOR_REPO_URL).toBe('https://github.com/AYYU945/Stator');
     expect(STATOR_LICENSE_URL).toBe('https://github.com/AYYU945/Stator/blob/main/LICENSE');
     expect(STATOR_THIRD_PARTY_NOTICES_URL).toBe(

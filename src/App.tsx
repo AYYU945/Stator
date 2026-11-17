@@ -651,11 +651,7 @@ export default function App() {
             </AnimatePresence>
           </main>
 
-          <StatusFooter
-            onNavigatePrivacy={() => navigateLegal('privacy')}
-            onNavigateTerms={() => navigateLegal('terms')}
-            onNavigateDmca={() => navigateLegal('dmca')}
-          />
+          <StatusFooter />
         </div>
 
         <ExportCenterModal

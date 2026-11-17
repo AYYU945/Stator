@@ -126,4 +126,4 @@ Pre-configured templates are included in `vercel.json` and `public/_headers`. St
 * **Source Repository:** [github.com/AYYU945/Stator](https://github.com/AYYU945/Stator) · [Releases](https://github.com/AYYU945/Stator/releases) · [Report a Bug](https://github.com/AYYU945/Stator/issues/new/choose)
 * **Stator Codebase:** Licensed under the **[MIT License](./LICENSE)**.
 * **Third-Party WebAssembly Codecs & Fonts:** Video/audio transcoding loads self-hosted `@ffmpeg/core` binaries locally in the browser (`LICENSE` and [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md) cover GPL/LGPL codec boundaries such as `libx264`, plus bundled OFL-1.1 fonts).
-* **Support & Contact:** `hanan.ahmed.pak@gmail.com` · Read [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md), and [`SECURITY.md`](./SECURITY.md).
+* **Maintainer:** [AYYU945](https://github.com/AYYU945) · Read [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md), and [`SECURITY.md`](./SECURITY.md).
