@@ -1,4 +1,5 @@
 import { ThemeMode } from '../lib/theme.ts';
+import { ProjectType } from './project.ts';
 
 export type UiDensity = 'comfortable' | 'compact';
 export type MotionPreference = 'system' | 'full' | 'reduced';
@@ -25,12 +26,14 @@ export interface StatorSettings {
   density: UiDensity;
   fontScale: 95 | 100 | 105 | 110;
   sidebarCollapsed: boolean;
-  sidebarWidth: number; // 210..300
+  sidebarWidth: number; // 200..300
   motionPreference: MotionPreference;
   highContrastFocus: boolean;
 
   // Studio
   pinnedTools: NavToolId[];
+  recentTools: NavToolId[];
+  recentProjectTypes: ProjectType[];
   autosaveProjects: boolean;
   showCheckerboardDefault: boolean;
   leftPanelWidth: number;
@@ -52,10 +55,12 @@ export const DEFAULT_STATOR_SETTINGS: StatorSettings = {
   density: 'comfortable',
   fontScale: 100,
   sidebarCollapsed: false,
-  sidebarWidth: 236,
+  sidebarWidth: 224,
   motionPreference: 'system',
   highContrastFocus: false,
   pinnedTools: ['converter', 'compressor', 'images', 'video', 'audio'],
+  recentTools: ['video', 'images', 'audio'],
+  recentProjectTypes: ['video', 'image', 'audio'],
   autosaveProjects: true,
   showCheckerboardDefault: true,
   leftPanelWidth: 256,

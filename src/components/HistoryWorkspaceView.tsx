@@ -108,7 +108,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[var(--stator-border)]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-[var(--stator-fg-subtle)] mb-2">
+          <div className="flex items-center gap-2 text-xs text-[var(--stator-fg-muted)] mb-2">
             <button
               type="button"
               onClick={onBackToConverter}
@@ -134,7 +134,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
             <button
               type="button"
               onClick={onClearHistory}
-              className="min-h-[38px] px-3.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] cursor-pointer transition-colors active:scale-[0.98]"
+              className="min-h-[38px] px-3.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] cursor-pointer transition-colors active:scale-[0.98]"
             >
               Clear History ({history.length})
             </button>
@@ -149,7 +149,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
                     onWipeAllData();
                     setConfirmWipe(false);
                   }}
-                  className="min-h-[38px] px-3.5 rounded-lg bg-[var(--stator-danger)] text-white text-xs font-medium cursor-pointer active:scale-[0.98]"
+                  className="min-h-[38px] px-3.5 rounded-lg bg-[#9B2C3E] hover:bg-[#822333] text-white text-xs font-medium cursor-pointer active:scale-[0.98]"
                 >
                   Confirm Full Wipe
                 </button>
@@ -165,7 +165,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmWipe(true)}
-                className="min-h-[38px] px-3.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/25 text-[var(--stator-danger)] text-xs font-medium cursor-pointer transition-colors active:scale-[0.98]"
+                className="min-h-[38px] px-3.5 rounded-lg bg-[var(--stator-danger-soft)] border border-[var(--stator-danger)]/35 text-[var(--stator-danger)] text-xs font-medium cursor-pointer transition-colors active:scale-[0.98]"
               >
                 Wipe All Local Data
               </button>
@@ -177,7 +177,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-2 border-b border-[var(--stator-border)] pb-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
-            <Shield className="w-4 h-4 text-[var(--stator-accent-fg)] shrink-0 mt-0.5" />
+            <Shield className="w-4 h-4 text-[var(--stator-fg-muted)] shrink-0 mt-0.5" />
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-[var(--stator-fg)]">
                 Ephemeral Privacy Mode
@@ -200,16 +200,16 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
         <div className="flex flex-col justify-center space-y-2.5 md:border-l md:border-[var(--stator-border)] md:pl-6">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-[var(--stator-fg)] inline-flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-[var(--stator-accent-fg)]" />
+              <HardDrive className="w-4 h-4 text-[var(--stator-fg-muted)]" />
               <span>Local Blob Cache Quota (LRU)</span>
             </span>
             <span className="font-mono tabular-nums text-[var(--stator-fg-muted)]">
               {formatFileSize(usage.usedBytes)} / 250 MB ({usage.percentUsed}%)
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-[var(--stator-surface-2)] overflow-hidden">
+          <div className="h-2 w-full rounded-full bg-[var(--stator-surface-2)] border border-[var(--stator-border)] overflow-hidden">
             <div
-              className="h-full bg-[var(--stator-accent)] origin-left transition-transform duration-150"
+              className="h-full bg-[var(--stator-cta-bg)] origin-left transition-transform duration-150"
               style={{
                 transform: `scaleX(${Math.max(0, Math.min(1, usage.percentUsed / 100))})`,
               }}
@@ -223,19 +223,19 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
         {history.length > 0 && (
           <div className="px-4 sm:px-5 py-3 border-b border-[var(--stator-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search className="w-3.5 h-3.5 text-[var(--stator-fg-subtle)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-[var(--stator-fg-muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter converted filenames…"
                 aria-label="Filter conversion history"
-                className="w-full h-9 pl-8 pr-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-subtle)]"
+                className="w-full h-9 pl-8 pr-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-muted)]"
               />
             </div>
 
             <div
-              className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)]"
+              className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)]"
               role="tablist"
               aria-label="Filter history by type"
             >
@@ -257,7 +257,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
                     onClick={() => setCategoryFilter(tab.id)}
                     className={`relative px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? 'text-white'
+                        ? 'text-[var(--stator-cta-fg)]'
                         : 'text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
                     }`}
                   >
@@ -266,7 +266,7 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
                         layoutId="stator-history-filter"
                         transition={STATOR_SPRING.tactile}
                         aria-hidden="true"
-                        className="absolute inset-0 rounded-md bg-[var(--stator-accent)]"
+                        className="absolute inset-0 rounded-md bg-[var(--stator-cta-bg)]"
                       />
                     )}
                     <span className="relative z-10">{tab.label}</span>
@@ -356,8 +356,8 @@ export const HistoryWorkspaceView: React.FC<HistoryWorkspaceViewProps> = ({
                         onClick={() => handleDownloadEntry(entry)}
                         className={`h-8 px-3 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors active:scale-[0.98] ${
                           hasPayload
-                            ? 'bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white cursor-pointer'
-                            : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg-subtle)] cursor-not-allowed opacity-50'
+                            ? 'bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] cursor-pointer'
+                            : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg-muted)] cursor-not-allowed opacity-50'
                         }`}
                       >
                         <Download className="w-3.5 h-3.5" />

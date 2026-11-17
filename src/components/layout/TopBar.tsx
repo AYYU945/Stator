@@ -7,11 +7,11 @@ import {
   Command,
   Sun,
   Moon,
-  Monitor,
   Download,
   Camera,
   Check,
   Pencil,
+  Plus,
 } from 'lucide-react';
 import { ThemeMode } from '../../lib/theme.ts';
 import { PWAInstallButton } from '../PWAInstallButton.tsx';
@@ -19,6 +19,7 @@ import { PWAInstallButton } from '../PWAInstallButton.tsx';
 export interface TopBarProps {
   viewTitle: string;
   isStudioView: boolean;
+  isHomeView: boolean;
   projectName?: string;
   onRenameProject?: (nextName: string) => void;
   onNavigateHome: () => void;
@@ -32,9 +33,11 @@ export interface TopBarProps {
   onSaveSnapshot?: () => void;
   onOpenCommandPalette: () => void;
   onOpenExportCenter: () => void;
+  onOpenNewProjectModal: () => void;
   readyCount: number;
   completedCount: number;
   theme: ThemeMode;
+  isDark: boolean;
   onThemeChange: (mode: ThemeMode) => void;
   onOpenMobileSidebar: () => void;
 }
@@ -42,6 +45,7 @@ export interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   viewTitle,
   isStudioView,
+  isHomeView,
   projectName,
   onRenameProject,
   onNavigateHome,
@@ -55,9 +59,10 @@ export const TopBar: React.FC<TopBarProps> = ({
   onSaveSnapshot,
   onOpenCommandPalette,
   onOpenExportCenter,
+  onOpenNewProjectModal,
   readyCount,
   completedCount,
-  theme,
+  isDark,
   onThemeChange,
   onOpenMobileSidebar,
 }) => {
@@ -72,28 +77,22 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
   };
 
-  const cycleTheme = () => {
-    const next: ThemeMode = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
-    onThemeChange(next);
+  const toggleLightDark = () => {
+    onThemeChange(isDark ? 'light' : 'dark');
   };
 
-  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const themeLabel =
-    theme === 'dark'
-      ? 'Obsidian Dark'
-      : theme === 'light'
-      ? 'Soft Titanium Light'
-      : 'System Theme';
+  const showContextualExport = isStudioView || completedCount > 0 || readyCount > 0;
+  const activeCount = completedCount > 0 ? completedCount : readyCount;
 
   return (
-    <header className="h-14 w-full bg-[var(--stator-surface)] border-b border-[var(--stator-border)] px-3 sm:px-5 flex items-center justify-between gap-3 sticky top-0 z-20 shrink-0">
+    <header className="h-14 w-full bg-[var(--stator-surface)] border-b border-[var(--stator-border)] px-3.5 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-20 shrink-0">
       {/* Left: Mobile drawer + Breadcrumb / Editable Project Title */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         <button
           type="button"
           onClick={onOpenMobileSidebar}
           aria-label="Open navigation sidebar"
-          className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center border border-[var(--stator-border)] bg-[var(--stator-surface-2)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer shrink-0"
+          className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center border border-[var(--stator-border-control)] bg-[var(--stator-surface)] text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] cursor-pointer shrink-0"
         >
           <Menu className="w-4 h-4" />
         </button>
@@ -105,9 +104,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={onNavigateHome}
               className="hidden sm:inline text-xs font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer shrink-0"
             >
-              Workspace
+              Projects
             </button>
-            <ChevronRight className="hidden sm:inline w-3.5 h-3.5 text-[var(--stator-fg-subtle)] shrink-0" />
+            <ChevronRight className="hidden sm:inline w-3.5 h-3.5 text-[var(--stator-fg-muted)] shrink-0" />
             {editingName ? (
               <div className="flex items-center gap-1">
                 <input
@@ -121,7 +120,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   autoFocus
                   aria-label="Project name"
-                  className="h-7 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-accent)] text-xs font-semibold text-[var(--stator-fg)] w-44 sm:w-60 focus:outline-none"
+                  className="h-7 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-semibold text-[var(--stator-fg)] w-44 sm:w-60 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -143,30 +142,31 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className="group inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-[var(--stator-surface-2)] text-xs sm:text-sm font-semibold text-[var(--stator-fg)] truncate max-w-[200px] sm:max-w-[300px] cursor-pointer"
               >
                 <span className="truncate">{projectName}</span>
-                <Pencil className="w-3 h-3 text-[var(--stator-fg-subtle)] opacity-0 group-hover:opacity-100 shrink-0" />
+                <Pencil className="w-3 h-3 text-[var(--stator-fg-muted)] opacity-0 group-hover:opacity-100 shrink-0" />
               </button>
             )}
 
-            <span className="hidden lg:inline-block whitespace-nowrap shrink-0 text-[11px] font-mono text-[var(--stator-fg-subtle)] ml-1.5 px-2 py-0.5 rounded bg-[var(--stator-surface-2)]">
+            <span className="hidden lg:inline-block whitespace-nowrap shrink-0 text-xs text-[var(--stator-fg-muted)] ml-1.5">
+              ·{' '}
               {saveStatus === 'ephemeral'
-                ? 'Ephemeral'
+                ? 'Ephemeral session'
                 : saveStatus === 'saving'
                 ? 'Saving…'
                 : saveStatus === 'unsaved'
-                ? 'Manual save'
-                : 'Saved locally'}
+                ? 'Unsaved edits'
+                : 'Saved'}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-sm sm:text-base font-semibold tracking-tight text-[var(--stator-fg)] truncate">
+            <h1 className="text-sm font-medium tracking-tight text-[var(--stator-fg)] truncate">
               {viewTitle}
             </h1>
           </div>
         )}
       </div>
 
-      {/* Right: Studio Edit Controls + Utilities + Primary Export */}
+      {/* Right: Studio Edit Controls + Utilities + Contextual Primary Action */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {isStudioView && (
           <div className="hidden sm:flex items-center gap-1 pr-2 border-r border-[var(--stator-border)]">
@@ -196,7 +196,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onClick={onSaveSnapshot}
                 title="Save non-destructive project snapshot"
                 aria-label="Save project snapshot"
-                className="h-8 px-2.5 rounded-lg text-xs font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] inline-flex items-center gap-1 cursor-pointer"
+                className="h-8 px-2.5 rounded-lg text-xs font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span className="hidden xl:inline">Snapshot</span>
@@ -212,7 +212,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           onClick={onOpenCommandPalette}
           title="Command Palette (Ctrl/Cmd+K)"
           aria-label="Open Command Palette"
-          className="h-8 px-2.5 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-[11px] font-mono text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer"
+          className="h-8 px-2.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer"
         >
           <Command className="w-3 h-3" />
           <span className="hidden sm:inline">K</span>
@@ -220,28 +220,41 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <button
           type="button"
-          onClick={cycleTheme}
-          title={`Theme: ${themeLabel} (click to cycle)`}
-          aria-label={`Theme: ${themeLabel}`}
-          className="h-8 px-2.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+          onClick={toggleLightDark}
+          title={isDark ? 'Switch to Soft Ivory (Light)' : 'Switch to Graphite Black (Dark)'}
+          aria-label={isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}
+          className="h-8 px-2.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
         >
-          <ThemeIcon className="w-3.5 h-3.5" />
-          <span className="hidden md:inline text-[11px] capitalize">{theme}</span>
+          {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          <span className="hidden md:inline">{isDark ? 'Light' : 'Dark'}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onOpenExportCenter}
-          className="h-8 px-3 sm:px-3.5 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export</span>
-          {(completedCount > 0 || readyCount > 0) && (
-            <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-white/20">
-              {completedCount > 0 ? completedCount : readyCount}
-            </span>
-          )}
-        </button>
+        {isHomeView && (
+          <button
+            type="button"
+            onClick={onOpenNewProjectModal}
+            className="lg:hidden h-8 px-3 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New</span>
+          </button>
+        )}
+
+        {showContextualExport && (
+          <button
+            type="button"
+            onClick={onOpenExportCenter}
+            className="h-8 px-3 sm:px-3.5 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export</span>
+            {activeCount > 0 && (
+              <span className="font-mono tabular-nums text-[11px] opacity-80">
+                ({activeCount})
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </header>
   );

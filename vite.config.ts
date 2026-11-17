@@ -21,12 +21,12 @@ export default defineConfig(() => {
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
           id: '/',
-          name: 'Stator — Local Media Workspace',
+          name: 'Stator',
           short_name: 'Stator',
           description:
             'Privacy-first 100% local video, audio, image, and GIF workspace powered by WebAssembly.',
-          theme_color: '#0D0E11',
-          background_color: '#0D0E11',
+          theme_color: '#101112',
+          background_color: '#101112',
           display: 'standalone',
           start_url: '/',
           scope: '/',

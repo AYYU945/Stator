@@ -1,6 +1,6 @@
 # Third-Party Notices & Open-Source Licenses
 
-Stator is an open-source, 100% client-side media conversion workspace released under the **MIT License**. All bundled dependencies and WebAssembly binaries are self-hosted for offline privacy and deterministic verification.
+Stator (`https://github.com/AYYU945/Stator`) is an open-source, 100% client-side media conversion workspace released under the **MIT License**. All bundled dependencies, fonts, and WebAssembly binaries are self-hosted for offline privacy and deterministic verification.
 
 ---
 
@@ -8,7 +8,7 @@ Stator is an open-source, 100% client-side media conversion workspace released u
 
 - **FFmpeg & `@ffmpeg/core` / `@ffmpeg/core-mt` (`0.12.6`)**
   - Website: https://ffmpeg.org / https://github.com/ffmpegwasm/ffmpeg.wasm
-  - License: **LGPL-2.1-or-later / GPL-2.0-or-later** (depending on linked codec build flags)
+  - License: **LGPL-2.1-or-later / GPL-2.0-or-later** (depending on linked codec build flags; npm wrapper package is MIT)
   - Linked Codec Libraries:
     - **libx264** — GPL-2.0-or-later (H.264 / AVC software encoder)
     - **libvpx** — BSD-3-Clause (VP8 / VP9 WebM encoder)
@@ -24,12 +24,21 @@ Stator is an open-source, 100% client-side media conversion workspace released u
 
 ---
 
+## Self-Hosted Fonts
+
+- **`@fontsource-variable/plus-jakarta-sans` (`5.3.0`)** — **SIL Open Font License 1.1 (`OFL-1.1`)**
+- **`@fontsource-variable/jetbrains-mono` (`5.3.0`)** — **SIL Open Font License 1.1 (`OFL-1.1`)**
+- **`@fontsource-variable/fraunces` (`5.3.0`)** — **SIL Open Font License 1.1 (`OFL-1.1`)**
+
+---
+
 ## Application & UI Dependencies
 
 - **React & React DOM (`19.x`)** — MIT License
 - **Motion (`motion`)** — MIT License
 - **Lucide React (`lucide-react`)** — ISC License
+- **Canvas Confetti (`canvas-confetti`)** — ISC License
 - **JSZip (`jszip`)** — MIT OR GPL-3.0-or-later License
 - **Tailwind CSS (`@tailwindcss/vite`)** — MIT License
-- **Vite & `vite-plugin-pwa`** — MIT License
+- **Vite, `@vitejs/plugin-react`, & `vite-plugin-pwa`** — MIT License
 - **Vitest** — MIT License

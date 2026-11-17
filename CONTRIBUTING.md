@@ -8,8 +8,8 @@ Thank you for helping improve Stator! Everything in Stator is 100% open source u
 
 1. **Fork & Clone**
    ```bash
-   git clone https://github.com/<your-username>/stator.git
-   cd stator
+   git clone https://github.com/AYYU945/Stator.git
+   cd Stator
    npm install
    ```
 

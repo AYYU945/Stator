@@ -13,7 +13,7 @@ export const PWAInstallButton: React.FC = () => {
       onClick={() => {
         void promptInstall();
       }}
-      className="h-9 px-3.5 text-xs font-medium rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
+      className="h-8 px-3 text-xs font-medium rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] text-[var(--stator-fg)] border border-[var(--stator-border-control)] transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
       title="Install Stator locally for offline use"
       aria-label="Install Stator App"
     >

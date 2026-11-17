@@ -186,10 +186,10 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
 
   const handleLoadSampleSequence = async () => {
     const colors = [
-      ['#0D0E11', '#4770E8'],
-      ['#17191D', '#2563EB'],
-      ['#064E3B', '#10B981'],
-      ['#312E81', '#6366F1'],
+      ['#101112', '#292A2D'],
+      ['#1B1C1F', '#383A40'],
+      ['#222428', '#4A4D55'],
+      ['#16171A', '#2F3136'],
     ];
     const generated: File[] = [];
     for (let i = 0; i < colors.length; i++) {
@@ -342,9 +342,9 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
     <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-[var(--stator-border)]">
         <div>
-          <div className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1.5">
-            <Film className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-            <span>2-Pass Palettegen Sequencer &amp; Animated WebP</span>
+          <div className="inline-flex items-center gap-2 text-xs font-medium text-[var(--stator-fg-muted)] mb-1.5">
+            <Film className="w-3.5 h-3.5" />
+            <span>2-pass palettegen sequencer &amp; Animated WebP</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--stator-fg)]">
             GIF &amp; Animation Studio
@@ -369,15 +369,15 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
           <button
             type="button"
             onClick={handleLoadSampleSequence}
-            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+            <Sparkles className="w-3.5 h-3.5 text-[var(--stator-fg-muted)]" />
             <span>Load 4 Sample Frames</span>
           </button>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="h-9 px-3.5 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Image Frames</span>
@@ -401,13 +401,13 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
           setIsDragOverSeq(false);
           if (e.dataTransfer.files?.length) handleAddFrames(e.dataTransfer.files);
         }}
-        className={`rounded-xl overflow-hidden border bg-[#0D0E11] text-[#F2F3F5] transition-colors ${
-          isDragOverSeq ? 'border-[#4770E8] ring-2 ring-[#4770E8]/30' : 'border-[#292C33]'
+        className={`rounded-xl overflow-hidden border bg-[#101112] text-[#F4F3F0] transition-colors ${
+          isDragOverSeq ? 'border-[#EEEDE9] ring-2 ring-[#EEEDE9]/25' : 'border-[#313338]'
         }`}
       >
-        <div className="px-4 sm:px-5 py-3 border-b border-[#292C33] bg-[#17191D] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 text-xs font-mono tabular-nums text-[#A4AAB5]">
-            <span className="text-[#F2F3F5] font-medium">
+        <div className="px-4 sm:px-5 py-3 border-b border-[#313338] bg-[#1B1C1F] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-xs font-mono tabular-nums text-[#B4B5B8]">
+            <span className="text-[#F4F3F0] font-medium">
               {frames.length} {frames.length === 1 ? 'Frame' : 'Frames'}
             </span>
             <span>·</span>
@@ -424,7 +424,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsPlayingPreview((p) => !p)}
-                  className="h-7 px-2.5 rounded bg-[#24272D] hover:bg-[#32363F] border border-[#32363F] text-xs font-medium text-white inline-flex items-center gap-1.5 cursor-pointer"
+                  className="h-7 px-2.5 rounded bg-[#292A2D] hover:bg-[#34363B] border border-[#46484F] text-xs font-medium text-[#F4F3F0] inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   {isPlayingPreview ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                   <span>{isPlayingPreview ? 'Stop Preview' : 'Preview Loop'}</span>
@@ -432,7 +432,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                 <button
                   type="button"
                   onClick={handleExportSpriteSheet}
-                  className="h-7 px-2.5 rounded bg-[#24272D] hover:bg-[#32363F] border border-[#32363F] text-xs text-[#D1D5DB] inline-flex items-center gap-1 cursor-pointer"
+                  className="h-7 px-2.5 rounded bg-[#292A2D] hover:bg-[#34363B] border border-[#46484F] text-xs text-[#F4F3F0] inline-flex items-center gap-1 cursor-pointer"
                 >
                   <Grid className="w-3 h-3" />
                   <span>Sprite Sheet</span>
@@ -444,7 +444,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
               <button
                 type="button"
                 onClick={clearFrames}
-                className="text-[11px] font-mono text-[#A4AAB5] hover:text-rose-400 inline-flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-mono text-[#B4B5B8] hover:text-rose-400 inline-flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" />
                 <span>Clear</span>
@@ -455,8 +455,8 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
 
         <div className="p-5 space-y-5">
           {frames.length >= 2 && activePreviewFrame && (
-            <div className="rounded-lg bg-[#17191D] border border-[#292C33] p-3 flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-full sm:w-52 h-32 rounded stator-checkerboard border border-[#292C33] flex items-center justify-center overflow-hidden shrink-0">
+            <div className="rounded-lg bg-[#1B1C1F] border border-[#313338] p-3 flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-full sm:w-52 h-32 rounded stator-checkerboard border border-[#313338] flex items-center justify-center overflow-hidden shrink-0">
                 <img
                   src={activePreviewFrame.previewUrl}
                   alt={activePreviewFrame.file.name}
@@ -464,11 +464,11 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                 />
               </div>
               <div className="text-xs space-y-1 flex-1">
-                <p className="font-mono text-[#7295FF] uppercase text-[10px]">
+                <p className="font-mono text-[#EEEDE9] uppercase text-[10px] tracking-[0.06em]">
                   {isPlayingPreview ? 'Live Sequence Playback' : 'Selected Stage Frame'}
                 </p>
-                <p className="font-semibold text-white">{activePreviewFrame.file.name}</p>
-                <p className="font-mono text-[#A4AAB5]">
+                <p className="font-semibold text-[#F4F3F0]">{activePreviewFrame.file.name}</p>
+                <p className="font-mono text-[#B4B5B8]">
                   Hold duration: {activePreviewFrame.durationMs} ms · Mode: {loopMode}
                 </p>
               </div>
@@ -486,14 +486,14 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                   inputRef.current?.click();
                 }
               }}
-              className="border border-dashed border-[#292C33] hover:border-[#4770E8] rounded-xl py-14 px-4 text-center cursor-pointer transition-colors bg-[#17191D]/60"
+              className="border border-dashed border-[#46484F] hover:border-[#EEEDE9] rounded-xl py-14 px-4 text-center cursor-pointer transition-colors bg-[#1B1C1F]/60"
             >
-              <p className="text-base font-semibold text-[#F2F3F5]">
+              <p className="text-base font-semibold text-[#F4F3F0]">
                 {isDragOverSeq
                   ? 'Release frames onto timeline'
                   : 'Drop or select 2+ image frames to sequence'}
               </p>
-              <p className="text-xs text-[#A4AAB5] mt-1.5 max-w-md mx-auto">
+              <p className="text-xs text-[#B4B5B8] mt-1.5 max-w-md mx-auto">
                 PNG, JPEG, or WebP frames are compiled locally using FFmpeg 2-pass palettegen.
               </p>
             </div>
@@ -502,10 +502,10 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
               {frames.map((frame, index) => (
                 <div
                   key={frame.id}
-                  className={`rounded-lg border overflow-hidden bg-[#17191D] flex flex-col ${
+                  className={`rounded-lg border overflow-hidden bg-[#1B1C1F] flex flex-col ${
                     isPlayingPreview && previewFrameIdx === index
-                      ? 'border-[#4770E8] ring-1 ring-[#4770E8]'
-                      : 'border-[#292C33]'
+                      ? 'border-[#EEEDE9] ring-1 ring-[#EEEDE9]'
+                      : 'border-[#313338]'
                   }`}
                 >
                   <div
@@ -518,8 +518,8 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <div className="px-2 py-1.5 border-t border-[#292C33] space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-[#A4AAB5]">
+                  <div className="px-2 py-1.5 border-t border-[#313338] space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-[#B4B5B8]">
                       <span>#{index + 1}</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -559,7 +559,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] font-mono text-[#A4AAB5]">
+                    <div className="flex items-center gap-1 text-[10px] font-mono text-[#B4B5B8]">
                       <span>ms:</span>
                       <input
                         type="number"
@@ -574,7 +574,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                           );
                         }}
                         aria-label={`Frame ${index + 1} duration milliseconds`}
-                        className="w-full px-1 py-0.5 rounded bg-[#0D0E11] border border-[#292C33] text-[10px] text-white"
+                        className="w-full px-1 py-0.5 rounded bg-[#101112] border border-[#313338] text-[10px] text-[#F4F3F0]"
                       />
                     </div>
                   </div>
@@ -584,19 +584,19 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
           )}
 
           {resultGif && (
-            <div className="p-4 rounded-xl bg-[#17191D] border border-[#292C33] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 rounded-xl bg-[#1B1C1F] border border-[#313338] flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-24 h-24 rounded-lg stator-checkerboard border border-[#292C33] flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-24 h-24 rounded-lg stator-checkerboard border border-[#313338] flex items-center justify-center overflow-hidden shrink-0">
                   <img src={resultGif.url} alt="Compiled output" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] font-mono uppercase tracking-[0.08em] text-emerald-400">
                     Compiled Output Ready
                   </span>
-                  <p className="text-sm font-medium text-[#F2F3F5] truncate mt-0.5">
+                  <p className="text-sm font-medium text-[#F4F3F0] truncate mt-0.5">
                     {resultGif.outputName}
                   </p>
-                  <p className="text-xs font-mono tabular-nums text-[#A4AAB5] mt-0.5">
+                  <p className="text-xs font-mono tabular-nums text-[#B4B5B8] mt-0.5">
                     {resultGif.dimensions} · {formatFileSize(resultGif.sizeBytes)}
                   </p>
                 </div>
@@ -605,7 +605,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
               <a
                 href={resultGif.url}
                 download={resultGif.outputName}
-                className="h-9 px-4 rounded-lg bg-[#4770E8] hover:bg-[#3C63DB] text-white text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                className="h-9 px-4 rounded-lg bg-[#EEEDE9] hover:bg-white text-[#191A1D] text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download {outputFormat}</span>
@@ -615,16 +615,16 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
         </div>
 
         {/* Bottom HUD Control Bar */}
-        <div className="px-4 sm:px-5 py-3.5 border-t border-[#292C33] bg-[#17191D] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="px-4 sm:px-5 py-3.5 border-t border-[#313338] bg-[#1B1C1F] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 flex-1">
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#A4AAB5] mb-1">
+              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#B4B5B8] mb-1">
                 Frame Rate
               </label>
               <select
                 value={fps}
                 onChange={(e) => setFps(Number(e.target.value))}
-                className="w-full h-8 px-2.5 rounded-md bg-[#24272D] border border-[#32363F] text-xs font-mono text-white cursor-pointer"
+                className="w-full h-8 px-2.5 rounded-md bg-[#292A2D] border border-[#46484F] text-xs font-mono text-[#F4F3F0] cursor-pointer"
               >
                 {[5, 10, 12, 15, 20, 24, 30].map((v) => (
                   <option key={v} value={v}>
@@ -635,13 +635,13 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#A4AAB5] mb-1">
+              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#B4B5B8] mb-1">
                 Max Width
               </label>
               <select
                 value={maxWidth}
                 onChange={(e) => setMaxWidth(Number(e.target.value))}
-                className="w-full h-8 px-2.5 rounded-md bg-[#24272D] border border-[#32363F] text-xs font-mono text-white cursor-pointer"
+                className="w-full h-8 px-2.5 rounded-md bg-[#292A2D] border border-[#46484F] text-xs font-mono text-[#F4F3F0] cursor-pointer"
               >
                 <option value={480}>480 px</option>
                 <option value={720}>720 px HD</option>
@@ -650,13 +650,13 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#A4AAB5] mb-1">
+              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#B4B5B8] mb-1">
                 Dither
               </label>
               <select
                 value={dither}
                 onChange={(e) => setDither(e.target.value as any)}
-                className="w-full h-8 px-2.5 rounded-md bg-[#24272D] border border-[#32363F] text-xs text-white cursor-pointer"
+                className="w-full h-8 px-2.5 rounded-md bg-[#292A2D] border border-[#46484F] text-xs text-[#F4F3F0] cursor-pointer"
               >
                 <option value="sierra2_4a">Smooth (Sierra2)</option>
                 <option value="bayer">Crisp UI (Bayer)</option>
@@ -665,13 +665,13 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#A4AAB5] mb-1">
+              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#B4B5B8] mb-1">
                 Playback
               </label>
               <select
                 value={loopMode}
                 onChange={(e) => setLoopMode(e.target.value as any)}
-                className="w-full h-8 px-2.5 rounded-md bg-[#24272D] border border-[#32363F] text-xs text-white cursor-pointer"
+                className="w-full h-8 px-2.5 rounded-md bg-[#292A2D] border border-[#46484F] text-xs text-[#F4F3F0] cursor-pointer"
               >
                 <option value="loop">Loop Forward</option>
                 <option value="boomerang">Boomerang</option>
@@ -680,13 +680,13 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#A4AAB5] mb-1">
+              <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[#B4B5B8] mb-1">
                 Output
               </label>
               <select
                 value={outputFormat}
                 onChange={(e) => setOutputFormat(e.target.value as any)}
-                className="w-full h-8 px-2.5 rounded-md bg-[#24272D] border border-[#32363F] text-xs font-mono text-white cursor-pointer"
+                className="w-full h-8 px-2.5 rounded-md bg-[#292A2D] border border-[#46484F] text-xs font-mono text-[#F4F3F0] cursor-pointer"
               >
                 <option value="GIF">Animated GIF</option>
                 <option value="WEBP">Animated WebP</option>
@@ -698,7 +698,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
             type="button"
             disabled={isBuilding || frames.length < 2}
             onClick={handleBuildGif}
-            className="h-9 px-4 rounded-lg bg-[#4770E8] hover:bg-[#3C63DB] disabled:opacity-40 text-white text-xs font-medium inline-flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0"
+            className="h-9 px-4 rounded-lg bg-[#EEEDE9] hover:bg-white disabled:opacity-40 text-[#191A1D] text-xs font-medium inline-flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
             {isBuilding ? (
               <>
@@ -714,8 +714,8 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
           </button>
         </div>
         {outputFormat === 'WEBP' && (
-          <div className="px-4 sm:px-5 py-2 border-t border-[#292C33] bg-[#131519] text-[11px] text-[#A4AAB5]">
-            Animated WebP encodes lossy loop frames directly in WebAssembly via <code className="font-mono text-[#D1D5DB]">libwebp</code>.
+          <div className="px-4 sm:px-5 py-2 border-t border-[#313338] bg-[#151618] text-[11px] text-[#B4B5B8]">
+            Animated WebP encodes lossy loop frames directly in WebAssembly via <code className="font-mono text-[#F4F3F0]">libwebp</code>.
           </div>
         )}
       </section>
@@ -724,10 +724,10 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 bg-[var(--stator-surface)] border border-[var(--stator-border)] rounded-xl overflow-hidden flex flex-col">
           <div className="px-5 py-3.5 border-b border-[var(--stator-border)] flex items-center justify-between">
-            <h3 className="text-xs font-mono uppercase tracking-[0.07em] text-[var(--stator-fg-muted)]">
-              Shareable Creator Preset Recipes
+            <h3 className="text-sm font-medium text-[var(--stator-fg)]">
+              Shareable Creator Presets
             </h3>
-            <span className="text-[11px] font-mono text-[var(--stator-fg-subtle)]">URL-Encoded State</span>
+            <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">URL-Encoded State</span>
           </div>
 
           <div className="divide-y divide-[var(--stator-border)]">
@@ -741,18 +741,18 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                     <p className="text-xs sm:text-[13px] font-medium text-[var(--stator-fg)]">
                       {recipe.title}
                     </p>
-                    <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">
+                    <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">
                       · {recipe.targetFormat}
                     </span>
                   </div>
-                  <p className="text-[11px] font-mono text-[var(--stator-fg-subtle)] mt-0.5">
+                  <p className="text-[11px] font-mono text-[var(--stator-fg-muted)] mt-0.5">
                     {recipe.summary}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   {recipe.targetFormat === 'AVIF' && !avifSupported ? (
-                    <span className="text-[11px] font-mono text-[var(--stator-fg-subtle)] px-2.5 py-1 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)]">
+                    <span className="text-[11px] font-mono text-[var(--stator-fg-muted)] px-2.5 py-1 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)]">
                       AVIF unsupported in browser
                     </span>
                   ) : (
@@ -765,7 +765,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                           recipe.targetFormat
                         )
                       }
-                      className="h-8 px-3 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium cursor-pointer"
+                      className="h-8 px-3 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium cursor-pointer transition-colors"
                     >
                       Apply to Studio
                     </button>
@@ -773,7 +773,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopyRecipeLink(recipe)}
-                    className="h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[var(--stator-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+                    className="h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[var(--stator-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     {copiedRecipeId === recipe.id ? (
                       <>
@@ -795,8 +795,8 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
 
         <section className="bg-[var(--stator-surface)] border border-[var(--stator-border)] rounded-xl overflow-hidden flex flex-col">
           <div className="px-5 py-3.5 border-b border-[var(--stator-border)] flex items-center gap-2">
-            <Palette className="w-3.5 h-3.5 text-[var(--stator-accent-fg)] shrink-0" />
-            <h3 className="text-xs font-mono uppercase tracking-[0.07em] text-[var(--stator-fg-muted)]">
+            <Palette className="w-4 h-4 text-[var(--stator-fg-muted)] shrink-0" />
+            <h3 className="text-sm font-medium text-[var(--stator-fg)]">
               Local Brand Defaults
             </h3>
           </div>
@@ -804,20 +804,20 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
           <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1.5">
+                <label className="block text-xs font-medium text-[var(--stator-fg-muted)] mb-1.5">
                   Studio / Channel Identifier
                 </label>
                 <input
                   type="text"
                   value={brandKit.brandName}
                   onChange={(e) => handleSaveBrandKit({ ...brandKit, brandName: e.target.value })}
-                  className="w-full h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                  className="w-full h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1.5">
+                  <label className="block text-xs font-medium text-[var(--stator-fg-muted)] mb-1.5">
                     Default Framing
                   </label>
                   <select
@@ -825,7 +825,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                     onChange={(e) =>
                       handleSaveBrandKit({ ...brandKit, defaultAspect: e.target.value as any })
                     }
-                    className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)] cursor-pointer"
+                    className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)] cursor-pointer"
                   >
                     <option value="original">Original</option>
                     <option value="9:16">9:16 Vertical</option>
@@ -836,7 +836,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1.5">
+                  <label className="block text-xs font-medium text-[var(--stator-fg-muted)] mb-1.5">
                     Reference Swatch
                   </label>
                   <input
@@ -845,7 +845,7 @@ export const GifStudioPanel: React.FC<GifStudioPanelProps> = ({
                     onChange={(e) =>
                       handleSaveBrandKit({ ...brandKit, accentColor: e.target.value })
                     }
-                    className="w-full h-9 p-1 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] cursor-pointer"
+                    className="w-full h-9 p-1 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] cursor-pointer"
                   />
                 </div>
               </div>

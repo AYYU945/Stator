@@ -4,6 +4,7 @@ import {
   NavToolId,
   StatorSettings,
 } from '../types/settings.ts';
+import { ProjectType } from '../types/project.ts';
 import { getStoredTheme } from './theme.ts';
 
 const SETTINGS_STORAGE_KEY = 'stator_settings_v3';
@@ -24,6 +25,15 @@ const VALID_NAV_IDS = new Set<NavToolId>([
   'presets',
   'settings',
   'help',
+]);
+
+const VALID_PROJECT_TYPES = new Set<ProjectType>([
+  'video',
+  'image',
+  'audio',
+  'gif',
+  'batch',
+  'blank',
 ]);
 
 export function sanitizeStatorSettings(raw: unknown): StatorSettings {
@@ -64,6 +74,16 @@ export function sanitizeStatorSettings(raw: unknown): StatorSettings {
     base.pinnedTools = input.pinnedTools
       .filter((t): t is NavToolId => typeof t === 'string' && VALID_NAV_IDS.has(t as NavToolId))
       .slice(0, 8);
+  }
+  if (Array.isArray(input.recentTools)) {
+    base.recentTools = input.recentTools
+      .filter((t): t is NavToolId => typeof t === 'string' && VALID_NAV_IDS.has(t as NavToolId))
+      .slice(0, 6);
+  }
+  if (Array.isArray(input.recentProjectTypes)) {
+    base.recentProjectTypes = input.recentProjectTypes
+      .filter((t): t is ProjectType => typeof t === 'string' && VALID_PROJECT_TYPES.has(t as ProjectType))
+      .slice(0, 4);
   }
   if (typeof input.autosaveProjects === 'boolean') {
     base.autosaveProjects = input.autosaveProjects;

@@ -23,15 +23,24 @@ import {
   PanelLeftOpen,
   ChevronDown,
   ChevronRight,
+  LayoutGrid,
+  WifiOff,
   X,
+  Code2,
+  Bug,
+  ExternalLink,
 } from 'lucide-react';
 import { NavToolId } from '../../types/settings.ts';
 import { STATOR_SPRING, STATOR_TRANSITION } from '../../lib/motion.ts';
+import { STATOR_ISSUES_URL, STATOR_REPO_URL } from '../../lib/links.ts';
+import { usePWAInstall } from '../../hooks/usePWAInstall.ts';
 
 export interface NavItemConfig {
   id: NavToolId;
   label: string;
   group: 'Workspace' | 'Media Tools' | 'Advanced' | 'System';
+  category?: 'Video & Motion' | 'Images' | 'Audio' | 'Workflows & Lab';
+  description?: string;
   icon: React.ComponentType<{ className?: string }>;
   keywords: string;
   badgeCount?: number;
@@ -42,30 +51,113 @@ export const NAV_ITEMS: NavItemConfig[] = [
   { id: 'projects', label: 'Projects', group: 'Workspace', icon: FolderKanban, keywords: 'workspace saved folders' },
   { id: 'history', label: 'History', group: 'Workspace', icon: History, keywords: 'cache indexeddb logs downloads' },
 
-  { id: 'converter', label: 'Converter', group: 'Media Tools', icon: ArrowLeftRight, keywords: 'format transcode convert' },
-  { id: 'compressor', label: 'Compressor', group: 'Media Tools', icon: Minimize2, keywords: 'shrink reduce bitrate size mb' },
-  { id: 'video', label: 'Video Editor', group: 'Media Tools', icon: Video, keywords: 'trim split merge clip speed subtitles' },
-  { id: 'images', label: 'Images', group: 'Media Tools', icon: ImageIcon, keywords: 'crop resize filter watermark icon sprite' },
-  { id: 'audio', label: 'Audio', group: 'Media Tools', icon: Music, keywords: 'waveform normalize lufs silence eq fade' },
-  { id: 'gif-studio', label: 'GIF Studio', group: 'Media Tools', icon: Film, keywords: 'gif animated webp sequence frames' },
-  { id: 'batch', label: 'Batch Queue', group: 'Media Tools', icon: Layers, keywords: 'queue bulk zip multiple' },
-  { id: 'quality-lab', label: 'Quality Lab', group: 'Media Tools', icon: FlaskConical, keywords: 'compare psnr split slider codecs' },
-
-  { id: 'pipelines', label: 'Smart Pipelines', group: 'Advanced', icon: Workflow, keywords: 'automation recipe multi step chain' },
-  { id: 'presets', label: 'Saved Presets', group: 'Advanced', icon: SlidersHorizontal, keywords: 'defaults crf quality' },
+  {
+    id: 'video',
+    label: 'Video Editor',
+    group: 'Media Tools',
+    category: 'Video & Motion',
+    description: 'Trim, split, resize, captions & MP4/WebM transcoding',
+    icon: Video,
+    keywords: 'trim split merge clip speed subtitles',
+  },
+  {
+    id: 'gif-studio',
+    label: 'GIF Studio',
+    group: 'Media Tools',
+    category: 'Video & Motion',
+    description: 'Frame sequence timing, 2-pass palette GIF & Animated WebP',
+    icon: Film,
+    keywords: 'gif animated webp sequence frames',
+  },
+  {
+    id: 'images',
+    label: 'Images',
+    group: 'Media Tools',
+    category: 'Images',
+    description: 'Crop, tone adjustments, watermarks, WebP/AVIF & icon packs',
+    icon: ImageIcon,
+    keywords: 'crop resize filter watermark icon sprite',
+  },
+  {
+    id: 'audio',
+    label: 'Audio',
+    group: 'Media Tools',
+    category: 'Audio',
+    description: 'Waveform trim, -16 LUFS loudness, EQ & silence cleanup',
+    icon: Music,
+    keywords: 'waveform normalize lufs silence eq fade',
+  },
+  {
+    id: 'converter',
+    label: 'Converter',
+    group: 'Media Tools',
+    category: 'Workflows & Lab',
+    description: 'Multi-format client conversion across video, audio & images',
+    icon: ArrowLeftRight,
+    keywords: 'format transcode convert',
+  },
+  {
+    id: 'compressor',
+    label: 'Compressor',
+    group: 'Media Tools',
+    category: 'Workflows & Lab',
+    description: 'Target-size optimization, CRF tuning & balanced presets',
+    icon: Minimize2,
+    keywords: 'shrink reduce bitrate size mb',
+  },
+  {
+    id: 'batch',
+    label: 'Batch Queue',
+    group: 'Media Tools',
+    category: 'Workflows & Lab',
+    description: 'Bulk file processing ledger with shared presets & ZIP export',
+    icon: Layers,
+    keywords: 'queue bulk zip multiple',
+  },
+  {
+    id: 'quality-lab',
+    label: 'Quality Lab',
+    group: 'Media Tools',
+    category: 'Workflows & Lab',
+    description: 'Parallel codec benchmarks with PSNR & visual split comparison',
+    icon: FlaskConical,
+    keywords: 'compare psnr split slider codecs',
+  },
+  {
+    id: 'pipelines',
+    label: 'Smart Pipelines',
+    group: 'Advanced',
+    category: 'Workflows & Lab',
+    description: 'Single-pass chained resize, loudness & compression recipes',
+    icon: Workflow,
+    keywords: 'automation recipe multi step chain',
+  },
+  {
+    id: 'presets',
+    label: 'Saved Presets',
+    group: 'Advanced',
+    category: 'Workflows & Lab',
+    description: 'Default image quality, video CRF & privacy hygiene presets',
+    icon: SlidersHorizontal,
+    keywords: 'defaults crf quality',
+  },
 
   { id: 'settings', label: 'Settings', group: 'System', icon: Settings, keywords: 'preferences appearance workers storage' },
   { id: 'help', label: 'Help & Engine', group: 'System', icon: HelpCircle, keywords: 'guide faq wasm documentation' },
 ];
 
+const TOOL_CATEGORIES = ['Video & Motion', 'Images', 'Audio', 'Workflows & Lab'] as const;
+
 export interface SidebarProps {
   activeNav: NavToolId;
   onSelectNav: (id: NavToolId) => void;
+  onOpenToolsDirectory: () => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
   width: number;
   onChangeWidth: (next: number) => void;
   pinnedTools: NavToolId[];
+  recentTools: NavToolId[];
   onTogglePinTool: (id: NavToolId) => void;
   projectCount: number;
   historyCount: number;
@@ -78,11 +170,13 @@ export interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeNav,
   onSelectNav,
+  onOpenToolsDirectory,
   collapsed,
   onToggleCollapse,
   width,
   onChangeWidth,
   pinnedTools,
+  recentTools,
   onTogglePinTool,
   projectCount,
   historyCount,
@@ -90,14 +184,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile,
 }) => {
+  const { isOnline } = usePWAInstall();
   const [search, setSearch] = useState('');
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    'Video & Motion': false,
+    Images: false,
+    Audio: false,
+    'Workflows & Lab': false,
+  });
 
-  const toggleGroup = (group: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
+  const toggleCategory = (cat: string) => {
+    setOpenCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
   };
 
-  const itemsWithBadges = useMemo(() => {
+  const itemsWithBadges = useMemo<NavItemConfig[]>(() => {
     return NAV_ITEMS.map((item) => {
       let badgeCount: number | undefined;
       if (item.id === 'projects' && projectCount > 0) badgeCount = projectCount;
@@ -107,18 +207,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
   }, [projectCount, historyCount, queuedCount]);
 
-  const filteredItems = useMemo(() => {
+  const workspaceItems = useMemo(
+    () => itemsWithBadges.filter((i) => i.group === 'Workspace'),
+    [itemsWithBadges]
+  );
+
+  const systemItems = useMemo(
+    () => itemsWithBadges.filter((i) => i.group === 'System'),
+    [itemsWithBadges]
+  );
+
+  const filteredTools = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return itemsWithBadges;
-    return itemsWithBadges.filter(
+    const allTools = itemsWithBadges.filter((i) => i.group === 'Media Tools' || i.group === 'Advanced');
+    if (!q) return allTools;
+    return allTools.filter(
       (i) => i.label.toLowerCase().includes(q) || i.keywords.toLowerCase().includes(q)
     );
   }, [itemsWithBadges, search]);
 
-  const pinnedItems = useMemo(
+  const favoriteItems = useMemo(
     () => itemsWithBadges.filter((i) => pinnedTools.includes(i.id)),
     [itemsWithBadges, pinnedTools]
   );
+
+  const recentItems = useMemo(() => {
+    const toolMap = new Map(itemsWithBadges.map((i) => [i.id, i]));
+    return recentTools
+      .filter((id) => !pinnedTools.includes(id))
+      .map((id) => toolMap.get(id))
+      .filter((x): x is NavItemConfig => Boolean(x))
+      .slice(0, 3);
+  }, [itemsWithBadges, recentTools, pinnedTools]);
 
   const handleDragResize = (e: React.PointerEvent<HTMLDivElement>) => {
     if (collapsed) return;
@@ -136,13 +256,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     window.addEventListener('pointerup', onUp);
   };
 
-  const renderNavRow = (item: NavItemConfig, compactMode: boolean, showPinControl = true) => {
+  const renderNavRow = (
+    item: NavItemConfig,
+    compactMode: boolean,
+    showPinControl = true,
+    layoutPrefix = 'nav'
+  ) => {
     const Icon = item.icon;
     const isActive = activeNav === item.id;
     const isPinned = pinnedTools.includes(item.id);
 
     return (
-      <div key={item.id} className="group/row relative flex items-center">
+      <div key={`${layoutPrefix}-${item.id}`} className="group/row relative flex items-center">
         <button
           type="button"
           onClick={() => {
@@ -151,20 +276,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
           title={compactMode ? item.label : undefined}
           aria-current={isActive ? 'page' : undefined}
-          className={`relative w-full flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-colors cursor-pointer ${
+          className={`relative w-full flex items-center gap-2.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
             compactMode ? 'justify-center h-9 px-0' : 'h-8 px-2.5'
           } ${
             isActive
-              ? 'text-[var(--stator-accent-fg)]'
-              : 'text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)]'
+              ? 'text-[var(--stator-fg)] font-semibold'
+              : 'text-[var(--stator-fg-muted)] font-medium hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)]/70'
           }`}
         >
           {isActive && (
             <motion.span
-              layoutId={showPinControl || !compactMode ? 'stator-sidebar-active' : undefined}
+              layoutId={!compactMode ? `stator-sidebar-active-${layoutPrefix}` : undefined}
               transition={STATOR_SPRING.tactile}
               aria-hidden="true"
-              className="absolute inset-0 rounded-lg bg-[var(--stator-accent-soft)]"
+              className="absolute inset-0 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)]"
+            />
+          )}
+          {isActive && !compactMode && (
+            <span
+              aria-hidden="true"
+              className="relative z-10 w-[2px] h-3.5 rounded-full bg-[var(--stator-cta-bg)] -ml-1 mr-0.5 shrink-0"
             />
           )}
           <Icon className="relative z-10 w-4 h-4 shrink-0" />
@@ -172,7 +303,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <>
               <span className="relative z-10 truncate flex-1 text-left">{item.label}</span>
               {typeof item.badgeCount === 'number' && (
-                <span className="relative z-10 font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded bg-[var(--stator-surface-2)] text-[var(--stator-fg-subtle)] group-hover/row:hidden">
+                <span className="relative z-10 font-mono tabular-nums text-[11px] text-[var(--stator-fg-muted)] group-hover/row:hidden">
                   {item.badgeCount}
                 </span>
               )}
@@ -180,7 +311,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {!compactMode && showPinControl && item.group !== 'System' && (
+        {!compactMode && showPinControl && item.group !== 'System' && item.group !== 'Workspace' && (
           <button
             type="button"
             onClick={(e) => {
@@ -188,8 +319,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onTogglePinTool(item.id);
             }}
             aria-label={isPinned ? `Unpin ${item.label}` : `Pin ${item.label}`}
-            title={isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-            className="opacity-0 group-hover/row:opacity-100 focus:opacity-100 absolute right-1.5 p-1 rounded text-[var(--stator-fg-subtle)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface)] cursor-pointer transition-opacity"
+            title={isPinned ? 'Remove from favorites' : 'Pin to favorites'}
+            className="opacity-0 group-hover/row:opacity-100 focus:opacity-100 absolute right-1.5 z-20 p-1 rounded text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface)] cursor-pointer transition-opacity"
           >
             {isPinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
           </button>
@@ -200,12 +331,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const renderSidebarBody = (isMobileDrawer: boolean) => {
     const compact = !isMobileDrawer && collapsed;
-    const groups: Array<'Workspace' | 'Media Tools' | 'Advanced'> = [
-      'Workspace',
-      'Media Tools',
-      'Advanced',
-    ];
-    const systemItems = filteredItems.filter((i) => i.group === 'System');
+    const prefix = isMobileDrawer ? 'mobile' : 'desktop';
+    const hasSearch = search.trim().length > 0;
 
     return (
       <div className="h-full flex flex-col bg-[var(--stator-surface)] border-r border-[var(--stator-border)] select-none">
@@ -227,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <svg
               viewBox="0 0 28 28"
               fill="none"
-              className="w-6 h-6 shrink-0 text-[var(--stator-accent-fg)] transition-transform duration-200 group-hover:rotate-45"
+              className="w-6 h-6 shrink-0 text-[var(--stator-fg)] transition-transform duration-200 group-hover:rotate-45"
               aria-hidden="true"
             >
               <rect
@@ -236,7 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 width="25"
                 height="25"
                 rx="6.5"
-                className="fill-[var(--stator-surface-2)] stroke-[var(--stator-border-strong)]"
+                className="fill-[var(--stator-surface-2)] stroke-[var(--stator-border-control)]"
                 strokeWidth="1.25"
               />
               <circle
@@ -255,7 +382,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="font-semibold tracking-tight text-[var(--stator-fg)] text-[16px] leading-none">
                   Stator
                 </span>
-                <span className="font-mono text-[10px] tabular-nums text-[var(--stator-fg-subtle)]">1.0</span>
+                <span className="font-mono text-[11px] tabular-nums text-[var(--stator-fg-muted)]">
+                  1.0
+                </span>
               </div>
             )}
           </button>
@@ -276,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onToggleCollapse}
                 aria-label="Collapse sidebar"
                 title="Collapse sidebar"
-                className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--stator-fg-subtle)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] cursor-pointer"
+                className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] cursor-pointer"
               >
                 <PanelLeftClose className="w-4 h-4" />
               </button>
@@ -284,8 +413,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Search / Expand Toggle */}
-        <div className="p-2.5 shrink-0">
+        {/* Filter / Expand */}
+        <div className="px-2.5 pt-3 pb-2 shrink-0">
           {compact ? (
             <button
               type="button"
@@ -298,61 +427,183 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           ) : (
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-[var(--stator-fg-subtle)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-[var(--stator-fg-muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filter tools…"
                 aria-label="Filter navigation tools"
-                className="w-full h-8 pl-8 pr-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-subtle)] focus:outline-none focus:border-[var(--stator-accent)]"
+                className="w-full h-8 pl-8 pr-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] focus:border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-muted)]"
               />
             </div>
           )}
         </div>
 
-        {/* Scrollable Nav Groups */}
-        <nav aria-label="Primary studio navigation" className="flex-1 overflow-y-auto px-2.5 pb-3 space-y-4">
-          {!search.trim() && pinnedItems.length > 0 && !compact && (
+        {/* Scrollable Navigation */}
+        <nav aria-label="Primary studio navigation" className="flex-1 overflow-y-auto px-2.5 pb-3 space-y-5">
+          {/* Workspace */}
+          {!hasSearch && (
             <div className="space-y-0.5">
-              <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)]">
-                Pinned
-              </div>
-              {pinnedItems.map((item) => renderNavRow(item, false, false))}
+              {!compact && (
+                <div className="px-2.5 py-1 text-[12px] font-medium text-[var(--stator-fg-muted)]">
+                  Workspace
+                </div>
+              )}
+              {workspaceItems.map((item) => renderNavRow(item, compact, false, prefix))}
             </div>
           )}
 
-          {groups.map((group) => {
-            const groupItems = filteredItems.filter((i) => i.group === group);
-            if (groupItems.length === 0) return null;
-            const isGroupCollapsed = Boolean(collapsedGroups[group]) && !search.trim();
-
-            return (
-              <div key={group} className="space-y-0.5">
-                {!compact && (
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(group)}
-                    className="w-full px-2 py-1 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] hover:text-[var(--stator-fg-muted)] cursor-pointer"
-                  >
-                    <span>{group}</span>
-                    {isGroupCollapsed ? (
-                      <ChevronRight className="w-3 h-3" />
-                    ) : (
-                      <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                )}
-                {(!isGroupCollapsed || compact) &&
-                  groupItems.map((item) => renderNavRow(item, compact, true))}
+          {/* Tools Discovery */}
+          <div className="space-y-1">
+            {!compact && (
+              <div className="px-2.5 py-1 text-[12px] font-medium text-[var(--stator-fg-muted)]">
+                Tools
               </div>
-            );
-          })}
+            )}
+
+            {/* Browse All Tools Trigger */}
+            {!hasSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  onCloseMobile();
+                  onOpenToolsDirectory();
+                }}
+                title={compact ? 'Browse All Tools' : undefined}
+                className={`w-full flex items-center gap-2.5 rounded-lg text-[13px] font-medium text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] transition-colors cursor-pointer ${
+                  compact ? 'justify-center h-9 px-0' : 'h-8 px-2.5'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 shrink-0 text-[var(--stator-fg-muted)]" />
+                {!compact && <span className="truncate flex-1 text-left">Browse All Tools</span>}
+              </button>
+            )}
+
+            {hasSearch ? (
+              <div className="space-y-0.5 pt-1">
+                {filteredTools.length === 0 ? (
+                  <p className="px-2.5 py-3 text-xs text-[var(--stator-fg-muted)]">
+                    No matching tools
+                  </p>
+                ) : (
+                  filteredTools.map((item) => renderNavRow(item, compact, true, prefix))
+                )}
+              </div>
+            ) : compact ? (
+              <div className="space-y-0.5 pt-1">
+                {favoriteItems.slice(0, 5).map((item) => renderNavRow(item, true, false, prefix))}
+              </div>
+            ) : (
+              <div className="space-y-3 pt-1">
+                {/* Favorites */}
+                {favoriteItems.length > 0 && (
+                  <div className="space-y-0.5">
+                    <div className="px-2.5 py-0.5 text-[11px] font-medium text-[var(--stator-fg-muted)]">
+                      Favorites
+                    </div>
+                    {favoriteItems.map((item) => renderNavRow(item, false, true, `${prefix}-fav`))}
+                  </div>
+                )}
+
+                {/* Recently Used */}
+                {recentItems.length > 0 && (
+                  <div className="space-y-0.5">
+                    <div className="px-2.5 py-0.5 text-[11px] font-medium text-[var(--stator-fg-muted)]">
+                      Recently used
+                    </div>
+                    {recentItems.map((item) => renderNavRow(item, false, true, `${prefix}-recent`))}
+                  </div>
+                )}
+
+                {/* Collapsible Categories */}
+                <div className="space-y-0.5 pt-1 border-t border-[var(--stator-border)]">
+                  {TOOL_CATEGORIES.map((category) => {
+                    const catItems = filteredTools.filter((i) => i.category === category);
+                    if (catItems.length === 0) return null;
+                    const isOpen =
+                      Boolean(openCategories[category]) ||
+                      catItems.some((i) => i.id === activeNav);
+
+                    return (
+                      <div key={category} className="space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(category)}
+                          className="w-full px-2.5 py-1.5 flex items-center justify-between text-[12px] font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] rounded-md hover:bg-[var(--stator-surface-2)]/50 cursor-pointer"
+                        >
+                          <span>{category}</span>
+                          {isOpen ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        {isOpen && (
+                          <div className="pl-1 space-y-0.5">
+                            {catItems.map((item) => renderNavRow(item, false, true, `${prefix}-cat`))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* Bottom System Navigation */}
+        {/* Bottom System Navigation + Quiet Local Status */}
         <div className="p-2.5 border-t border-[var(--stator-border)] space-y-1 shrink-0">
-          {systemItems.map((item) => renderNavRow(item, compact, false))}
+          {!compact && !isOnline && (
+            <div className="px-2.5 py-1.5 mb-1 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] flex items-center gap-2 text-[11px] text-[var(--stator-fg)]">
+              <WifiOff className="w-3.5 h-3.5 text-[var(--stator-warning)] shrink-0" />
+              <span>Offline ready</span>
+            </div>
+          )}
+          {systemItems.map((item) => renderNavRow(item, compact, false, prefix))}
+          {compact ? (
+            <a
+              href={STATOR_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Stator on GitHub (AYYU945/Stator)"
+              aria-label="Stator on GitHub"
+              className="w-full h-9 rounded-lg flex items-center justify-center text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)] transition-colors"
+            >
+              <Code2 className="w-4 h-4 shrink-0" />
+            </a>
+          ) : (
+            <div className="pt-1 mt-1 border-t border-[var(--stator-border)] space-y-0.5">
+              <a
+                href={STATOR_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 px-2.5 rounded-lg flex items-center justify-between gap-2 text-[13px] font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)]/70 transition-colors"
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <Code2 className="w-4 h-4 shrink-0" />
+                  <span className="truncate">GitHub Source</span>
+                </span>
+                <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+              </a>
+              <a
+                href={STATOR_ISSUES_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 px-2.5 rounded-lg flex items-center justify-between gap-2 text-[13px] font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:bg-[var(--stator-surface-2)]/70 transition-colors"
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <Bug className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Report a Bug</span>
+                </span>
+                <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+              </a>
+              <p className="px-2.5 pt-1 text-[11px] text-[var(--stator-fg-muted)]">
+                Local · On-device processing
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -372,7 +623,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-orientation="vertical"
             aria-label="Resize navigation sidebar"
             onPointerDown={handleDragResize}
-            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-accent)]/50 transition-colors"
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-border-control)] transition-colors"
           />
         )}
       </aside>
@@ -395,7 +646,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={STATOR_TRANSITION.drawer}
-              className="relative z-10 w-[264px] max-w-[82vw] h-full shadow-2xl"
+              className="relative z-10 w-[264px] max-w-[84vw] h-full shadow-2xl"
             >
               {renderSidebarBody(true)}
             </motion.aside>

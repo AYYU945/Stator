@@ -130,8 +130,8 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
             }}
             className={`h-7 px-2.5 rounded-md text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer border transition-colors ${
               cropMode || cropRect
-                ? 'bg-[var(--stator-accent)] text-white border-transparent'
-                : 'bg-[#17191D] text-[#D1D5DB] border-[#292C33] hover:text-white'
+                ? 'bg-[#EEEDE9] text-[#191A1D] border-transparent'
+                : 'bg-[#1B1C1F] text-[#E4E4E7] border-[#313338] hover:text-white'
             }`}
           >
             <Crop className="w-3.5 h-3.5" />
@@ -145,7 +145,7 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
                 onChangeCropRect(undefined);
                 setCropMode(false);
               }}
-              className="h-7 px-2 rounded-md bg-[#17191D] border border-[#292C33] text-[11px] font-mono text-[#A4AAB5] hover:text-white inline-flex items-center gap-1 cursor-pointer"
+              className="h-7 px-2 rounded-md bg-[#1B1C1F] border border-[#313338] text-[11px] font-mono text-[#B4B5B8] hover:text-white inline-flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Clear Crop</span>
@@ -160,8 +160,8 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
             title="Toggle transparency grid"
             className={`h-7 px-2 rounded-md border text-[11px] font-mono inline-flex items-center gap-1 cursor-pointer ${
               showCheckerboard
-                ? 'bg-[#24272D] border-[#383D47] text-white'
-                : 'bg-[#17191D] border-[#292C33] text-[#A4AAB5]'
+                ? 'bg-[#292A2D] border-[#46484F] text-white'
+                : 'bg-[#1B1C1F] border-[#313338] text-[#B4B5B8]'
             }`}
           >
             <Grid className="w-3 h-3" />
@@ -171,7 +171,7 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
           <button
             type="button"
             onClick={() => setZoom((z) => (z === 1 ? 1.5 : z === 1.5 ? 2 : 1))}
-            className="h-7 px-2 rounded-md bg-[#17191D] border border-[#292C33] text-[11px] font-mono text-[#D1D5DB] inline-flex items-center gap-1 cursor-pointer"
+            className="h-7 px-2 rounded-md bg-[#1B1C1F] border border-[#313338] text-[11px] font-mono text-[#E4E4E7] inline-flex items-center gap-1 cursor-pointer"
           >
             {zoom === 1 ? <ZoomIn className="w-3 h-3" /> : <ZoomOut className="w-3 h-3" />}
             <span>{zoom === 1 ? 'Fit' : `${zoom}×`}</span>
@@ -181,8 +181,8 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
 
       {/* Interactive Image Frame */}
       <div
-        className={`relative w-full h-[290px] sm:h-[360px] rounded-xl border border-[#292C33] overflow-hidden flex items-center justify-center ${
-          showCheckerboard ? 'stator-checkerboard' : 'bg-[#0D0E11]'
+        className={`relative w-full h-[290px] sm:h-[360px] rounded-xl border border-[#313338] overflow-hidden flex items-center justify-center ${
+          showCheckerboard ? 'stator-checkerboard' : 'bg-[#101112]'
         }`}
       >
         <div
@@ -223,23 +223,23 @@ export const CropOverlayCanvas: React.FC<CropOverlayCanvasProps> = ({
                 height: `${activeCrop.h * 100}%`,
                 boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.54)',
               }}
-              className="absolute border-2 border-[#4770E8] cursor-move touch-none"
+              className="absolute border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.75)] cursor-move touch-none"
             >
               <div
                 onPointerDown={(e) => startHandleDrag('nw', e)}
-                className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#4770E8] cursor-nwse-resize"
+                className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#191A1D] cursor-nwse-resize"
               />
               <div
                 onPointerDown={(e) => startHandleDrag('ne', e)}
-                className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#4770E8] cursor-nesw-resize"
+                className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#191A1D] cursor-nesw-resize"
               />
               <div
                 onPointerDown={(e) => startHandleDrag('sw', e)}
-                className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#4770E8] cursor-nesw-resize"
+                className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#191A1D] cursor-nesw-resize"
               />
               <div
                 onPointerDown={(e) => startHandleDrag('se', e)}
-                className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#4770E8] cursor-nwse-resize"
+                className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 rounded-sm bg-white border border-[#191A1D] cursor-nwse-resize"
               />
               <span className="absolute top-1 left-1.5 px-1.5 py-0.5 rounded bg-black/75 text-white text-[10px] font-mono tabular-nums pointer-events-none">
                 {Math.round(activeCrop.w * 100)}% × {Math.round(activeCrop.h * 100)}%

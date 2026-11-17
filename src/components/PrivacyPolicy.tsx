@@ -1,14 +1,24 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
+import {
+  LegalRoute,
+  STATOR_CONTACT_EMAIL,
+  STATOR_ISSUES_URL,
+  STATOR_LICENSE_URL,
+  STATOR_RELEASES_URL,
+  STATOR_REPO_URL,
+  STATOR_THIRD_PARTY_NOTICES_URL,
+} from '../lib/links.ts';
 
 export interface PrivacyPolicyProps {
   onBack: () => void;
+  onNavigateLegal?: (route: Exclude<LegalRoute, 'none'>) => void;
 }
 
-export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
+export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, onNavigateLegal }) => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 text-[var(--stator-fg-muted)]">
-      <div className="mb-8 flex items-center justify-between border-b border-[var(--stator-border)] pb-4">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--stator-border)] pb-4">
         <button
           type="button"
           onClick={onBack}
@@ -17,9 +27,25 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Studio</span>
         </button>
-        <span className="text-xs font-mono text-[var(--stator-fg-subtle)]">
-          MIT Open Source · v1.0.0
-        </span>
+        <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[var(--stator-fg-subtle)]">
+          <a
+            href={STATOR_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-[var(--stator-fg)] transition-colors"
+          >
+            <span>AYYU945/Stator</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <a
+            href={STATOR_RELEASES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[var(--stator-fg)] transition-colors"
+          >
+            v1.0.0
+          </a>
+        </div>
       </div>
 
       <div className="space-y-10">
@@ -28,73 +54,81 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
             Privacy Policy
           </h1>
           <p className="text-sm text-[var(--stator-fg-muted)] leading-relaxed">
-            Stator is an independent, MIT-licensed open-source media utility maintained by its
-            contributors (contact: hanan.ahmed.pak@gmail.com).
+            Stator is a free, MIT-licensed, open-source browser application distributed via{' '}
+            <a
+              href={STATOR_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--stator-fg)] underline underline-offset-4 hover:opacity-80"
+            >
+              github.com/AYYU945/Stator
+            </a>
+            . It runs locally on your device with no user accounts, no cloud media storage, and no
+            analytics.
           </p>
         </div>
 
         <div className="divide-y divide-[var(--stator-border)] border-t border-b border-[var(--stator-border)]">
           <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
             <div className="md:col-span-4">
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">01</span>
+              <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">01</span>
               <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                100% On-Device WebAssembly Execution
+                Client-Side FFmpeg &amp; Canvas Processing
               </h2>
             </div>
             <div className="md:col-span-8 space-y-2.5 text-sm leading-relaxed">
               <p>
-                Media conversion is 100% on-device via WebAssembly; no audio, video, or image files
-                are uploaded or sent over a network. All processing routines (FFmpeg WebAssembly core
-                and OffscreenCanvas image pipelines) run strictly within your local browser memory.
+                Every video, audio, GIF, and image job executes locally inside your browser session.
+                Audio/video transcoding and animation compilation run via self-hosted FFmpeg
+                WebAssembly (<code className="font-mono text-xs">@ffmpeg/core-mt</code> when
+                Cross-Origin Isolation is active, or single-threaded{' '}
+                <code className="font-mono text-xs">@ffmpeg/core</code> fallback). Still image
+                resizing, cropping, tonal grading, watermarks, and encoding run in local{' '}
+                <code className="font-mono text-xs">OffscreenCanvas</code> Web Workers and HTML5
+                Canvas pipelines.
               </p>
               <p>
-                Zero media buffers, filenames, audio waveforms, or video frames ever leave your
-                device or traverse external servers. You can independently confirm this architecture
-                at any time by inspecting the browser Network tab during any media conversion.
+                Media files, frames, waveforms, and filenames are never uploaded to a server. You
+                can verify zero media egress at any time in your browser&apos;s Network inspector.
               </p>
             </div>
           </section>
 
           <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
             <div className="md:col-span-4">
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">02</span>
+              <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">02</span>
               <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                Self-Hosted Assets &amp; Typography
+                Browser Storage (IndexedDB &amp; localStorage)
               </h2>
             </div>
-            <p className="md:col-span-8 text-sm leading-relaxed">
-              All fonts are self-hosted (.woff2); no requests connect to Google Fonts or external
-              font delivery networks. Your IP address and browser headers are never transmitted to
-              third-party typography or style providers.
-            </p>
-          </section>
-
-          <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
-            <div className="md:col-span-4">
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">03</span>
-              <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                Browser Storage &amp; Cookie Exemption
-              </h2>
-            </div>
-            <div className="md:col-span-8 space-y-2.5 text-sm leading-relaxed">
+            <div className="md:col-span-8 space-y-3 text-sm leading-relaxed">
               <p>
-                Browser storage (localStorage / IndexedDB) is used solely for local technical state
-                (theme mode, preset configurations, and conversion session history), exempting the
-                site from cookie tracking consent banners under EU/Garante privacy guidelines.
+                All persistence stays strictly inside your browser&apos;s origin-isolated storage:
               </p>
-              <ul className="list-disc list-inside space-y-1.5 pl-1">
+              <ul className="list-disc list-inside space-y-2 pl-1">
                 <li>
                   <span className="text-[var(--stator-fg)] font-medium">
-                    Session History (IndexedDB):
+                    IndexedDB (<code className="font-mono text-xs">stator_db</code>):
                   </span>{' '}
-                  Enables instant downloading of converted outputs within your local 250 MB LRU
-                  cache (optional Ephemeral Privacy Mode disables IndexedDB persistence completely).
+                  Stores conversion history and re-downloadable output blobs in{' '}
+                  <code className="font-mono text-xs">history_entries</code> (up to a 250 MB / 50
+                  entry LRU cap), saved workspace metadata and snapshots in{' '}
+                  <code className="font-mono text-xs">projects</code>, and selectively cached source
+                  files below your per-file threshold (default 35 MB, configurable 5–60 MB in
+                  Settings; 200 MB total LRU cap) in{' '}
+                  <code className="font-mono text-xs">project_assets</code>. Larger source files stay
+                  in volatile memory only until reconnected.
                 </li>
                 <li>
-                  <span className="text-[var(--stator-fg)] font-medium">
-                    Encoding Presets &amp; Theme (LocalStorage):
-                  </span>{' '}
-                  Saves your preferred light/dark theme and encoding settings across visits.
+                  <span className="text-[var(--stator-fg)] font-medium">localStorage:</span> Stores
+                  your theme selection (<code className="font-mono text-xs">stator_theme</code>),
+                  workspace preferences (<code className="font-mono text-xs">stator_settings_v3</code>
+                  ), global encoding preset (<code className="font-mono text-xs">stator_global_preset</code>),
+                  Brand Kit (<code className="font-mono text-xs">stator_brand_kit</code>), Smart
+                  Pipelines (<code className="font-mono text-xs">stator_smart_pipelines_v3</code>),
+                  Ephemeral Privacy Mode flag (<code className="font-mono text-xs">stator_ephemeral_privacy</code>),
+                  and lightweight metadata mirrors (<code className="font-mono text-xs">stator_projects_meta_v3</code>,{' '}
+                  <code className="font-mono text-xs">stator_conversion_history</code>).
                 </li>
               </ul>
             </div>
@@ -102,36 +136,146 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
 
           <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
             <div className="md:col-span-4">
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">04</span>
+              <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">03</span>
               <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                Zero Telemetry or Tracking Pixels
+                Privacy Controls &amp; Local Data Erasure
               </h2>
             </div>
-            <p className="md:col-span-8 text-sm leading-relaxed">
-              Stator does not deploy tracking cookies, fingerprinting scripts, Google Analytics,
-              telemetry beacons, or advertising networks. We do not sell, rent, or profile user
-              behavior under any circumstances.
-            </p>
+            <div className="md:col-span-8 space-y-2.5 text-sm leading-relaxed">
+              <ul className="list-disc list-inside space-y-2 pl-1">
+                <li>
+                  <span className="text-[var(--stator-fg)] font-medium">
+                    Ephemeral Privacy Mode:
+                  </span>{' '}
+                  Available in History and Settings. When enabled, Stator keeps queues and converted
+                  outputs strictly in volatile RAM (<code className="font-mono text-xs">ObjectURL</code>s)
+                  and skips writing projects, cached source blobs, and history entries to IndexedDB.
+                </li>
+                <li>
+                  <span className="text-[var(--stator-fg)] font-medium">
+                    EXIF &amp; Metadata Stripping:
+                  </span>{' '}
+                  Enabled by default so GPS coordinates, camera identifiers, and container metadata
+                  are stripped during processing unless you turn it off.
+                </li>
+                <li>
+                  <span className="text-[var(--stator-fg)] font-medium">
+                    Full Local Wipe:
+                  </span>{' '}
+                  You can delete individual entries, clear conversion history, or use{' '}
+                  <span className="text-[var(--stator-fg)]">Wipe All Local Data</span> in History or
+                  Settings to clear IndexedDB stores and Stator <code className="font-mono text-xs">localStorage</code>{' '}
+                  keys immediately.
+                </li>
+              </ul>
+            </div>
           </section>
 
           <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
             <div className="md:col-span-4">
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">05</span>
+              <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">04</span>
               <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
-                Metadata (EXIF) Hygiene
+                Actual Network Behavior
               </h2>
             </div>
-            <p className="md:col-span-8 text-sm leading-relaxed">
-              When processing images and media files, EXIF metadata (such as GPS coordinates, camera
-              serial numbers, and container tags) is stripped by default to protect your privacy
-              before files are saved.
-            </p>
+            <div className="md:col-span-8 space-y-2.5 text-sm leading-relaxed">
+              <p>
+                Stator deploys zero analytics scripts, zero tracking cookies, zero fingerprinting,
+                and zero advertising networks. There are no user accounts, subscriptions, or remote
+                databases.
+              </p>
+              <p>
+                When served from a static host or local server, your browser only fetches the
+                application shell (HTML, JS, CSS), self-hosted variable fonts (
+                <code className="font-mono text-xs">.woff2</code> from{' '}
+                <code className="font-mono text-xs">@fontsource-variable/*</code>—never Google Fonts
+                or external font CDNs), and local WebAssembly core files from{' '}
+                <code className="font-mono text-xs">/wasm/</code>. When installed or cached as a
+                Progressive Web App, Workbox precaches these static assets locally so Stator works
+                offline. External links to GitHub only open when you click them.
+              </p>
+            </div>
+          </section>
+
+          <section className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
+            <div className="md:col-span-4">
+              <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">05</span>
+              <h2 className="text-[var(--stator-fg)] font-semibold text-base tracking-tight mt-0.5">
+                Source Audit &amp; Maintainer Contact
+              </h2>
+            </div>
+            <div className="md:col-span-8 space-y-3 text-sm leading-relaxed">
+              <p>
+                Because Stator is open source, you can inspect the storage, worker, and WebAssembly
+                implementation directly in the repository or report privacy issues on GitHub.
+              </p>
+              <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
+                <a
+                  href={STATOR_REPO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--stator-fg)] underline underline-offset-4 hover:opacity-80"
+                >
+                  Source Repository
+                </a>
+                <a
+                  href={STATOR_LICENSE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--stator-fg)] underline underline-offset-4 hover:opacity-80"
+                >
+                  MIT License
+                </a>
+                <a
+                  href={STATOR_THIRD_PARTY_NOTICES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--stator-fg)] underline underline-offset-4 hover:opacity-80"
+                >
+                  THIRD_PARTY_NOTICES.md
+                </a>
+                <a
+                  href={STATOR_ISSUES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--stator-fg)] underline underline-offset-4 hover:opacity-80"
+                >
+                  Report a Bug
+                </a>
+              </div>
+            </div>
           </section>
         </div>
 
-        <p className="text-xs font-mono text-[var(--stator-fg-subtle)]">
-          For privacy inquiries or technical questions: hanan.ahmed.pak@gmail.com
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[var(--stator-fg-subtle)]">
+          <span>
+            Privacy or technical inquiries:{' '}
+            <a
+              href={`mailto:${STATOR_CONTACT_EMAIL}`}
+              className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+            >
+              {STATOR_CONTACT_EMAIL}
+            </a>
+          </span>
+          {onNavigateLegal && (
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => onNavigateLegal('terms')}
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
+              >
+                Software Terms &amp; License
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateLegal('dmca')}
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
+              >
+                Copyright &amp; DMCA Notice
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -127,7 +127,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_10px_rgba(0,0,0,0.65)] pointer-events-none"
           style={{ left: `${splitPercent}%` }}
         >
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[var(--stator-accent)] border-2 border-white text-white flex items-center justify-center shadow-md">
+          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#FFFFFF] border-2 border-[#191A1D] text-[#191A1D] flex items-center justify-center shadow-md">
             <MoveHorizontal className="w-3.5 h-3.5" />
           </div>
         </div>

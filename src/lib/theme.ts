@@ -24,7 +24,7 @@ function updateMetaThemeColor(isDark: boolean) {
   if (typeof document === 'undefined') return;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute('content', isDark ? '#0D0E11' : '#F5F6F7');
+    meta.setAttribute('content', isDark ? '#101112' : '#FAF9F7');
   }
 }
 

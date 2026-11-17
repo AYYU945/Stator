@@ -283,7 +283,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={STATOR_TRANSITION.micro}
-            className="absolute inset-0 z-40 bg-[var(--stator-accent)]/12 border-2 border-dashed border-[var(--stator-accent)] pointer-events-none flex items-center justify-center"
+            className="absolute inset-0 z-40 bg-[var(--stator-cta-bg)]/10 border-2 border-dashed border-[var(--stator-cta-bg)] pointer-events-none flex items-center justify-center"
           >
             <div className="px-5 py-3 rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border-strong)] shadow-xl text-sm font-semibold text-[var(--stator-fg)]">
               Drop files into {project?.name || 'Stator Studio'}
@@ -299,7 +299,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
           className="hidden xl:flex flex-col shrink-0 bg-[var(--stator-surface)] border-r border-[var(--stator-border)] relative"
         >
           <div className="px-3.5 py-2.5 border-b border-[var(--stator-border)] flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)]">
+            <span className="text-xs font-medium text-[var(--stator-fg-muted)]">
               Media Bin ({queue.length})
             </span>
             <div className="flex items-center gap-1">
@@ -333,16 +333,16 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                 <button
                   type="button"
                   onClick={onAddFilesClick}
-                  className="w-full h-8 rounded-lg bg-[var(--stator-accent)] text-white text-xs font-medium cursor-pointer"
+                  className="w-full h-8 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium cursor-pointer transition-colors"
                 >
                   Choose Files
                 </button>
                 <button
                   type="button"
                   onClick={onLoadSamples}
-                  className="w-full h-8 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full h-8 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles className="w-3 h-3 text-[var(--stator-accent-fg)]" />
+                  <Sparkles className="w-3 h-3 text-[var(--stator-fg)]" />
                   <span>Load Samples</span>
                 </button>
               </div>
@@ -355,7 +355,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                     key={item.id}
                     className={`group rounded-lg p-2 border transition-colors flex items-center gap-2 ${
                       isActive
-                        ? 'bg-[var(--stator-accent-soft)] border-[var(--stator-accent)]/50'
+                        ? 'bg-[var(--stator-surface-2)] border-[var(--stator-border-control)]'
                         : 'bg-transparent border-transparent hover:bg-[var(--stator-surface-2)]'
                     }`}
                   >
@@ -366,7 +366,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                       className="text-[var(--stator-fg-subtle)] hover:text-[var(--stator-fg)] cursor-pointer shrink-0"
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                        <CheckSquare className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                       ) : (
                         <Square className="w-3.5 h-3.5" />
                       )}
@@ -432,7 +432,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                       mode === 'audio' ? 'MP3' : 'MP4'
                     );
                   }}
-                  className="w-full h-8 px-2.5 rounded-lg bg-[var(--stator-accent)] text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full h-8 px-2.5 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Combine className="w-3.5 h-3.5" />
                   <span>Merge {selectedItems.length} Clips</span>
@@ -442,9 +442,9 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                 <button
                   type="button"
                   onClick={handleCreateSpriteSheet}
-                  className="w-full h-8 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full h-8 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Grid className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                  <Grid className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                   <span>Sprite Sheet ({selectedItems.length})</span>
                 </button>
               )}
@@ -483,7 +483,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             role="separator"
             aria-orientation="vertical"
             onPointerDown={handleDragResizeLeft}
-            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-accent)]/50"
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-border-control)]"
           />
         </aside>
       )}
@@ -517,7 +517,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
               </span>
             )}
             {wasmLoadProgress && (
-              <span className="text-[11px] font-mono text-[var(--stator-accent-fg)]">
+              <span className="text-[11px] font-mono text-[var(--stator-fg)]">
                 {wasmLoadProgress}
               </span>
             )}
@@ -530,8 +530,8 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                 onClick={() => setCompareMode((m) => (m === 'split' ? 'edit' : 'split'))}
                 className={`h-7 px-2.5 rounded border text-xs font-medium inline-flex items-center gap-1 cursor-pointer ${
                   compareMode === 'split'
-                    ? 'bg-[var(--stator-accent)] text-white border-transparent'
-                    : 'bg-[var(--stator-surface-2)] border-[var(--stator-border)] text-[var(--stator-fg)]'
+                    ? 'bg-[var(--stator-cta-bg)] text-[var(--stator-cta-fg)] border-transparent'
+                    : 'bg-[var(--stator-surface-2)] border-[var(--stator-border-control)] text-[var(--stator-fg)]'
                 }`}
               >
                 <SplitSquareHorizontal className="w-3.5 h-3.5" />
@@ -564,7 +564,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                   onClick={() => onSelectActiveItem(item.id)}
                   className={`h-7 px-2.5 rounded-md border text-[11px] font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                     isActive
-                      ? 'bg-[var(--stator-accent-soft)] border-[var(--stator-accent)] text-[var(--stator-accent-fg)]'
+                      ? 'bg-[var(--stator-cta-bg)] border-transparent text-[var(--stator-cta-fg)]'
                       : 'bg-[var(--stator-surface-2)] border-[var(--stator-border)] text-[var(--stator-fg-muted)]'
                   }`}
                 >
@@ -580,7 +580,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
           {activeTool === 'compressor' && queue.length > 0 && (
             <div className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <Minimize2 className="w-4 h-4 text-[var(--stator-accent-fg)] shrink-0" />
+                <Minimize2 className="w-4 h-4 text-[var(--stator-fg)] shrink-0" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-[var(--stator-fg)]">
                     Batch Size Optimization ·{' '}
@@ -610,8 +610,8 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                         }
                         className={`h-7 px-2.5 rounded-md border text-[11px] font-medium capitalize cursor-pointer transition-colors ${
                           isCurrent
-                            ? 'bg-[var(--stator-accent)] border-transparent text-white'
-                            : 'bg-[var(--stator-surface-2)] border-[var(--stator-border)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
+                            ? 'bg-[var(--stator-cta-bg)] border-transparent text-[var(--stator-cta-fg)]'
+                            : 'bg-[var(--stator-surface-2)] border-[var(--stator-border-control)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
                         }`}
                       >
                         {goal}
@@ -623,7 +623,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             </div>
           )}
           {!activeItem ? (
-            <div className="rounded-xl border border-dashed border-[var(--stator-border-strong)] bg-[var(--stator-surface)] py-16 px-6 text-center space-y-3">
+            <div className="rounded-xl border border-dashed border-[var(--stator-border-control)] bg-[var(--stator-surface)] py-16 px-6 text-center space-y-3">
               <p className="text-base font-semibold text-[var(--stator-fg)]">
                 Studio Canvas Empty
               </p>
@@ -634,16 +634,16 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                 <button
                   type="button"
                   onClick={onAddFilesClick}
-                  className="h-9 px-4 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium cursor-pointer"
+                  className="h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium cursor-pointer transition-colors"
                 >
                   Select Media Files
                 </button>
                 <button
                   type="button"
                   onClick={onLoadSamples}
-                  className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+                  className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                   <span>Load Samples</span>
                 </button>
               </div>
@@ -657,7 +657,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
               <p className="text-xs text-[var(--stator-fg-muted)] max-w-md mx-auto">
                 All your non-destructive crop, trim, and compression settings are preserved. Re-select the local file from disk to unlock live preview &amp; export.
               </p>
-              <label className="inline-flex h-9 px-4 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium items-center gap-1.5 cursor-pointer">
+              <label className="inline-flex h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium items-center gap-1.5 cursor-pointer transition-colors">
                 <span>Choose Local File</span>
                 <input
                   type="file"
@@ -671,7 +671,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
               </label>
             </div>
           ) : activeItem.typeCategory === 'image' && activeItem.previewUrl ? (
-            <div className="rounded-xl bg-[#0D0E11] border border-[#292C33] p-3.5 sm:p-4">
+            <div className="rounded-xl bg-[#101112] border border-[#313338] p-3.5 sm:p-4">
               {compareMode === 'split' && activeItem.outputUrl ? (
                 <BeforeAfterSlider
                   originalUrl={activeItem.previewUrl}
@@ -699,7 +699,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             </div>
           ) : activeItem.typeCategory === 'video' && mediaObjectUrl ? (
             <div className="space-y-3">
-              <div className="relative rounded-xl bg-[#0D0E11] border border-[#292C33] overflow-hidden flex items-center justify-center">
+              <div className="relative rounded-xl bg-[#101112] border border-[#313338] overflow-hidden flex items-center justify-center">
                 <video
                   ref={videoRef}
                   src={activeItem.outputUrl || mediaObjectUrl}
@@ -750,7 +750,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                     <button
                       type="button"
                       onClick={() => onSplitClip(activeItem.id, mediaCurrentSec)}
-                      className="h-7 px-2.5 rounded bg-[var(--stator-accent-soft)] border border-[var(--stator-accent)]/40 text-[11px] font-medium text-[var(--stator-accent-fg)] inline-flex items-center gap-1 cursor-pointer"
+                      className="h-7 px-2.5 rounded bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Scissors className="w-3 h-3" />
                       <span>Split at Playhead</span>
@@ -769,7 +769,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                     if (videoRef.current) videoRef.current.currentTime = sec;
                   }}
                   aria-label="Video timeline scrub"
-                  className="w-full accent-[var(--stator-accent)]"
+                  className="w-full stator-slider"
                 />
               </div>
             </div>
@@ -824,7 +824,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] overflow-hidden">
               <div className="px-4 py-2.5 border-b border-[var(--stator-border)] flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xs font-mono uppercase tracking-[0.07em] text-[var(--stator-fg-muted)]">
+                  <h3 className="text-xs font-medium text-[var(--stator-fg-muted)]">
                     Batch Queue ({queue.length})
                   </h3>
                   {queue.some((i) => i.typeCategory === 'image') && (
@@ -835,7 +835,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                         e.target.value = '';
                       }}
                       aria-label="Bulk set all image formats"
-                      className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] text-[var(--stator-fg)] cursor-pointer"
+                      className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] text-[var(--stator-fg)] cursor-pointer"
                     >
                       <option value="">All Images → …</option>
                       {TARGET_FORMAT_OPTIONS.image.map((f) => (
@@ -851,7 +851,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                   <button
                     type="button"
                     onClick={onTogglePause}
-                    className="h-7 px-2.5 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer"
+                    className="h-7 px-2.5 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer"
                   >
                     {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
                     <span>{isPaused ? 'Resume' : 'Pause'}</span>
@@ -860,9 +860,9 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                     <button
                       type="button"
                       onClick={onConvertAll}
-                      className="h-7 px-3 rounded bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-[11px] font-medium inline-flex items-center gap-1 cursor-pointer"
+                      className="h-7 px-3 rounded bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-[11px] font-medium inline-flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      <Zap className="w-3 h-3 fill-white" />
+                      <Zap className="w-3 h-3 fill-current" />
                       <span>Convert All ({readyCount})</span>
                     </button>
                   )}
@@ -879,7 +879,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                       onClick={() => onSelectActiveItem(item.id)}
                       className={`px-4 py-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
                         isActiveRow
-                          ? 'bg-[var(--stator-accent-soft)]/50'
+                          ? 'bg-[var(--stator-surface-2)]'
                           : 'hover:bg-[var(--stator-surface-2)]/50'
                       }`}
                     >
@@ -912,7 +912,7 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
                           value={item.targetFormat}
                           onChange={(e) => onUpdateTargetFormat(item.id, e.target.value)}
                           aria-label={`Format for ${item.name}`}
-                          className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] font-mono text-[var(--stator-fg)] cursor-pointer"
+                          className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] font-mono text-[var(--stator-fg)] cursor-pointer"
                         >
                           {formats.map((f) => (
                             <option key={f} value={f}>
@@ -968,10 +968,10 @@ export const StatorStudio: React.FC<StatorStudioProps> = ({
             role="separator"
             aria-orientation="vertical"
             onPointerDown={handleDragResizeRight}
-            className="hidden lg:block absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-accent)]/50 z-10"
+            className="hidden lg:block absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-[var(--stator-border-control)] z-10"
           />
           <div className="px-4 py-2.5 border-b border-[var(--stator-border)] flex items-center justify-between shrink-0">
-            <span className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)]">
+            <span className="text-xs font-medium text-[var(--stator-fg-muted)] capitalize">
               Inspector {activeItem ? `· ${activeItem.typeCategory}` : ''}
             </span>
             <button

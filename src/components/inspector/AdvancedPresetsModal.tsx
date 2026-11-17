@@ -125,7 +125,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[var(--stator-border)]">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[var(--stator-accent-fg)] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[var(--stator-fg)] flex items-center justify-center shrink-0">
                   <Sliders className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -186,7 +186,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                         className="absolute inset-0 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border)] shadow-2xs"
                       />
                     )}
-                    <Icon className="relative z-10 w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                    <Icon className="relative z-10 w-3.5 h-3.5 text-[var(--stator-fg)]" />
                     <span className="relative z-10">{tab.label}</span>
                   </button>
                 );
@@ -209,7 +209,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-[var(--stator-fg)]">Compression Quality</span>
-                        <span className="font-mono tabular-nums font-medium text-[var(--stator-accent-fg)]">
+                        <span className="font-mono tabular-nums font-medium text-[var(--stator-fg)]">
                           {getQualityLabel(settings.imageQuality)}
                         </span>
                       </div>
@@ -224,7 +224,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                           setSettings({ ...settings, imageQuality: parseInt(e.target.value, 10) })
                         }
                         style={{
-                          background: `linear-gradient(to right, var(--stator-accent) ${qualityPercentage}%, var(--stator-border) ${qualityPercentage}%)`,
+                          background: `linear-gradient(to right, var(--stator-cta-bg) ${qualityPercentage}%, var(--stator-border-control) ${qualityPercentage}%)`,
                         }}
                         className="w-full stator-slider"
                       />
@@ -244,7 +244,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                           Target Resolution Scaling
                         </label>
                         {(settings.imageResize === '4K' || settings.imageResize === '2K') && (
-                          <span className="text-[11px] font-mono tabular-nums text-[var(--stator-accent-fg)]">
+                          <span className="text-[11px] font-mono tabular-nums text-[var(--stator-fg-muted)]">
                             {settings.imageResize === '4K' ? '4K UHD (Lanczos)' : '2K QHD (Lanczos)'}
                           </span>
                         )}
@@ -259,8 +259,8 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                               res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
                             } ${
                               settings.imageResize === res.id
-                                ? 'bg-[var(--stator-accent)] text-white border-transparent'
-                                : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border)]'
+                                ? 'bg-[var(--stator-cta-bg)] text-[var(--stator-cta-fg)] border-transparent'
+                                : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border-control)]'
                             }`}
                           >
                             {res.label}
@@ -319,14 +319,14 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                             }
                             className={`p-2.5 text-left rounded-xl border transition-colors cursor-pointer active:scale-[0.98] ${
                               settings.videoBitrate === p.id
-                                ? 'bg-[var(--stator-accent-soft)] border-[var(--stator-accent)] text-[var(--stator-fg)]'
+                                ? 'bg-[var(--stator-surface-2)] border-[var(--stator-cta-bg)] text-[var(--stator-fg)]'
                                 : 'bg-[var(--stator-surface-2)]/50 border-[var(--stator-border)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)]'
                             }`}
                           >
                             <div className="text-xs font-medium text-[var(--stator-fg)] flex items-center justify-between">
                               <span>{p.label}</span>
                               {settings.videoBitrate === p.id && (
-                                <Check className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                                <Check className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                               )}
                             </div>
                             <div className="text-[10px] text-[var(--stator-fg-subtle)] font-mono tabular-nums mt-0.5">
@@ -350,7 +350,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                           Target Max Video Resolution
                         </label>
                         {(settings.videoResolution === '4K' || settings.videoResolution === '2K') && (
-                          <span className="text-[11px] font-mono tabular-nums text-[var(--stator-accent-fg)]">
+                          <span className="text-[11px] font-mono tabular-nums text-[var(--stator-fg-muted)]">
                             {settings.videoResolution === '4K'
                               ? '4K UHD (Lanczos)'
                               : '2K QHD (Lanczos)'}
@@ -367,8 +367,8 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                               res.id === 'original' ? 'font-sans' : 'font-mono tabular-nums'
                             } ${
                               settings.videoResolution === res.id
-                                ? 'bg-[var(--stator-accent)] text-white border-transparent'
-                                : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border)]'
+                                ? 'bg-[var(--stator-cta-bg)] text-[var(--stator-cta-fg)] border-transparent'
+                                : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border-control)]'
                             }`}
                           >
                             {res.label}
@@ -436,8 +436,8 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                               }
                               className={`h-9 rounded-lg text-xs font-mono tabular-nums border transition-colors text-center cursor-pointer flex items-center justify-center active:scale-[0.97] ${
                                 settings.audioBitrate === bitrate.id
-                                  ? 'bg-[var(--stator-accent)] text-white border-transparent font-medium'
-                                  : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border)]'
+                                  ? 'bg-[var(--stator-cta-bg)] text-[var(--stator-cta-fg)] border-transparent font-medium'
+                                  : 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] hover:border-[var(--stator-border-strong)] border-[var(--stator-border-control)]'
                               }`}
                             >
                               {bitrate.label}
@@ -466,7 +466,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[36px] bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] text-[var(--stator-fg)] border border-[var(--stator-border)] rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+                  className="min-h-[36px] bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] text-[var(--stator-fg)] border border-[var(--stator-border-control)] rounded-lg px-3.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
                 >
                   Cancel
                 </button>
@@ -474,7 +474,7 @@ export const AdvancedPresetsModal: React.FC<AdvancedPresetsModalProps> = ({
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="min-h-[36px] bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white font-medium rounded-lg px-4 text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap active:scale-[0.98]"
+                  className="min-h-[36px] bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] font-medium rounded-lg px-4 text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap active:scale-[0.98]"
                 >
                   <Check className="w-3.5 h-3.5 stroke-[2.25]" />
                   <span>Apply Preset</span>

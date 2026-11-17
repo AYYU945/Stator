@@ -95,9 +95,9 @@ export const AudioWaveformBar: React.FC<AudioWaveformBarProps> = ({
       const barH = Math.max(4, amp * (height * 0.82));
       const inTrim = x >= trimStartX && x <= trimEndX;
       if (x <= playX && inTrim) {
-        ctx.fillStyle = '#4770E8';
+        ctx.fillStyle = '#EEEDE9';
       } else if (inTrim) {
-        ctx.fillStyle = '#8F96A3';
+        ctx.fillStyle = '#8A8C91';
       } else {
         ctx.fillStyle = 'rgba(130, 138, 152, 0.35)';
       }
@@ -131,7 +131,7 @@ export const AudioWaveformBar: React.FC<AudioWaveformBarProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-[var(--stator-fg-muted)]">
         <div className="flex items-center gap-3">
           {loading ? (
-            <span className="inline-flex items-center gap-1.5 text-[var(--stator-accent-fg)]">
+            <span className="inline-flex items-center gap-1.5 text-[var(--stator-fg)]">
               <Loader2 className="w-3 h-3 animate-spin" />
               Decoding Web Audio waveform…
             </span>
@@ -182,7 +182,7 @@ export const AudioWaveformBar: React.FC<AudioWaveformBarProps> = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg bg-[#0D0E11] border border-[#292C33] p-2">
+      <div className="overflow-x-auto rounded-lg bg-[#101112] border border-[#313338] p-2">
         <div style={{ width: zoom === 2 ? '180%' : '100%' }}>
           <canvas
             ref={canvasRef}

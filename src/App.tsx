@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
-import { Sidebar } from './components/layout/Sidebar.tsx';
+import { Sidebar, NAV_ITEMS } from './components/layout/Sidebar.tsx';
 import { TopBar } from './components/layout/TopBar.tsx';
 import { HomeDashboard } from './components/HomeDashboard.tsx';
 import { ProjectsView } from './components/ProjectsView.tsx';
@@ -15,10 +15,14 @@ import { SettingsView } from './components/SettingsView.tsx';
 import { GuideWorkspaceView } from './components/GuideWorkspaceView.tsx';
 import { CommandPalette } from './components/CommandPalette.tsx';
 import { PresetModal } from './components/PresetModal.tsx';
+import { NewProjectModal } from './components/NewProjectModal.tsx';
+import { ToolsDirectoryModal } from './components/ToolsDirectoryModal.tsx';
 import { OfflineIndicator } from './components/OfflineIndicator.tsx';
 import { StatusFooter } from './components/StatusFooter.tsx';
 import { PrivacyPolicy } from './components/PrivacyPolicy.tsx';
 import { TermsOfService } from './components/TermsOfService.tsx';
+import { CopyrightNotice } from './components/CopyrightNotice.tsx';
+import { LegalRoute, legalRouteToPath, parseLegalRoute } from './lib/links.ts';
 import { buildOutputFilename } from './utils/formatCapabilities.ts';
 import { useTheme } from './lib/theme.ts';
 import { useStatorSettings } from './lib/settingsStore.ts';
@@ -39,22 +43,34 @@ const STUDIO_TOOL_IDS = new Set<NavToolId>([
 ]);
 
 const VIEW_TITLES: Record<NavToolId, string> = {
-  home: 'Home Workspace',
-  projects: 'Saved Projects',
-  history: 'History & Cache',
+  home: 'Home',
+  projects: 'Projects',
+  history: 'History',
   converter: 'Converter Studio',
   compressor: 'Compressor',
   video: 'Video Studio',
   images: 'Image Studio',
   audio: 'Audio Studio',
-  'gif-studio': 'GIF & Animation Studio',
+  'gif-studio': 'GIF & Animation',
   batch: 'Batch Queue',
   'quality-lab': 'Quality Lab',
   pipelines: 'Smart Pipelines',
   presets: 'Saved Presets',
   settings: 'Settings',
-  help: 'Architecture & Help',
+  help: 'Help & Engine',
 };
+
+const TRACKABLE_TOOL_IDS = new Set<NavToolId>([
+  'video',
+  'gif-studio',
+  'images',
+  'audio',
+  'converter',
+  'compressor',
+  'batch',
+  'quality-lab',
+  'pipelines',
+]);
 
 export default function App() {
   const { theme, isDark, setTheme, toggleTheme } = useTheme();
@@ -66,9 +82,16 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [isExportCenterOpen, setIsExportCenterOpen] = useState(false);
-  const [legalRoute, setLegalRoute] = useState<'none' | 'privacy' | 'terms'>('none');
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isToolsDirectoryOpen, setIsToolsDirectoryOpen] = useState(false);
+  const [legalRoute, setLegalRoute] = useState<LegalRoute>(() =>
+    typeof window !== 'undefined'
+      ? parseLegalRoute(window.location.pathname, window.location.hash)
+      : 'none'
+  );
 
   const globalFileInputRef = useRef<HTMLInputElement>(null);
+  const projectJsonInputRef = useRef<HTMLInputElement>(null);
 
   const {
     queue,
@@ -143,26 +166,42 @@ export default function App() {
     }
   }, [queue, activeStageItemId]);
 
-  // URL navigation (/privacy, /terms, /)
+  // URL navigation (/privacy, /terms, /dmca, /)
   useEffect(() => {
     const syncPath = () => {
-      const path = window.location.pathname.toLowerCase();
-      if (path === '/privacy') setLegalRoute('privacy');
-      else if (path === '/terms') setLegalRoute('terms');
-      else setLegalRoute('none');
+      setLegalRoute(parseLegalRoute(window.location.pathname, window.location.hash));
     };
     syncPath();
     window.addEventListener('popstate', syncPath);
-    return () => window.removeEventListener('popstate', syncPath);
+    window.addEventListener('hashchange', syncPath);
+    return () => {
+      window.removeEventListener('popstate', syncPath);
+      window.removeEventListener('hashchange', syncPath);
+    };
   }, []);
 
-  const navigateLegal = (route: 'none' | 'privacy' | 'terms') => {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (legalRoute === 'privacy') document.title = 'Stator — Privacy Policy';
+    else if (legalRoute === 'terms') document.title = 'Stator — Software Terms & License';
+    else if (legalRoute === 'dmca') document.title = 'Stator — Copyright & DMCA Notice';
+    else document.title = 'Stator';
+  }, [legalRoute]);
+
+  const navigateLegal = (route: LegalRoute) => {
     setLegalRoute(route);
-    const targetPath = route === 'none' ? '/' : `/${route}`;
-    if (window.location.pathname !== targetPath) {
+    const targetPath = legalRouteToPath(route);
+    if (window.location.pathname !== targetPath || window.location.hash) {
       window.history.pushState({}, '', targetPath);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const exitLegalRoute = () => {
+    setLegalRoute('none');
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   // Global Cmd/Ctrl+K + Ctrl/Cmd+Z / Shift+Z
@@ -200,7 +239,7 @@ export default function App() {
         e.preventDefault();
         const files = Array.from(items);
         void openFilesSmartRef.current(files).then((proj) => {
-          setLegalRoute('none');
+          exitLegalRoute();
           setActiveNav(proj.type === 'image' ? 'images' : proj.type === 'audio' ? 'audio' : proj.type === 'video' ? 'video' : 'converter');
           showToast(`Opened ${files.length} pasted file${files.length === 1 ? '' : 's'} in Studio`);
         });
@@ -211,12 +250,17 @@ export default function App() {
   }, [showToast]);
 
   const handleSelectNav = (id: NavToolId) => {
-    setLegalRoute('none');
+    exitLegalRoute();
     if (id === 'presets') {
       setIsPresetModalOpen(true);
       return;
     }
     setActiveNav(id);
+
+    if (TRACKABLE_TOOL_IDS.has(id)) {
+      const nextRecent = [id, ...settings.recentTools.filter((t) => t !== id)].slice(0, 6);
+      updateSettings({ recentTools: nextRecent });
+    }
 
     // If user focuses a category tool (video, images, audio), jump active item to a matching file if available
     if (id === 'video') {
@@ -232,7 +276,10 @@ export default function App() {
   };
 
   const handleCreateNewProject = async (type: ProjectType) => {
-    setLegalRoute('none');
+    exitLegalRoute();
+    const nextTypes = [type, ...settings.recentProjectTypes.filter((t) => t !== type)].slice(0, 4);
+    updateSettings({ recentProjectTypes: nextTypes });
+
     if (type === 'gif') {
       setActiveNav('gif-studio');
       await projectWorkspace.createProject('gif');
@@ -253,7 +300,7 @@ export default function App() {
   };
 
   const handleOpenExistingProject = async (projectId: string) => {
-    setLegalRoute('none');
+    exitLegalRoute();
     const opened = await projectWorkspace.openProject(projectId);
     if (!opened) return;
     if (opened.type === 'gif') setActiveNav('gif-studio');
@@ -266,7 +313,7 @@ export default function App() {
 
   const handleIncomingMediaFiles = async (files: File[]) => {
     if (!files || files.length === 0) return;
-    setLegalRoute('none');
+    exitLegalRoute();
     const proj = await projectWorkspace.openFilesInSmartProject(files);
     const navTarget: NavToolId =
       files.length > 1
@@ -301,7 +348,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion={motionMode}>
-      <div className="min-h-screen bg-[var(--stator-bg)] text-[var(--stator-fg)] flex font-sans selection:bg-[var(--stator-accent-soft)] selection:text-[var(--stator-fg)]">
+      <div className="min-h-screen bg-[var(--stator-bg)] text-[var(--stator-fg)] flex font-sans selection:bg-[var(--stator-cta-bg)] selection:text-[var(--stator-cta-fg)]">
         <input
           ref={globalFileInputRef}
           type="file"
@@ -314,11 +361,23 @@ export default function App() {
             }
           }}
         />
+        <input
+          ref={projectJsonInputRef}
+          type="file"
+          accept=".json,.stator.json,application/json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void projectWorkspace.importProjectFile(f);
+            e.target.value = '';
+          }}
+        />
 
         {/* Persistent Left Navigation Sidebar */}
         <Sidebar
           activeNav={activeNav}
           onSelectNav={handleSelectNav}
+          onOpenToolsDirectory={() => setIsToolsDirectoryOpen(true)}
           collapsed={settings.sidebarCollapsed}
           onToggleCollapse={() =>
             updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed })
@@ -326,6 +385,7 @@ export default function App() {
           width={settings.sidebarWidth}
           onChangeWidth={(sidebarWidth) => updateSettings({ sidebarWidth })}
           pinnedTools={settings.pinnedTools}
+          recentTools={settings.recentTools}
           onTogglePinTool={handleTogglePinTool}
           projectCount={projectWorkspace.projects.length}
           historyCount={history.length}
@@ -342,10 +402,13 @@ export default function App() {
               legalRoute === 'privacy'
                 ? 'Privacy Policy'
                 : legalRoute === 'terms'
-                ? 'Terms of Service'
+                ? 'Software Terms & License'
+                : legalRoute === 'dmca'
+                ? 'Copyright & DMCA Notice'
                 : VIEW_TITLES[activeNav]
             }
             isStudioView={isStudioView}
+            isHomeView={legalRoute === 'none' && activeNav === 'home'}
             projectName={projectWorkspace.activeProject?.name || 'Active Studio'}
             onRenameProject={(name) => {
               if (projectWorkspace.activeProjectId) {
@@ -353,7 +416,7 @@ export default function App() {
               }
             }}
             onNavigateHome={() => {
-              setLegalRoute('none');
+              exitLegalRoute();
               setActiveNav('home');
             }}
             saveStatus={projectWorkspace.saveStatus}
@@ -370,9 +433,11 @@ export default function App() {
             }
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenExportCenter={() => setIsExportCenterOpen(true)}
+            onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
             readyCount={readyCount}
             completedCount={completedCount}
             theme={theme}
+            isDark={isDark}
             onThemeChange={(m) => {
               setTheme(m);
               updateSettings({ theme: m });
@@ -393,14 +458,27 @@ export default function App() {
                 className="flex-1 flex flex-col min-w-0"
               >
             {legalRoute === 'privacy' ? (
-              <PrivacyPolicy onBack={() => navigateLegal('none')} />
+              <PrivacyPolicy
+                onBack={() => navigateLegal('none')}
+                onNavigateLegal={(r) => navigateLegal(r)}
+              />
             ) : legalRoute === 'terms' ? (
-              <TermsOfService onBack={() => navigateLegal('none')} />
+              <TermsOfService
+                onBack={() => navigateLegal('none')}
+                onNavigateLegal={(r) => navigateLegal(r)}
+              />
+            ) : legalRoute === 'dmca' ? (
+              <CopyrightNotice
+                onBack={() => navigateLegal('none')}
+                onNavigateLegal={(r) => navigateLegal(r)}
+              />
             ) : activeNav === 'home' ? (
               <HomeDashboard
                 projects={projectWorkspace.projects}
                 ephemeralMode={ephemeralMode}
+                recentProjectTypes={settings.recentProjectTypes}
                 onCreateProject={(type) => void handleCreateNewProject(type)}
+                onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
                 onOpenProject={(id) => void handleOpenExistingProject(id)}
                 onRenameProject={(id, name) => void projectWorkspace.renameProject(id, name)}
                 onDuplicateProject={(id) => void projectWorkspace.duplicateProject(id)}
@@ -422,6 +500,7 @@ export default function App() {
               <ProjectsView
                 projects={projectWorkspace.projects}
                 onCreateProject={(type) => void handleCreateNewProject(type)}
+                onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
                 onOpenProject={(id) => void handleOpenExistingProject(id)}
                 onRenameProject={(id, name) => void projectWorkspace.renameProject(id, name)}
                 onDuplicateProject={(id) => void projectWorkspace.duplicateProject(id)}
@@ -560,9 +639,13 @@ export default function App() {
                   await projectWorkspace.clearAllProjects();
                 }}
                 onToast={showToast}
+                onNavigateLegal={(r) => navigateLegal(r)}
               />
             ) : (
-              <GuideWorkspaceView onBackToConverter={() => setActiveNav('home')} />
+              <GuideWorkspaceView
+                onBackToConverter={() => setActiveNav('home')}
+                onNavigateLegal={(r) => navigateLegal(r)}
+              />
             )}
               </motion.div>
             </AnimatePresence>
@@ -571,6 +654,7 @@ export default function App() {
           <StatusFooter
             onNavigatePrivacy={() => navigateLegal('privacy')}
             onNavigateTerms={() => navigateLegal('terms')}
+            onNavigateDmca={() => navigateLegal('dmca')}
           />
         </div>
 
@@ -594,6 +678,7 @@ export default function App() {
           readyCount={readyCount}
           activeNav={activeNav}
           onSelectNav={handleSelectNav}
+          onNavigateLegal={(r) => navigateLegal(r)}
           onCreateBlankProject={() => void handleCreateNewProject('blank')}
           onChooseFiles={() => globalFileInputRef.current?.click()}
           onLoadSamples={() => void handleLoadSampleFiles()}
@@ -611,6 +696,24 @@ export default function App() {
           onApply={handleApplyPreset}
           initialSettings={globalPreset}
           activeItemId={null}
+        />
+
+        <NewProjectModal
+          isOpen={isNewProjectModalOpen}
+          onClose={() => setIsNewProjectModalOpen(false)}
+          onCreateProject={(type) => void handleCreateNewProject(type)}
+          onImportProjectJsonClick={() => projectJsonInputRef.current?.click()}
+          onImportMediaClick={() => globalFileInputRef.current?.click()}
+        />
+
+        <ToolsDirectoryModal
+          isOpen={isToolsDirectoryOpen}
+          onClose={() => setIsToolsDirectoryOpen(false)}
+          tools={NAV_ITEMS}
+          pinnedTools={settings.pinnedTools}
+          recentTools={settings.recentTools}
+          onSelectTool={handleSelectNav}
+          onTogglePinTool={handleTogglePinTool}
         />
 
         <AnimatePresence>

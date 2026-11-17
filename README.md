@@ -16,7 +16,7 @@ Stator runs entirely inside browser memory via WebAssembly (`@ffmpeg/core` multi
   * **GIF & Animation Studio:** Multi-frame sequencer with per-frame millisecond durations, live loop/boomerang/reverse playback preview, FFmpeg 2-pass `palettegen` + `paletteuse` GIF compilation, Animated WebP export, sprite sheets, shareable creator recipes, and local Brand Kit defaults.
   * **Quality Lab & Smart Pipelines:** Side-by-side codec & bitrate benchmarking and single-pass multi-step transformation recipes.
 * **Privacy & Storage Controls:** Local IndexedDB conversion history (`250 MB` LRU cache), **Ephemeral Privacy Mode** (volatile RAM only), customizable output filename templates, and one-click local storage wipe.
-* **Command Palette & Accessibility:** `Cmd/Ctrl+K` command launcher, `Soft Titanium` (Light) & `Obsidian` (Dark) themes, Comfortable / Compact studio density, font scaling, high-contrast focus rings, and OS/manual reduced-motion preferences.
+* **Command Palette & Accessibility:** `Cmd/Ctrl+K` command launcher, `Soft Ivory` (Light) & `Graphite Black` (Dark) Monochrome Luxe themes, Comfortable / Compact studio density, font scaling, high-contrast focus rings, and OS/manual reduced-motion preferences.
 
 ---
 
@@ -123,6 +123,7 @@ Pre-configured templates are included in `vercel.json` and `public/_headers`. St
 
 ## License & Attribution
 
+* **Source Repository:** [github.com/AYYU945/Stator](https://github.com/AYYU945/Stator) · [Releases](https://github.com/AYYU945/Stator/releases) · [Report a Bug](https://github.com/AYYU945/Stator/issues/new/choose)
 * **Stator Codebase:** Licensed under the **[MIT License](./LICENSE)**.
-* **Third-Party WebAssembly Codecs:** Video/audio transcoding loads self-hosted `@ffmpeg/core` binaries locally in the browser (`LICENSE` and `THIRD_PARTY_NOTICES.md` cover GPL/LGPL codec boundaries such as `libx264`).
+* **Third-Party WebAssembly Codecs & Fonts:** Video/audio transcoding loads self-hosted `@ffmpeg/core` binaries locally in the browser (`LICENSE` and [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md) cover GPL/LGPL codec boundaries such as `libx264`, plus bundled OFL-1.1 fonts).
 * **Support & Contact:** `hanan.ahmed.pak@gmail.com` · Read [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md), and [`SECURITY.md`](./SECURITY.md).

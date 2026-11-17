@@ -11,51 +11,69 @@
   color-scheme: light dark;
   --stator-font-scale: 1;
 
-  /* Light — Soft Titanium */
-  --stator-bg: #F5F6F7;
+  /* Light — Soft Ivory (Monochrome Luxe) */
+  --stator-bg: #FAF9F7;
   --stator-surface: #FFFFFF;
-  --stator-surface-2: #ECEEF1;
-  --stator-stage: #0D0E11;
-  --stator-stage-border: #252830;
-  --stator-border: #E2E5E9;
-  --stator-border-strong: #C9CFD8;
-  --stator-fg: #17191D;
-  --stator-fg-muted: #575E6A;
-  --stator-fg-subtle: #68707D;
-  --stator-accent: #3C63DB;
-  --stator-accent-hover: #2F55CA;
-  --stator-accent-fg: #345AD2;
-  --stator-accent-soft: rgba(71, 112, 232, 0.10);
-  --stator-success: #047857;
-  --stator-success-soft: rgba(4, 120, 87, 0.10);
-  --stator-warning: #B45309;
-  --stator-warning-soft: rgba(180, 83, 9, 0.10);
-  --stator-danger: #BE123C;
-  --stator-danger-soft: rgba(190, 18, 60, 0.10);
+  --stator-surface-2: #F0EFEC;
+  --stator-stage: #101112;
+  --stator-stage-border: #292A2D;
+  --stator-border: #E6E4E0;
+  --stator-border-strong: #C9C7C1;
+  --stator-border-control: #A6A49E;
+  --stator-fg: #292A2D;
+  --stator-fg-muted: #66686D;
+  --stator-fg-subtle: #66686D;
+
+  /* Monochrome CTA & Selection Tokens */
+  --stator-cta-bg: #292A2D;
+  --stator-cta-hover: #18191B;
+  --stator-cta-fg: #FFFFFF;
+  --stator-focus: #292A2D;
+  --stator-accent: #292A2D;
+  --stator-accent-hover: #18191B;
+  --stator-accent-fg: #292A2D;
+  --stator-accent-soft: #F0EFEC;
+
+  /* Restrained Semantic Status (strictly paired with icons/labels) */
+  --stator-success: #2F6846;
+  --stator-success-soft: rgba(47, 104, 70, 0.10);
+  --stator-warning: #8C5A14;
+  --stator-warning-soft: rgba(140, 90, 20, 0.10);
+  --stator-danger: #9B2C3E;
+  --stator-danger-soft: rgba(155, 44, 62, 0.10);
 }
 
 html.dark {
-  /* Dark — Obsidian */
-  --stator-bg: #0D0E11;
-  --stator-surface: #17191D;
-  --stator-surface-2: #24272D;
-  --stator-stage: #08090C;
-  --stator-stage-border: #292C33;
-  --stator-border: #292C33;
-  --stator-border-strong: #393E48;
-  --stator-fg: #F2F3F5;
-  --stator-fg-muted: #A4AAB5;
-  --stator-fg-subtle: #888F9C;
-  --stator-accent: #4770E8;
-  --stator-accent-hover: #5A81F0;
-  --stator-accent-fg: #7295FF;
-  --stator-accent-soft: rgba(114, 149, 255, 0.14);
-  --stator-success: #34D399;
-  --stator-success-soft: rgba(52, 211, 153, 0.12);
-  --stator-warning: #FBBF24;
-  --stator-warning-soft: rgba(251, 191, 36, 0.12);
-  --stator-danger: #FB7185;
-  --stator-danger-soft: rgba(251, 113, 133, 0.12);
+  /* Dark — Graphite Black (Monochrome Luxe) */
+  --stator-bg: #101112;
+  --stator-surface: #1B1C1F;
+  --stator-surface-2: #292A2D;
+  --stator-stage: #0A0B0C;
+  --stator-stage-border: #313338;
+  --stator-border: #313338;
+  --stator-border-strong: #46484F;
+  --stator-border-control: #686A73;
+  --stator-fg: #F4F3F0;
+  --stator-fg-muted: #B4B5B8;
+  --stator-fg-subtle: #B4B5B8;
+
+  /* Monochrome CTA & Selection Tokens */
+  --stator-cta-bg: #EEEDE9;
+  --stator-cta-hover: #FFFFFF;
+  --stator-cta-fg: #191A1D;
+  --stator-focus: #EEEDE9;
+  --stator-accent: #EEEDE9;
+  --stator-accent-hover: #FFFFFF;
+  --stator-accent-fg: #F4F3F0;
+  --stator-accent-soft: #292A2D;
+
+  /* Restrained Semantic Status (strictly paired with icons/labels) */
+  --stator-success: #70B589;
+  --stator-success-soft: rgba(112, 181, 137, 0.12);
+  --stator-warning: #DDA74F;
+  --stator-warning-soft: rgba(221, 167, 79, 0.12);
+  --stator-danger: #E07A8B;
+  --stator-danger-soft: rgba(224, 122, 139, 0.12);
 }
 
 html {
@@ -108,7 +126,7 @@ html.theme-transition main {
     border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Accessible keyboard focus ring */
+/* Accessible monochrome keyboard focus ring */
 @layer base {
   button:focus-visible,
   a:focus-visible,
@@ -119,7 +137,7 @@ html.theme-transition main {
   [role="slider"]:focus-visible,
   [role="tab"]:focus-visible,
   [role="switch"]:focus-visible {
-    outline: 2px solid var(--stator-accent-fg);
+    outline: 2px solid var(--stator-focus);
     outline-offset: 2px;
   }
 
@@ -141,21 +159,21 @@ html.theme-transition main {
 .stator-checkerboard {
   background-color: var(--stator-stage);
   background-image:
-    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+    linear-gradient(45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.045) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.045) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
 
-/* Precision range slider */
+/* Precision monochrome range slider */
 input[type="range"].stator-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 5px;
   border-radius: 999px;
-  background: var(--stator-surface-2);
+  background: var(--stator-border-control);
   cursor: pointer;
 }
 
@@ -166,9 +184,9 @@ input[type="range"].stator-slider::-webkit-slider-thumb {
   height: 14px;
   border-radius: 999px;
   background: var(--stator-surface);
-  border: 2px solid var(--stator-accent);
+  border: 2px solid var(--stator-cta-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 input[type="range"].stator-slider::-webkit-slider-thumb:hover {
@@ -180,9 +198,9 @@ input[type="range"].stator-slider::-moz-range-thumb {
   height: 14px;
   border-radius: 999px;
   background: var(--stator-surface);
-  border: 2px solid var(--stator-accent);
+  border: 2px solid var(--stator-cta-bg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .no-scrollbar::-webkit-scrollbar {

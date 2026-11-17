@@ -231,9 +231,9 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-[var(--stator-border)]">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1 inline-flex items-center gap-1.5">
-            <FlaskConical className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-            <span>Encoder Comparison &amp; Visual Verification</span>
+          <p className="text-xs font-medium text-[var(--stator-fg-muted)] mb-1 inline-flex items-center gap-1.5">
+            <FlaskConical className="w-3.5 h-3.5" />
+            <span>Encoder comparison &amp; visual verification</span>
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-[var(--stator-fg)]">
             Quality Lab
@@ -253,7 +253,7 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
                 clearCandidates();
               }}
               aria-label="Choose source from active studio"
-              className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] max-w-[220px]"
+              className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] max-w-[220px]"
             >
               {availableSources.map((q) => (
                 <option key={q.id} value={q.id}>
@@ -265,7 +265,7 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Choose File</span>
@@ -274,16 +274,16 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
             type="button"
             disabled={!activeSourceFile || isRunning}
             onClick={runComparison}
-            className="h-9 px-4 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] disabled:opacity-45 text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] disabled:opacity-45 text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
           >
-            {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-white" />}
+            {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
             <span>{isRunning ? 'Encoding Candidates…' : 'Run Real Comparison'}</span>
           </button>
         </div>
       </div>
 
       {!activeSourceFile ? (
-        <div className="rounded-xl border border-dashed border-[var(--stator-border-strong)] bg-[var(--stator-surface)] py-16 text-center space-y-3">
+        <div className="rounded-xl border border-dashed border-[var(--stator-border-control)] bg-[var(--stator-surface)] py-16 text-center space-y-3">
           <p className="text-sm font-semibold text-[var(--stator-fg)]">No media selected for comparison</p>
           <p className="text-xs text-[var(--stator-fg-muted)]">
             Choose an image, video, or audio file to generate real candidate outputs and inspect differences.
@@ -291,7 +291,7 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="h-9 px-4 rounded-lg bg-[var(--stator-accent)] text-white text-xs font-medium cursor-pointer"
+            className="h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium cursor-pointer transition-colors"
           >
             Browse Media File
           </button>
@@ -352,14 +352,14 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
                     onClick={() => setActiveCandidateId(cand.id)}
                     className={`rounded-xl bg-[var(--stator-surface)] border p-4 space-y-3 cursor-pointer transition-colors ${
                       isSelected
-                        ? 'border-[var(--stator-accent)] ring-1 ring-[var(--stator-accent)]/30'
-                        : 'border-[var(--stator-border)] hover:border-[var(--stator-border-strong)]'
+                        ? 'border-[var(--stator-cta-bg)] ring-1 ring-[var(--stator-cta-bg)]/25'
+                        : 'border-[var(--stator-border)] hover:border-[var(--stator-border-control)]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-xs font-semibold text-[var(--stator-fg)]">{cand.label}</p>
-                        <p className="text-[11px] font-mono text-[var(--stator-fg-subtle)] mt-0.5">
+                        <p className="text-[11px] font-mono text-[var(--stator-fg-muted)] mt-0.5">
                           {cand.dimensions ? `${cand.dimensions} · ` : ''}
                           {cand.elapsedSec}
                         </p>
@@ -404,7 +404,7 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
                           e.stopPropagation();
                           onApplyCandidatePreset(cand.targetFormat, cand.preset);
                         }}
-                        className="flex-1 h-8 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center justify-center gap-1 cursor-pointer"
+                        className="flex-1 h-8 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
                       >
                         <Check className="w-3 h-3" />
                         <span>Use Preset</span>
@@ -418,7 +418,7 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
 
           {/* Visual / Playback Stage */}
           {activeCandidate && localPreviewUrl && (
-            <div className="rounded-xl bg-[#0D0E11] border border-[#292C33] p-4">
+            <div className="rounded-xl bg-[#101112] border border-[#313338] p-4">
               {isImageSource ? (
                 viewMode === 'split' ? (
                   <BeforeAfterSlider
@@ -431,48 +431,48 @@ export const QualityLabView: React.FC<QualityLabViewProps> = ({
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <p className="text-[11px] font-mono text-[#A4AAB5]">
+                      <p className="text-[11px] font-mono text-[#B4B5B8]">
                         Reference ({formatFileSize(activeSourceFile.size)})
                       </p>
-                      <div className="h-[320px] rounded-lg stator-checkerboard border border-[#292C33] flex items-center justify-center overflow-hidden">
+                      <div className="h-[320px] rounded-lg stator-checkerboard border border-[#313338] flex items-center justify-center overflow-hidden">
                         <img src={localPreviewUrl} alt="Original" className="max-h-full max-w-full object-contain" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[11px] font-mono text-[#A4AAB5]">
+                      <p className="text-[11px] font-mono text-[#B4B5B8]">
                         {activeCandidate.label} ({formatFileSize(activeCandidate.sizeBytes)})
                       </p>
-                      <div className="h-[320px] rounded-lg stator-checkerboard border border-[#292C33] flex items-center justify-center overflow-hidden">
+                      <div className="h-[320px] rounded-lg stator-checkerboard border border-[#313338] flex items-center justify-center overflow-hidden">
                         <img src={activeCandidate.url} alt="Candidate" className="max-h-full max-w-full object-contain" />
                       </div>
                     </div>
                   </div>
                 )
               ) : activeSourceFile.type.startsWith('audio/') ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                  <div className="p-3 rounded-lg bg-[#17191D] border border-[#292C33] space-y-2">
-                    <p className="text-xs font-mono text-[#A4AAB5]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[#F4F3F0]">
+                  <div className="p-3 rounded-lg bg-[#1B1C1F] border border-[#313338] space-y-2">
+                    <p className="text-xs font-mono text-[#B4B5B8]">
                       Original ({formatFileSize(activeSourceFile.size)})
                     </p>
                     <audio src={localPreviewUrl} controls className="w-full" />
                   </div>
-                  <div className="p-3 rounded-lg bg-[#17191D] border border-[#292C33] space-y-2">
-                    <p className="text-xs font-mono text-[#A4AAB5]">
+                  <div className="p-3 rounded-lg bg-[#1B1C1F] border border-[#313338] space-y-2">
+                    <p className="text-xs font-mono text-[#B4B5B8]">
                       {activeCandidate.label} ({formatFileSize(activeCandidate.sizeBytes)})
                     </p>
                     <audio src={activeCandidate.url} controls className="w-full" />
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[#F4F3F0]">
                   <div className="space-y-2">
-                    <p className="text-xs font-mono text-[#A4AAB5]">
+                    <p className="text-xs font-mono text-[#B4B5B8]">
                       Original ({formatFileSize(activeSourceFile.size)})
                     </p>
                     <video src={localPreviewUrl} controls className="w-full max-h-[300px] rounded-lg bg-black" />
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs font-mono text-[#A4AAB5]">
+                    <p className="text-xs font-mono text-[#B4B5B8]">
                       {activeCandidate.label} ({formatFileSize(activeCandidate.sizeBytes)})
                     </p>
                     <video src={activeCandidate.url} controls className="w-full max-h-[300px] rounded-lg bg-black" />

@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
+  Code2,
+  ExternalLink,
 } from 'lucide-react';
 import { StatorSettings } from '../types/settings.ts';
 import { ThemeMode } from '../lib/theme.ts';
@@ -16,6 +18,14 @@ import { probeBrowserCapabilities, BrowserCapabilitiesReport } from '../utils/ca
 import { getProjectStorageFootprint } from '../utils/projectStorage.ts';
 import { formatFileSize } from '../types/queue.ts';
 import { getStoredGlobalPreset, saveGlobalPreset } from '../lib/presets.ts';
+import {
+  LegalRoute,
+  STATOR_ISSUES_URL,
+  STATOR_LICENSE_URL,
+  STATOR_RELEASES_URL,
+  STATOR_REPO_URL,
+  STATOR_THIRD_PARTY_NOTICES_URL,
+} from '../lib/links.ts';
 import { ToggleSwitch } from './ui/Primitives.tsx';
 
 export interface SettingsViewProps {
@@ -28,6 +38,7 @@ export interface SettingsViewProps {
   onToggleEphemeralMode: (enabled: boolean) => void;
   onWipeAllData: () => void;
   onToast: (msg: string) => void;
+  onNavigateLegal?: (route: Exclude<LegalRoute, 'none'>) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -40,6 +51,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleEphemeralMode,
   onWipeAllData,
   onToast,
+  onNavigateLegal,
 }) => {
   const [caps, setCaps] = useState<BrowserCapabilitiesReport | null>(null);
   const [footprint, setFootprint] = useState<{
@@ -72,8 +84,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[var(--stator-border)]">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1">
-            Local Workspace Preferences
+          <p className="text-xs font-medium text-[var(--stator-fg-muted)] mb-1">
+            Local workspace preferences
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-[var(--stator-fg)]">Settings</h2>
           <p className="text-xs sm:text-sm text-[var(--stator-fg-muted)] mt-1">
@@ -88,7 +100,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onThemeChange('system');
             onToast('Restored default Stator settings');
           }}
-          className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+          className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Defaults</span>
@@ -97,39 +109,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 1. Appearance */}
       <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-4">
-        <h3 className="text-xs font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)] flex items-center gap-2">
-          <Palette className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-          <span>1 · Appearance &amp; Interface</span>
+        <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+          <Palette className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+          <span>Appearance &amp; Interface</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
+            <label htmlFor="stator-theme-select" className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
               Color Theme
             </label>
             <select
+              id="stator-theme-select"
               value={theme}
               onChange={(e) => {
                 const next = e.target.value as ThemeMode;
                 onThemeChange(next);
                 onUpdateSettings({ theme: next });
               }}
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
             >
               <option value="system">System Preference</option>
-              <option value="light">Light — Soft Titanium</option>
-              <option value="dark">Dark — Obsidian</option>
+              <option value="light">Light — Soft Ivory</option>
+              <option value="dark">Dark — Graphite Black</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
+            <label htmlFor="stator-density-select" className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
               Interface Density
             </label>
             <select
+              id="stator-density-select"
               value={settings.density}
               onChange={(e) => onUpdateSettings({ density: e.target.value as any })}
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
             >
               <option value="comfortable">Comfortable</option>
               <option value="compact">Compact Studio</option>
@@ -137,13 +151,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
+            <label htmlFor="stator-fontscale-select" className="block text-xs font-medium text-[var(--stator-fg)] mb-1.5">
               UI Font Scale
             </label>
             <select
+              id="stator-fontscale-select"
               value={settings.fontScale}
               onChange={(e) => onUpdateSettings({ fontScale: Number(e.target.value) as any })}
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)] cursor-pointer"
             >
               <option value={95}>95%</option>
               <option value={100}>100% (Default)</option>
@@ -156,9 +171,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 2. Studio & Conversion Defaults */}
       <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-4">
-        <h3 className="text-xs font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)] flex items-center gap-2">
-          <Sliders className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-          <span>2 &amp; 3 · Studio &amp; Conversion Defaults</span>
+        <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+          <span>Studio &amp; Conversion Defaults</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -171,7 +186,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               value={settings.filenameTemplate}
               onChange={(e) => onUpdateSettings({ filenameTemplate: e.target.value })}
               placeholder="{name}"
-              className="w-full h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+              className="w-full h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
             />
             <p className="text-[11px] text-[var(--stator-fg-subtle)] mt-1">
               Tokens: <code>{'{name}'}</code>, <code>{'{format}'}</code>, <code>{'{res}'}</code>
@@ -185,7 +200,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <select
               value={settings.defaultCompressionGoal}
               onChange={(e) => onUpdateSettings({ defaultCompressionGoal: e.target.value as any })}
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
             >
               <option value="smaller">Smaller File</option>
               <option value="balanced">Balanced (Recommended)</option>
@@ -258,9 +273,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 4. Performance & Hardware Probes */}
       <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-4">
-        <h3 className="text-xs font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)] flex items-center gap-2">
-          <Cpu className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-          <span>4 · Local Workers &amp; Browser Capabilities</span>
+        <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+          <span>Local Workers &amp; Browser Capabilities</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -274,7 +289,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               max={4}
               value={settings.maxImageWorkers}
               onChange={(e) => onUpdateSettings({ maxImageWorkers: Number(e.target.value) })}
-              className="w-full accent-[var(--stator-accent)]"
+              className="w-full stator-slider"
             />
           </div>
           <div>
@@ -290,7 +305,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) =>
                 onUpdateSettings({ cacheSmallMediaThresholdMb: Number(e.target.value) })
               }
-              className="w-full accent-[var(--stator-accent)]"
+              className="w-full stator-slider"
             />
           </div>
         </div>
@@ -325,9 +340,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 5. Storage & Privacy */}
       <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-4">
-        <h3 className="text-xs font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)] flex items-center gap-2">
-          <HardDrive className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-          <span>5 · Storage &amp; Privacy</span>
+        <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+          <HardDrive className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+          <span>Storage &amp; Privacy</span>
         </h3>
 
         <div className="flex items-center justify-between gap-4">
@@ -360,7 +375,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={requestPersistentStorage}
-              className="h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] cursor-pointer"
+              className="h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] cursor-pointer"
             >
               Request Persistent Storage
             </button>
@@ -374,7 +389,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     setConfirmWipe(false);
                     getProjectStorageFootprint().then(setFootprint);
                   }}
-                  className="h-8 px-3 rounded-lg bg-[var(--stator-danger)] text-white text-xs font-medium cursor-pointer"
+                  className="h-8 px-3 rounded-lg bg-[#9B2C3E] hover:bg-[#822333] text-white text-xs font-medium cursor-pointer"
                 >
                   Confirm Full Wipe
                 </button>
@@ -390,7 +405,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmWipe(true)}
-                className="h-8 px-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-xs font-medium text-[var(--stator-danger)] cursor-pointer"
+                className="h-8 px-3 rounded-lg bg-[var(--stator-danger-soft)] border border-[var(--stator-danger)]/35 text-xs font-medium text-[var(--stator-danger)] cursor-pointer"
               >
                 Wipe All Local Data
               </button>
@@ -401,9 +416,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 6. Keyboard & Accessibility */}
       <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-4">
-        <h3 className="text-xs font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-muted)] flex items-center gap-2">
-          <Accessibility className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-          <span>6 · Motion &amp; Accessibility</span>
+        <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+          <Accessibility className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+          <span>Motion &amp; Accessibility</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -414,7 +429,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <select
               value={settings.motionPreference}
               onChange={(e) => onUpdateSettings({ motionPreference: e.target.value as any })}
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
             >
               <option value="system">Follow OS Reduced Motion</option>
               <option value="full">Full Studio Transitions</option>
@@ -435,6 +450,93 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               ariaLabel="High-contrast keyboard focus outlines"
             />
           </div>
+        </div>
+      </section>
+
+      {/* 7. Open Source, License & Legal */}
+      <section className="rounded-xl bg-[var(--stator-surface)] border border-[var(--stator-border)] p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-medium text-[var(--stator-fg)] flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-[var(--stator-fg-muted)]" />
+            <span>Open Source, License &amp; Legal</span>
+          </h3>
+          <span className="text-[11px] font-mono text-[var(--stator-fg-muted)]">
+            Stator v1.0.0 · MIT License
+          </span>
+        </div>
+
+        <p className="text-xs text-[var(--stator-fg-muted)]">
+          Free, open-source software running locally in your browser. Inspect source code, review
+          codec attributions, or report issues on GitHub.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs">
+          <a
+            href={STATOR_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-[var(--stator-fg)] hover:opacity-80 underline underline-offset-4"
+          >
+            <span>AYYU945/Stator</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <a
+            href={STATOR_RELEASES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+          >
+            Releases
+          </a>
+          <a
+            href={STATOR_ISSUES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+          >
+            Report a Bug
+          </a>
+          <a
+            href={STATOR_LICENSE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+          >
+            MIT License
+          </a>
+          <a
+            href={STATOR_THIRD_PARTY_NOTICES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4"
+          >
+            Third-Party Notices
+          </a>
+          {onNavigateLegal && (
+            <>
+              <button
+                type="button"
+                onClick={() => onNavigateLegal('privacy')}
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4 cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateLegal('terms')}
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4 cursor-pointer"
+              >
+                Software Terms &amp; License
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateLegal('dmca')}
+                className="text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] underline underline-offset-4 cursor-pointer"
+              >
+                Copyright &amp; DMCA Notice
+              </button>
+            </>
+          )}
         </div>
       </section>
     </div>

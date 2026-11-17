@@ -284,7 +284,7 @@ export function encodePresetRecipeUrl(recipe: SharedPresetRecipe): string {
   const base =
     typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}`
-      : 'https://stator.media/';
+      : 'https://github.com/AYYU945/Stator/';
   return `${base}#preset=${encoded}`;
 }
 

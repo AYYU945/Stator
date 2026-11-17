@@ -134,14 +134,14 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
                 value={filenameTemplate}
                 onChange={(e) => onUpdateFilenameTemplate(e.target.value)}
                 aria-label="Filename template"
-                className="h-8 px-2.5 rounded-md bg-[var(--stator-surface)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)] w-48"
+                className="h-8 px-2.5 rounded-md bg-[var(--stator-surface)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)] w-48"
               />
               {['{name}', '{name}_stator', '{name}_{format}'].map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => onUpdateFilenameTemplate(preset)}
-                  className="hidden sm:inline-block px-2 py-1 rounded bg-[var(--stator-surface)] border border-[var(--stator-border)] text-[10px] font-mono text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
+                  className="hidden sm:inline-block px-2 py-1 rounded bg-[var(--stator-surface)] border border-[var(--stator-border-control)] text-[10px] font-mono text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
                 >
                   {preset}
                 </button>
@@ -152,7 +152,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
           {firstVideo && (
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-[var(--stator-border)]">
               <div className="text-xs text-[var(--stator-fg-muted)] flex items-center gap-2 min-w-0">
-                <Film className="w-3.5 h-3.5 text-[var(--stator-accent-fg)] shrink-0" />
+                <Film className="w-3.5 h-3.5 text-[var(--stator-fg)] shrink-0" />
                 <span className="truncate">
                   Multi-Resolution Export for <strong className="text-[var(--stator-fg)]">{firstVideo.name}</strong>
                 </span>
@@ -161,7 +161,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
                 type="button"
                 disabled={Boolean(multiResBusy)}
                 onClick={handleMultiResExport}
-                className="h-7 px-3 rounded-md bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] shrink-0 cursor-pointer disabled:opacity-50"
+                className="h-7 px-3 rounded-md bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] shrink-0 cursor-pointer disabled:opacity-50"
               >
                 {multiResBusy || 'Export 1080p + 720p + 480p ZIP'}
               </button>
@@ -182,7 +182,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
                   {item.status === 'completed' ? (
                     <CheckCircle2 className="w-4 h-4 text-[var(--stator-success)] shrink-0" />
                   ) : item.status === 'converting' ? (
-                    <Loader2 className="w-4 h-4 text-[var(--stator-accent-fg)] animate-spin shrink-0" />
+                    <Loader2 className="w-4 h-4 text-[var(--stator-fg)] animate-spin shrink-0" />
                   ) : item.status === 'error' ? (
                     <AlertCircle className="w-4 h-4 text-[var(--stator-danger)] shrink-0" />
                   ) : (
@@ -213,7 +213,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
                     <a
                       href={item.outputUrl}
                       download={item.outputName || item.name}
-                      className="h-7 px-2.5 rounded-md bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-[11px] font-medium inline-flex items-center gap-1"
+                      className="h-7 px-2.5 rounded-md bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-[11px] font-medium inline-flex items-center gap-1 transition-colors"
                     >
                       <Download className="w-3 h-3" />
                       <span>Save</span>
@@ -223,7 +223,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
                       type="button"
                       disabled={item.needsReconnect}
                       onClick={() => onRetryItem(item.id)}
-                      className="h-7 px-2.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                      className="h-7 px-2.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center gap-1 cursor-pointer disabled:opacity-40"
                     >
                       {item.status === 'error' ? <RotateCcw className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                       <span>{item.status === 'error' ? 'Retry' : 'Run'}</span>
@@ -241,9 +241,9 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
             <button
               type="button"
               onClick={onConvertAll}
-              className="h-9 px-4 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+              className="h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Play className="w-3.5 h-3.5 fill-white" />
+              <Play className="w-3.5 h-3.5 fill-current" />
               <span>Run Pending ({readyItems.length})</span>
             </button>
           ) : (
@@ -255,7 +255,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
               type="button"
               disabled={completedItems.length === 0}
               onClick={onExportFolder}
-              className="h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              className="h-9 px-3 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
             >
               <FolderOutput className="w-3.5 h-3.5" />
               <span>Save to Folder</span>
@@ -264,7 +264,7 @@ export const ExportCenterModal: React.FC<ExportCenterModalProps> = ({
               type="button"
               disabled={completedItems.length === 0}
               onClick={onExportZip}
-              className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              className="h-9 px-3.5 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
             >
               <Archive className="w-3.5 h-3.5" />
               <span>Download ZIP</span>

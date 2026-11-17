@@ -163,9 +163,9 @@ export const SmartPipelinesView: React.FC<SmartPipelinesViewProps> = ({
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-[var(--stator-border)]">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1 inline-flex items-center gap-1.5">
-            <Workflow className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
-            <span>Single-Pass Compiled Recipes</span>
+          <p className="text-xs font-medium text-[var(--stator-fg-muted)] mb-1 inline-flex items-center gap-1.5">
+            <Workflow className="w-3.5 h-3.5" />
+            <span>Single-pass compiled recipes</span>
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-[var(--stator-fg)]">
             Smart Pipelines
@@ -179,7 +179,7 @@ export const SmartPipelinesView: React.FC<SmartPipelinesViewProps> = ({
           <button
             type="button"
             onClick={() => importRef.current?.click()}
-            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Import JSON</span>
@@ -187,7 +187,7 @@ export const SmartPipelinesView: React.FC<SmartPipelinesViewProps> = ({
           <button
             type="button"
             onClick={handleCreateCustom}
-            className="h-9 px-3.5 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Pipeline</span>
@@ -206,7 +206,9 @@ export const SmartPipelinesView: React.FC<SmartPipelinesViewProps> = ({
                 type="button"
                 onClick={() => setActiveId(p.id)}
                 className={`w-full p-4 text-left transition-colors cursor-pointer ${
-                  isSelected ? 'bg-[var(--stator-accent-soft)]' : 'hover:bg-[var(--stator-surface-2)]/60'
+                  isSelected
+                    ? 'bg-[var(--stator-surface-2)] border-l-2 border-l-[var(--stator-cta-bg)]'
+                    : 'hover:bg-[var(--stator-surface-2)]/60'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -340,9 +342,9 @@ export const SmartPipelinesView: React.FC<SmartPipelinesViewProps> = ({
                   const compiled = compilePipelineToPreset(activePipeline);
                   onApplyPipelineToQueue(activePipeline, compiled);
                 }}
-                className="h-9 px-4 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] disabled:opacity-45 text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+                className="h-9 px-4 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] disabled:opacity-45 text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Play className="w-3.5 h-3.5 fill-white" />
+                <Play className="w-3.5 h-3.5 fill-current" />
                 <span>Apply &amp; Stage in Studio</span>
               </button>
             </div>

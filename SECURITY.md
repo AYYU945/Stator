@@ -26,7 +26,7 @@ If you discover a security issue (such as Cross-Site Scripting, unsafe HTML/SVG 
 Instead, report it privately via:
 
 * **Email:** `hanan.ahmed.pak@gmail.com`
-* **GitHub Security Advisories:** Use the repository's **Security -> Report a vulnerability** tab if enabled.
+* **GitHub Security Advisories:** [Report a vulnerability](https://github.com/AYYU945/Stator/security/advisories) on `AYYU945/Stator`.
 
 Please include:
 1. A clear description of the vulnerability and potential impact.

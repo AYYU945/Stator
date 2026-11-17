@@ -25,18 +25,34 @@ import {
   Trash2,
   Download,
   FilePlus2,
+  Code2,
+  Bug,
+  Scale,
+  Tag,
+  ShieldCheck,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { NavToolId } from '../types/settings.ts';
 import { STATOR_SPRING, STATOR_TRANSITION } from '../lib/motion.ts';
+import {
+  LegalRoute,
+  STATOR_ISSUES_URL,
+  STATOR_LICENSE_URL,
+  STATOR_RELEASES_URL,
+  STATOR_REPO_URL,
+  STATOR_THIRD_PARTY_NOTICES_URL,
+} from '../lib/links.ts';
 
 export interface CommandPaletteAction {
   id: string;
   label: string;
-  section: 'Navigation' | 'Studio & Files' | 'Preferences';
+  section: 'Navigation' | 'Studio & Files' | 'Preferences' | 'Open Source & Legal';
   shortcut?: string;
   keywords?: string;
   icon: React.ReactNode;
   disabled?: boolean;
+  href?: string;
   onSelect: () => void;
 }
 
@@ -47,6 +63,7 @@ export interface CommandPaletteProps {
   readyCount: number;
   activeNav: NavToolId;
   onSelectNav: (nav: NavToolId) => void;
+  onNavigateLegal?: (route: Exclude<LegalRoute, 'none'>) => void;
   onCreateBlankProject: () => void;
   onChooseFiles: () => void;
   onLoadSamples: () => void;
@@ -65,6 +82,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   readyCount,
   activeNav,
   onSelectNav,
+  onNavigateLegal,
   onCreateBlankProject,
   onChooseFiles,
   onLoadSamples,
@@ -181,7 +199,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
       {
         id: 'toggle-theme',
-        label: isDark ? 'Switch to Light (Soft Titanium)' : 'Switch to Dark (Obsidian)',
+        label: isDark ? 'Switch to Light (Soft Ivory)' : 'Switch to Dark (Graphite Black)',
         section: 'Preferences',
         shortcut: 'T',
         keywords: 'theme light dark color appearance',
@@ -190,13 +208,92 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     ];
 
-    return [...fileAndStudio, ...navActions, ...prefs].filter((item) => !item.disabled);
+    const openSourceAndLegal: CommandPaletteAction[] = [
+      ...(onNavigateLegal
+        ? [
+            {
+              id: 'legal-privacy',
+              label: 'Open Privacy Policy',
+              section: 'Open Source & Legal' as const,
+              keywords: 'privacy local storage indexeddb ephemeral',
+              icon: <ShieldCheck className="w-4 h-4" />,
+              onSelect: () => onNavigateLegal('privacy'),
+            },
+            {
+              id: 'legal-terms',
+              label: 'Open Software Terms & License',
+              section: 'Open Source & Legal' as const,
+              keywords: 'terms license mit warranty',
+              icon: <Scale className="w-4 h-4" />,
+              onSelect: () => onNavigateLegal('terms'),
+            },
+            {
+              id: 'legal-dmca',
+              label: 'Open Copyright & DMCA Notice',
+              section: 'Open Source & Legal' as const,
+              keywords: 'copyright dmca github notice',
+              icon: <FileText className="w-4 h-4" />,
+              onSelect: () => onNavigateLegal('dmca'),
+            },
+          ]
+        : []),
+      {
+        id: 'github-repo',
+        label: 'Open GitHub Repository (AYYU945/Stator)',
+        section: 'Open Source & Legal',
+        keywords: 'github source code repository',
+        icon: <Code2 className="w-4 h-4" />,
+        href: STATOR_REPO_URL,
+        onSelect: () => {},
+      },
+      {
+        id: 'github-bug',
+        label: 'Report a Bug on GitHub',
+        section: 'Open Source & Legal',
+        keywords: 'bug report issue feedback github',
+        icon: <Bug className="w-4 h-4" />,
+        href: STATOR_ISSUES_URL,
+        onSelect: () => {},
+      },
+      {
+        id: 'github-releases',
+        label: 'View Stator Releases (v1.0.0)',
+        section: 'Open Source & Legal',
+        keywords: 'release changelog version v1.0.0 github',
+        icon: <Tag className="w-4 h-4" />,
+        href: STATOR_RELEASES_URL,
+        onSelect: () => {},
+      },
+      {
+        id: 'github-license',
+        label: 'View MIT License on GitHub',
+        section: 'Open Source & Legal',
+        keywords: 'mit license legal',
+        icon: <Scale className="w-4 h-4" />,
+        href: STATOR_LICENSE_URL,
+        onSelect: () => {},
+      },
+      {
+        id: 'github-notices',
+        label: 'View Third-Party Notices',
+        section: 'Open Source & Legal',
+        keywords: 'third party notices ffmpeg codecs fonts',
+        icon: <FileText className="w-4 h-4" />,
+        href: STATOR_THIRD_PARTY_NOTICES_URL,
+        onSelect: () => {},
+      },
+    ];
+
+    return [...fileAndStudio, ...navActions, ...prefs, ...openSourceAndLegal].filter(
+      (item) => !item.disabled
+    );
   }, [
     activeNav,
     hasQueuedFiles,
     readyCount,
     isDark,
     onSelectNav,
+    onNavigateLegal,
     onCreateBlankProject,
     onChooseFiles,
     onLoadSamples,
@@ -238,7 +335,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         );
       } else if (e.key === 'Enter' && filtered[selectedIndex]) {
         e.preventDefault();
-        filtered[selectedIndex].onSelect();
+        const chosen = filtered[selectedIndex];
+        if (chosen.href) {
+          const el = document.querySelector<HTMLAnchorElement>(`[data-cmd-id="${chosen.id}"]`);
+          el?.click();
+        } else {
+          chosen.onSelect();
+        }
         onClose();
       }
     };
@@ -293,31 +396,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               ) : (
                 filtered.map((action, idx) => {
                   const isHighlighted = idx === selectedIndex;
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      onMouseEnter={() => setSelectedIndex(idx)}
-                      onClick={() => {
-                        action.onSelect();
-                        onClose();
-                      }}
-                      className="relative w-full px-3 py-2.5 rounded-lg text-left text-xs flex items-center justify-between gap-3 cursor-pointer"
-                    >
+                  const inner = (
+                    <>
                       {isHighlighted && (
                         <motion.span
                           layoutId="stator-cmd-highlight"
                           transition={STATOR_SPRING.tactile}
                           aria-hidden="true"
-                          className="absolute inset-0 rounded-lg bg-[var(--stator-accent-soft)]"
+                          className="absolute inset-0 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)]"
                         />
                       )}
                       <div className="relative z-10 flex items-center gap-2.5 min-w-0">
                         <span
                           className={
                             isHighlighted
-                              ? 'text-[var(--stator-accent-fg)]'
-                              : 'text-[var(--stator-fg-subtle)]'
+                              ? 'text-[var(--stator-fg)]'
+                              : 'text-[var(--stator-fg-muted)]'
                           }
                         >
                           {action.icon}
@@ -330,12 +424,48 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <span className="text-[10px] text-[var(--stator-fg-subtle)]">
                           {action.section}
                         </span>
-                        {action.shortcut && (
-                          <span className="font-mono text-[10px] text-[var(--stator-fg-muted)] px-1.5 py-0.5 rounded border border-[var(--stator-border)] bg-[var(--stator-surface)]">
-                            {action.shortcut}
-                          </span>
+                        {action.href ? (
+                          <ExternalLink className="w-3 h-3 text-[var(--stator-fg-muted)]" />
+                        ) : (
+                          action.shortcut && (
+                            <span className="font-mono text-[10px] text-[var(--stator-fg-muted)] px-1.5 py-0.5 rounded border border-[var(--stator-border)] bg-[var(--stator-surface)]">
+                              {action.shortcut}
+                            </span>
+                          )
                         )}
                       </div>
+                    </>
+                  );
+
+                  if (action.href) {
+                    return (
+                      <a
+                        key={action.id}
+                        data-cmd-id={action.id}
+                        href={action.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onMouseEnter={() => setSelectedIndex(idx)}
+                        onClick={onClose}
+                        className="relative w-full px-3 py-2.5 rounded-lg text-left text-xs flex items-center justify-between gap-3 cursor-pointer"
+                      >
+                        {inner}
+                      </a>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onMouseEnter={() => setSelectedIndex(idx)}
+                      onClick={() => {
+                        action.onSelect();
+                        onClose();
+                      }}
+                      className="relative w-full px-3 py-2.5 rounded-lg text-left text-xs flex items-center justify-between gap-3 cursor-pointer"
+                    >
+                      {inner}
                     </button>
                   );
                 })

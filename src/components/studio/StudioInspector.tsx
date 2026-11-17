@@ -193,14 +193,14 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
         {/* Essential: Output Format & Compression Goal */}
         <section className="space-y-3">
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1.5">
+            <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1.5">
               Output Format
             </label>
             <select
               value={item.targetFormat}
               onChange={(e) => onUpdateTargetFormat(item.id, e.target.value)}
               aria-label="Target output format"
-              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono font-medium text-[var(--stator-fg)] cursor-pointer"
+              className="w-full h-9 px-2.5 rounded-lg bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono font-medium text-[var(--stator-fg)] cursor-pointer"
             >
               {formats.map((fmt) => {
                 const disabled =
@@ -225,7 +225,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1.5">
+            <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1.5">
               Compression Goal
             </label>
             <div className="grid grid-cols-2 gap-1.5">
@@ -251,8 +251,8 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     }
                     className={`h-8 px-2 rounded-lg text-[11px] font-medium border cursor-pointer transition-colors ${
                       active
-                        ? 'bg-[var(--stator-accent-soft)] border-[var(--stator-accent)] text-[var(--stator-accent-fg)]'
-                        : 'bg-[var(--stator-surface-2)] border-[var(--stator-border)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
+                        ? 'bg-[var(--stator-cta-bg)] border-transparent text-[var(--stator-cta-fg)]'
+                        : 'bg-[var(--stator-surface-2)] border-[var(--stator-border-control)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
                     }`}
                   >
                     {g.label}
@@ -277,7 +277,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       )
                     }
                     aria-label="Target maximum size in MB"
-                    className="w-24 h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono tabular-nums text-[var(--stator-fg)]"
+                    className="w-24 h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono tabular-nums text-[var(--stator-fg)]"
                   />
                   <span className="text-xs font-mono text-[var(--stator-fg-muted)]">MB max</span>
                 </div>
@@ -296,13 +296,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <section className="space-y-3 pt-3 border-t border-[var(--stator-border)]">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Resize
                 </label>
                 <select
                   value={preset.imageResize}
                   onChange={(e) => updatePreset({ imageResize: e.target.value as any }, 'Resize preset')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
                 >
                   <option value="original">Original</option>
                   <option value="4K">4K (2160p)</option>
@@ -314,13 +314,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Aspect Crop
                 </label>
                 <select
                   value={preset.aspectCrop || 'original'}
                   onChange={(e) => updatePreset({ aspectCrop: e.target.value as any }, 'Aspect crop')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] cursor-pointer"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] cursor-pointer"
                 >
                   <option value="original">Original</option>
                   <option value="1:1">1:1 Square</option>
@@ -341,7 +341,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   onChange={(e) => updatePreset({ customWidth: Number(e.target.value) || 1920 }, 'Custom width')}
                   placeholder="Width px"
                   aria-label="Custom width"
-                  className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                  className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                 />
                 <input
                   type="number"
@@ -351,7 +351,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   onChange={(e) => updatePreset({ customHeight: Number(e.target.value) || 1080 }, 'Custom height')}
                   placeholder="Height px"
                   aria-label="Custom height"
-                  className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                  className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                 />
               </div>
             )}
@@ -363,7 +363,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   const nextRot = (((preset.rotation || 0) + 90) % 360) as RotationDegrees;
                   updatePreset({ rotation: nextRot }, 'Rotate 90°');
                 }}
-                className="flex-1 h-8 px-2.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 h-8 px-2.5 rounded-md bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCw className="w-3.5 h-3.5" />
                 <span>Rotate ({preset.rotation || 0}°)</span>
@@ -371,10 +371,10 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <button
                 type="button"
                 onClick={() => updatePreset({ flipH: !preset.flipH }, 'Flip horizontal')}
-                className={`flex-1 h-8 px-2.5 rounded-md border text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 h-8 px-2.5 rounded-md border text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
                   preset.flipH
-                    ? 'bg-[var(--stator-accent-soft)] border-[var(--stator-accent)] text-[var(--stator-accent-fg)]'
-                    : 'bg-[var(--stator-surface-2)] border-[var(--stator-border)] text-[var(--stator-fg)]'
+                    ? 'bg-[var(--stator-cta-bg)] border-transparent text-[var(--stator-cta-fg)]'
+                    : 'bg-[var(--stator-surface-2)] border-[var(--stator-border-control)] text-[var(--stator-fg)]'
                 }`}
               >
                 <FlipHorizontal2 className="w-3.5 h-3.5" />
@@ -425,7 +425,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                             `Adjust ${slider.label}`
                           )
                         }
-                        className="w-full accent-[var(--stator-accent)]"
+                        className="w-full stator-slider"
                       />
                     </div>
                   ))}
@@ -465,7 +465,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       )
                     }
                     placeholder="© Your Name / Brand"
-                    className="w-full h-8 px-2.5 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                    className="w-full h-8 px-2.5 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                   />
                   <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
                     <select
@@ -476,7 +476,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           'Watermark position'
                         )
                       }
-                      className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                      className="h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                     >
                       <option value="bottom-right">Bottom Right</option>
                       <option value="bottom-left">Bottom Left</option>
@@ -495,7 +495,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       }
                       aria-label="Watermark tint color"
                       title="Watermark text color"
-                      className="w-9 h-8 p-0.5 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] cursor-pointer"
+                      className="w-9 h-8 p-0.5 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] cursor-pointer"
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -514,7 +514,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                           'Watermark opacity'
                         )
                       }
-                      className="flex-1 accent-[var(--stator-accent)]"
+                      className="flex-1 stator-slider"
                       aria-label="Watermark opacity"
                     />
                   </div>
@@ -526,9 +526,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               <button
                 type="button"
                 onClick={() => onGenerateIconPack(item)}
-                className="w-full h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full h-8 px-3 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Package className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                <Package className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                 <span>Generate Favicon &amp; PWA Icon Pack ZIP</span>
               </button>
             )}
@@ -540,13 +540,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <section className="space-y-3 pt-3 border-t border-[var(--stator-border)]">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Resolution
                 </label>
                 <select
                   value={preset.videoResolution}
                   onChange={(e) => updatePreset({ videoResolution: e.target.value as any }, 'Video resolution')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                 >
                   <option value="original">Original</option>
                   <option value="4K">4K (2160p)</option>
@@ -557,13 +557,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Frame Rate
                 </label>
                 <select
                   value={preset.fpsLimiter}
                   onChange={(e) => updatePreset({ fpsLimiter: e.target.value as any }, 'Frame rate')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                 >
                   <option value="original">Original FPS</option>
                   <option value="60">60 fps</option>
@@ -575,13 +575,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Playback Speed
                 </label>
                 <select
                   value={String(preset.playbackSpeed || 1)}
                   onChange={(e) => updatePreset({ playbackSpeed: Number(e.target.value) }, 'Video speed')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                 >
                   <option value="0.5">0.5× Slow</option>
                   <option value="0.75">0.75×</option>
@@ -592,13 +592,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-[0.06em] text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Aspect Crop
                 </label>
                 <select
                   value={preset.aspectCrop || 'original'}
                   onChange={(e) => updatePreset({ aspectCrop: e.target.value as any }, 'Video aspect crop')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                 >
                   <option value="original">Original</option>
                   <option value="9:16">9:16 Vertical</option>
@@ -626,7 +626,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 className="w-full px-3 py-2 bg-[var(--stator-surface-2)]/60 flex items-center justify-between text-xs font-medium text-[var(--stator-fg)] cursor-pointer"
               >
                 <span className="inline-flex items-center gap-1.5">
-                  <Captions className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                  <Captions className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                   Subtitles ({preset.subtitleCues?.length || 0} cues)
                 </span>
                 {showSubtitlesPanel ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -637,7 +637,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     <button
                       type="button"
                       onClick={() => subtitleInputRef.current?.click()}
-                      className="flex-1 h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
+                      className="flex-1 h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Upload className="w-3 h-3" />
                       Import .SRT / .VTT
@@ -645,7 +645,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     <button
                       type="button"
                       onClick={addManualSubtitleCue}
-                      className="h-7 px-2 rounded bg-[var(--stator-accent)] text-white text-[11px] font-medium inline-flex items-center gap-1 cursor-pointer"
+                      className="h-7 px-2 rounded bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-[11px] font-medium inline-flex items-center gap-1 cursor-pointer transition-colors"
                     >
                       <Plus className="w-3 h-3" />
                       Add Cue
@@ -738,9 +738,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <button
                     type="button"
                     onClick={() => onExtractVideoFrame(item)}
-                    className="h-8 px-2 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
+                    className="h-8 px-2 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
                   >
-                    <Camera className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                    <Camera className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                     <span>Capture PNG</span>
                   </button>
                 )}
@@ -748,9 +748,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   <button
                     type="button"
                     onClick={() => replaceAudioInputRef.current?.click()}
-                    className="h-8 px-2 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
+                    className="h-8 px-2 rounded-lg bg-[var(--stator-surface-2)] hover:bg-[var(--stator-border)] border border-[var(--stator-border-control)] text-[11px] font-medium text-[var(--stator-fg)] inline-flex items-center justify-center gap-1 cursor-pointer"
                   >
-                    <Music className="w-3.5 h-3.5 text-[var(--stator-accent-fg)]" />
+                    <Music className="w-3.5 h-3.5 text-[var(--stator-fg)]" />
                     <span>Replace Audio</span>
                   </button>
                 )}
@@ -797,7 +797,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Fade In (s)
                 </label>
                 <input
@@ -807,11 +807,11 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   step={0.5}
                   value={preset.audioFadeInSec || 0}
                   onChange={(e) => updatePreset({ audioFadeInSec: Number(e.target.value) || 0 }, 'Fade in')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Fade Out (s)
                 </label>
                 <input
@@ -821,20 +821,20 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   step={0.5}
                   value={preset.audioFadeOutSec || 0}
                   onChange={(e) => updatePreset({ audioFadeOutSec: Number(e.target.value) || 0 }, 'Fade out')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   EQ Profile
                 </label>
                 <select
                   value={preset.eqPreset || 'flat'}
                   onChange={(e) => updatePreset({ eqPreset: e.target.value as any }, 'Audio EQ')}
-                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                  className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                 >
                   <option value="flat">Flat</option>
                   <option value="voice">Voice Clarity</option>
@@ -843,7 +843,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                   Volume ({preset.volumePercent ?? 100}%)
                 </label>
                 <input
@@ -853,7 +853,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                   step={5}
                   value={preset.volumePercent ?? 100}
                   onChange={(e) => updatePreset({ volumePercent: Number(e.target.value) }, 'Volume gain')}
-                  className="w-full accent-[var(--stator-accent)] mt-2"
+                  className="w-full stator-slider mt-2"
                 />
               </div>
             </div>
@@ -865,7 +865,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <button
             type="button"
             onClick={() => setShowAdvanced((v) => !v)}
-            className="w-full flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.07em] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
+            className="w-full flex items-center justify-between text-xs font-medium text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)] cursor-pointer"
           >
             <span>Advanced Technical</span>
             {showAdvanced ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -885,7 +885,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     max={100}
                     value={preset.imageQuality}
                     onChange={(e) => updatePreset({ imageQuality: Number(e.target.value) }, 'Image quality')}
-                    className="w-full accent-[var(--stator-accent)]"
+                    className="w-full stator-slider"
                   />
                 </div>
               )}
@@ -893,13 +893,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
               {item.typeCategory === 'video' && (
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                    <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                       CRF / Bitrate
                     </label>
                     <select
                       value={preset.videoBitrate}
                       onChange={(e) => updatePreset({ videoBitrate: e.target.value as any }, 'Video bitrate')}
-                      className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                      className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                     >
                       <option value="high">High (CRF 18)</option>
                       <option value="balanced">Balanced (CRF 23)</option>
@@ -908,13 +908,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                    <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                       Video Audio
                     </label>
                     <select
                       value={preset.videoAudioBitrate || 'original'}
                       onChange={(e) => updatePreset({ videoAudioBitrate: e.target.value as any }, 'Video audio bitrate')}
-                      className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+                      className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)]"
                     >
                       <option value="original">Keep / AAC</option>
                       <option value="320k">320 kbps</option>
@@ -930,13 +930,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                      <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                         Bitrate
                       </label>
                       <select
                         value={preset.audioBitrate}
                         onChange={(e) => updatePreset({ audioBitrate: e.target.value as any }, 'Audio bitrate')}
-                        className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                        className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                       >
                         <option value="320k">320 kbps</option>
                         <option value="256k">256 kbps</option>
@@ -946,13 +946,13 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)] mb-1">
+                      <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)] mb-1">
                         Sample Rate
                       </label>
                       <select
                         value={preset.audioSampleRate || 'original'}
                         onChange={(e) => updatePreset({ audioSampleRate: e.target.value as any }, 'Sample rate')}
-                        className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-mono text-[var(--stator-fg)]"
+                        className="w-full h-8 px-2 rounded-md bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-mono text-[var(--stator-fg)]"
                       >
                         <option value="original">Original</option>
                         <option value="48000">48 kHz</option>
@@ -962,7 +962,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-mono uppercase text-[var(--stator-fg-subtle)]">
+                    <label className="block text-[11px] font-medium text-[var(--stator-fg-muted)]">
                       ID3 / Container Tags
                     </label>
                     <input
@@ -970,7 +970,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                       value={preset.audioMetaTitle || ''}
                       onChange={(e) => updatePreset({ audioMetaTitle: e.target.value }, 'Track title')}
                       placeholder="Track Title"
-                      className="w-full h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] text-[var(--stator-fg)]"
+                      className="w-full h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] text-[var(--stator-fg)]"
                     />
                     <div className="grid grid-cols-2 gap-1.5">
                       <input
@@ -978,14 +978,14 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
                         value={preset.audioMetaArtist || ''}
                         onChange={(e) => updatePreset({ audioMetaArtist: e.target.value }, 'Artist')}
                         placeholder="Artist"
-                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] text-[var(--stator-fg)]"
+                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] text-[var(--stator-fg)]"
                       />
                       <input
                         type="text"
                         value={preset.audioMetaAlbum || ''}
                         onChange={(e) => updatePreset({ audioMetaAlbum: e.target.value }, 'Album')}
                         placeholder="Album"
-                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-[11px] text-[var(--stator-fg)]"
+                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-[11px] text-[var(--stator-fg)]"
                       />
                     </div>
                   </div>
@@ -1032,7 +1032,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <button
             type="button"
             onClick={() => onCancelConversion(item.id)}
-            className="w-full h-9 rounded-lg bg-[var(--stator-danger)] text-white text-xs font-medium inline-flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-9 rounded-lg bg-[#9B2C3E] hover:bg-[#822333] text-white text-xs font-medium inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             <span>Cancel ({item.progress}%)</span>
@@ -1042,9 +1042,9 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
             type="button"
             disabled={item.needsReconnect}
             onClick={() => onStartConversion(item.id)}
-            className="w-full h-9 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] disabled:opacity-45 text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+            className="w-full h-9 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] disabled:opacity-45 text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
-            <Zap className="w-3.5 h-3.5 fill-white" />
+            <Zap className="w-3.5 h-3.5 fill-current" />
             <span>
               {item.status === 'completed'
                 ? `Re-Encode ${item.targetFormat}`
@@ -1059,7 +1059,7 @@ export const StudioInspector: React.FC<StudioInspectorProps> = ({
           <a
             href={item.outputUrl}
             download={item.outputName || item.name}
-            className="w-full h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full h-8 rounded-lg bg-[#2F6846] hover:bg-[#255438] text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download Output ({item.outputSizeFormatted})</span>

@@ -18,6 +18,7 @@ import { formatRelativeTime } from '../types/history.ts';
 export interface ProjectsViewProps {
   projects: ProjectRecord[];
   onCreateProject: (type: ProjectType) => void;
+  onOpenNewProjectModal?: () => void;
   onOpenProject: (id: string) => void;
   onRenameProject: (id: string, name: string) => void;
   onDuplicateProject: (id: string) => void;
@@ -30,6 +31,7 @@ export interface ProjectsViewProps {
 export const ProjectsView: React.FC<ProjectsViewProps> = ({
   projects,
   onCreateProject,
+  onOpenNewProjectModal,
   onOpenProject,
   onRenameProject,
   onDuplicateProject,
@@ -71,8 +73,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[var(--stator-border)]">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.08em] text-[var(--stator-fg-subtle)] mb-1">
-            IndexedDB Project Ledger
+          <p className="text-xs font-medium text-[var(--stator-fg-muted)] mb-1">
+            Local project library
           </p>
           <h2 className="text-2xl font-semibold tracking-tight text-[var(--stator-fg)]">
             Saved Projects ({projects.length})
@@ -86,32 +88,32 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           <button
             type="button"
             onClick={() => jsonInputRef.current?.click()}
-            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3 rounded-lg bg-[var(--stator-surface)] hover:bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-xs font-medium text-[var(--stator-fg)] inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Import .stator.json</span>
           </button>
           <button
             type="button"
-            onClick={() => onCreateProject('blank')}
-            className="h-9 px-3.5 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            onClick={() => (onOpenNewProjectModal ? onOpenNewProjectModal() : onCreateProject('blank'))}
+            className="h-9 px-3.5 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <FolderPlus className="w-3.5 h-3.5" />
-            <span>New Blank Project</span>
+            <span>New Project</span>
           </button>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="w-3.5 h-3.5 text-[var(--stator-fg-subtle)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-[var(--stator-fg-muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by project or filename…"
             aria-label="Filter projects"
-            className="w-full h-9 pl-8 pr-3 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border)] text-xs text-[var(--stator-fg)]"
+            className="w-full h-9 pl-8 pr-3 rounded-lg bg-[var(--stator-surface)] border border-[var(--stator-border-control)] text-xs text-[var(--stator-fg)] placeholder:text-[var(--stator-fg-muted)]"
           />
         </div>
 
@@ -123,8 +125,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               onClick={() => setTypeFilter(t)}
               className={`h-8 px-3 rounded-lg text-xs font-medium capitalize cursor-pointer transition-colors ${
                 typeFilter === t
-                  ? 'bg-[var(--stator-accent)] text-white'
-                  : 'bg-[var(--stator-surface)] border border-[var(--stator-border)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
+                  ? 'bg-[var(--stator-cta-bg)] text-[var(--stator-cta-fg)]'
+                  : 'bg-[var(--stator-surface)] border border-[var(--stator-border-control)] text-[var(--stator-fg-muted)] hover:text-[var(--stator-fg)]'
               }`}
             >
               {t}
@@ -176,13 +178,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                           if (e.key === 'Escape') setRenamingId(null);
                         }}
                         autoFocus
-                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-accent)] text-sm font-semibold text-[var(--stator-fg)]"
+                        className="h-7 px-2 rounded bg-[var(--stator-surface-2)] border border-[var(--stator-border-control)] text-sm font-semibold text-[var(--stator-fg)]"
                       />
                     ) : (
                       <button
                         type="button"
                         onClick={() => onOpenProject(proj.id)}
-                        className="text-sm font-semibold text-[var(--stator-fg)] hover:text-[var(--stator-accent-fg)] truncate block cursor-pointer"
+                        className="text-sm font-semibold text-[var(--stator-fg)] hover:opacity-80 truncate block cursor-pointer"
                       >
                         {proj.name}
                       </button>
@@ -222,7 +224,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenProject(proj.id)}
-                    className="h-8 px-3 rounded-lg bg-[var(--stator-accent)] hover:bg-[var(--stator-accent-hover)] text-white text-xs font-medium cursor-pointer"
+                    className="h-8 px-3 rounded-lg bg-[var(--stator-cta-bg)] hover:bg-[var(--stator-cta-hover)] text-[var(--stator-cta-fg)] text-xs font-medium cursor-pointer transition-colors"
                   >
                     Open Studio
                   </button>
@@ -269,7 +271,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                           onDeleteProject(proj.id);
                           setConfirmDeleteId(null);
                         }}
-                        className="h-8 px-2.5 rounded-lg bg-[var(--stator-danger)] text-white text-xs font-medium cursor-pointer"
+                        className="h-8 px-2.5 rounded-lg bg-[#9B2C3E] hover:bg-[#822333] text-white text-xs font-medium cursor-pointer"
                       >
                         Confirm
                       </button>

@@ -96,7 +96,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`w-full h-9 flex items-center justify-between px-3 bg-[var(--stator-surface)] border border-[var(--stator-border)] hover:border-[var(--stator-border-strong)] rounded-lg text-xs sm:text-[13px] text-[var(--stator-fg)] transition-colors cursor-pointer active:scale-[0.99] ${
+        className={`w-full h-9 flex items-center justify-between px-3 bg-[var(--stator-surface)] border border-[var(--stator-border-control)] hover:border-[var(--stator-border-strong)] rounded-lg text-xs sm:text-[13px] text-[var(--stator-fg)] transition-colors cursor-pointer active:scale-[0.99] ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
@@ -138,7 +138,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                   }}
                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs sm:text-[13px] cursor-pointer transition-colors duration-100 ${
                     isSelected
-                      ? 'bg-[var(--stator-accent-soft)] text-[var(--stator-fg)] font-medium'
+                      ? 'bg-[var(--stator-surface-2)] text-[var(--stator-fg)] font-medium'
                       : option.isLocked
                       ? 'text-[var(--stator-fg-subtle)] hover:bg-[var(--stator-surface-2)]'
                       : 'text-[var(--stator-fg-muted)] hover:bg-[var(--stator-surface-2)] hover:text-[var(--stator-fg)]'
@@ -158,7 +158,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     )}
                   </div>
                   {isSelected && (
-                    <Check className="w-4 h-4 text-[var(--stator-accent-fg)] shrink-0 ml-auto" />
+                    <Check className="w-4 h-4 text-[var(--stator-fg)] shrink-0 ml-auto" />
                   )}
                 </div>
               );
